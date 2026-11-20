@@ -245,3 +245,17 @@ This document tracks all requirements, design decisions, architectural component
    - Either via the same browser extension on `web.telegram.org` or headless via `python scripts/telegram_live_monitor.py`.
 
 ---
+
+## Log Entry: Step 9 — 100% Free & Zero-Billing Architecture as Primary Default
+
+### 1. User Decision & Requirements
+* Google Cloud Console requires credit/debit card billing verification even for trial credits.
+* Remove Google Cloud as a primary dependency so the user is never blocked, forced into payment verifications, or charged fees.
+* Re-orient the architecture around the **100% free, zero-card, local-first stack**:
+  - Primary LLM: **Groq** (`openai/gpt-oss-120b` / `openai/gpt-oss-20b` via `console.groq.com/keys` - 100% free with no credit card).
+  - Primary Vectors: **Local FastEmbed (`BAAI/bge-small-en-v1.5`) & ChromaDB/SQLite** (runs 100% locally on CPU/RAM with zero network costs).
+  - Primary Maps: **OpenStreetMap (Leaflet)** (100% free, zero keys, zero billing accounts).
+  - Primary Database: **Local SQLite file** in `backend/data/` (or free-tier Supabase/Neon).
+* Keep Google Gemini / Maps as an optional plug-in if the user ever adds keys later, but ensure zero features require it to run.
+
+---
