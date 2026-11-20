@@ -20,7 +20,7 @@ from app.auth.schemas import (
     ResetPasswordIn,
     SignupIn,
 )
-from app.schemas import AnalyzeRequest, AnalyzeResponse
+from app.schemas import AnalyzeRequest, AnalyzeResponse, AutoAlertRequest
 from app.shield.classifier import analyze
 from app.complaint.drafting import ComplaintError, build_complaint
 from app.complaint.pdf import build_complaint_pdf
@@ -772,18 +772,129 @@ async def people_siren(pid: str, request: Request):
     p = _person(pid)
     raw_token = request.cookies.get(SESSION_COOKIE)
     curr_user = accounts.user_for_session(raw_token) if raw_token else None
-    user_name = curr_user.get("full_name") or curr_user.get("username") if curr_user else "User"
+    user_name = (curr_user.get("full_name") or curr_user.get("username") if curr_user else None) or "Your ward"
+
+    lat = None
+    lng = None
+    try:
+        data = await request.json()
+        if isinstance(data, dict):
+            lat = data.get("lat")
+            lng = data.get("lng")
+    except Exception:
+        lat = request.query_params.get("lat")
+        lng = request.query_params.get("lng")
+
+    parsed_lat = float(lat) if lat is not None else None
+    parsed_lng = float(lng) if lng is not None else None
+
     email_status = "no email"
     if p.get("email"):
-        email_status = await notify.send_siren_alert_email(p["email"], p["name"], user_name)
+        email_status = await notify.send_siren_alert_email(
+            p["email"], p["name"], user_name, lat=parsed_lat, lng=parsed_lng
+        )
+
     tg_status = "not linked"
     if p.get("telegram_chat_id"):
         try:
-            await notify.tg("sendMessage", chat_id=p["telegram_chat_id"], text=f"🚨 URGENT EMERGENCY SIREN: {user_name} has triggered an emergency distress alarm right now! Please call or assist immediately.")
+            loc_msg = ""
+            if parsed_lat is not None and parsed_lng is not None:
+                loc_msg = f"\n\n📍 Live GPS Location:\nhttps://maps.google.com/?q={parsed_lat:.6f},{parsed_lng:.6f}\nCoordinates: {parsed_lat:.6f}, {parsed_lng:.6f}"
+            await notify.tg(
+                "sendMessage",
+                chat_id=p["telegram_chat_id"],
+                text=f"🚨 URGENT EMERGENCY SIREN: {user_name} has triggered an emergency distress alarm right now!{loc_msg}\nPlease call or assist immediately."
+            )
             tg_status = "sent"
         except Exception as exc:
             tg_status = f"failed: {exc}"
     return {"ok": True, "email": email_status, "telegram": tg_status}
+
+
+@app.post("/sos/auto-alert")
+async def sos_auto_alert(req: AutoAlertRequest, request: Request):
+    """Automatically dispatches critical threat warnings with live GPS & LLM guardian advice when threat score >= 90."""
+    raw_token = request.cookies.get(SESSION_COOKIE)
+    curr_user = accounts.user_for_session(raw_token) if raw_token else None
+    user_name = (curr_user.get("full_name") or curr_user.get("username") if curr_user else None) or "Your ward"
+    user_id = curr_user["id"] if curr_user else None
+
+    contacts = people.list_kind("contact", owner_id=user_id) if user_id else people.list_kind("contact")
+    if not contacts:
+        contacts = people.list_kind("contact")
+
+    advice = req.guardian_advice or (
+        "Approach your ward gently and calmly without anger, panic, or victim-blaming. "
+        "Reassure them: 'You did nothing wrong, I am here with you, and we will handle this together.' "
+        "Do not transfer any money. Contact Cyber Crime Helpline 1930 or 112 if in danger."
+    )
+
+    loc_tg = ""
+    loc_mail = ""
+    if req.lat is not None and req.lng is not None:
+        gmaps = f"https://maps.google.com/?q={req.lat:.6f},{req.lng:.6f}"
+        osm = f"https://www.openstreetmap.org/?mlat={req.lat:.6f}&mlon={req.lng:.6f}#map=16/{req.lat:.6f}/{req.lng:.6f}"
+        loc_tg = f"\n📍 LIVE GPS LOCATION:\nGoogle Maps: {gmaps}\nOSM: {osm}\nCoordinates: {req.lat:.6f}, {req.lng:.6f}\n"
+        loc_mail = f"\n• Live GPS Location: {gmaps}\n• Exact Coordinates: {req.lat:.6f}, {req.lng:.6f}\n"
+
+    tg_sent = 0
+    mail_sent = 0
+
+    tg_text = (
+        f"🚨 KAVACH CRITICAL AUTO-ALERT (Threat Score: {req.risk_score}/100)\n\n"
+        f"An urgent safety threat was detected for {user_name} from sender: '{req.sender}'.\n"
+        f"Threat Type: {req.category.replace('_', ' ').upper()}\n\n"
+        f"⚠️ THREAT SUMMARY:\n{req.reason}\n"
+        f"{loc_tg}\n"
+        f"💙 HOW TO APPROACH {user_name.upper()} POLITELY & CALMLY:\n{advice}\n\n"
+        f"Immediate Action Steps:\n"
+        f"1. Reach out calmly with care and affection.\n"
+        f"2. Say: 'You did nothing wrong. I am here to help you.'\n"
+        f"3. Do NOT transfer money or comply with extortion.\n"
+        f"4. Need police help? Dial 112 or 1930."
+    )
+
+    for c in contacts:
+        if c.get("telegram_chat_id") and notify.telegram_on():
+            try:
+                await notify.tg("sendMessage", chat_id=c["telegram_chat_id"], text=tg_text)
+                tg_sent += 1
+            except Exception as e:
+                log.warning("Auto-alert telegram to %s failed: %s", c.get("name"), e)
+
+        if c.get("email") and notify.email_on():
+            subject = f"🚨 URGENT KAVACH AUTO-ALERT: Safety Threat Detected for {user_name} ({req.risk_score}/100)"
+            body = (
+                f"Hello {c.get('name', 'Guardian')},\n\n"
+                f"Kavach Smart Shield automatically detected an urgent online safety threat for {user_name}.\n\n"
+                f"INCIDENT DETAILS:\n"
+                f"• Threat Category: {req.category.replace('_', ' ').upper()}\n"
+                f"• Threat Risk Score: {req.risk_score}/100 (CRITICAL)\n"
+                f"• Sender / Account: {req.sender}\n"
+                f"• Threat Summary: {req.reason}\n"
+                f"{loc_mail}\n"
+                f"GUIDANCE FOR GUARDIANS (HOW TO APPROACH POLITELY & SUPPORTIVELY):\n"
+                f"{advice}\n\n"
+                f"NEXT STEPS:\n"
+                f"1. Reach out to {user_name} calmly. Avoid showing panic or anger.\n"
+                f"2. Explicitly state: 'You are safe, you did nothing wrong, I am by your side.'\n"
+                f"3. Do not engage with the blackmailer or transfer funds.\n"
+                f"4. File a complaint via Kavach or call 1930 / 112.\n\n"
+                f"Kavach Automated Emergency Network"
+            )
+            try:
+                res = await notify.email(c["email"], subject, body)
+                if res == "sent":
+                    mail_sent += 1
+            except Exception as e:
+                log.warning("Auto-alert email to %s failed: %s", c.get("email"), e)
+
+    return {
+        "ok": True,
+        "dispatched_to_guardians": len(contacts),
+        "telegram_sent": tg_sent,
+        "email_sent": mail_sent,
+    }
 
 
 @app.patch("/people/{pid}")

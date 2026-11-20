@@ -69,6 +69,29 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
     return true; // Keep message channel open for async sendResponse
   }
 
+  if (msg.type === "TRIGGER_AUTO_ALERT") {
+    chrome.storage.sync.get(["kavachApiUrl"], (cfg) => {
+      const apiUrl = cfg.kavachApiUrl || "http://localhost:8000";
+      fetch(`${apiUrl}/sos/auto-alert`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "X-Kavach-Client": "extension"
+        },
+        credentials: "include",
+        body: JSON.stringify(msg.payload),
+      })
+        .then(async (res) => {
+          const data = await res.json().catch(() => ({}));
+          sendResponse({ ok: res.ok, data });
+        })
+        .catch((err) => {
+          sendResponse({ ok: false, error: err.message });
+        });
+    });
+    return true;
+  }
+
   if (msg.type === "THREAT_DETECTED") {
     // Set badge warning on extension icon
     chrome.action.setBadgeText({ text: "!" });

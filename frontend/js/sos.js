@@ -216,9 +216,24 @@
       sirenBtn.disabled = true;
       sirenBtn.textContent = "Sending…";
       try {
-        await api(`/people/${pid}/siren`, { method: "POST" });
+        let loc = null;
+        try {
+          loc = await new Promise((resolve) => {
+            if (!navigator.geolocation) return resolve(null);
+            navigator.geolocation.getCurrentPosition(
+              (pos) => resolve({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
+              () => resolve(null),
+              { timeout: 3500, maximumAge: 60000 }
+            );
+          });
+        } catch {}
+
+        await api(`/people/${pid}/siren`, {
+          method: "POST",
+          body: JSON.stringify(loc || {})
+        });
         playAlertSound();
-        window.kavach?.toast("🚨 Emergency siren alert & email dispatched to guardian!");
+        window.kavach?.toast("🚨 Emergency siren alert with GPS coordinates & email dispatched to guardian!");
       } catch (err) {
         window.kavach?.toast(`Alert error: ${err.message}`);
       } finally {
@@ -939,8 +954,12 @@
     if (!isOpen) return;
     isOpen = false;
     document.body.classList.remove("sosing", "calling");
-    els.view.hidden = true;
-    els.btn.classList.remove("active");
+    if (els.view) els.view.hidden = true;
+    const sView = document.querySelector("#safetyspace-view");
+    if (sView) sView.hidden = true;
+    const gView = document.querySelector("#guardians-view");
+    if (gView) gView.hidden = true;
+    els.btn?.classList.remove("active");
   }
 
   els.btn.addEventListener("click", open);

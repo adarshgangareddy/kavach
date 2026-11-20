@@ -8,12 +8,23 @@
 (() => {
   let activePlatform = location.host.includes("whatsapp.com") ? "whatsapp" : "telegram";
   let lastScannedFingerprint = "";
+  let lastContactName = "";
+  let autoAlertDispatched = new Set();
   let scanDebounceTimer = null;
   let isProtectionEnabled = true;
 
   chrome.storage?.sync?.get(["kavachEnabled"], (res) => {
     if (res?.kavachEnabled !== undefined) isProtectionEnabled = res.kavachEnabled;
   });
+
+  function getGeolocation(cb) {
+    if (!navigator.geolocation) return cb(null);
+    navigator.geolocation.getCurrentPosition(
+      (pos) => cb({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
+      () => cb(null),
+      { timeout: 3500, maximumAge: 60000 }
+    );
+  }
 
   // Inject Kavach persistent floating badge into the page
   function injectStatusBadge() {
@@ -137,10 +148,21 @@
       return;
     }
 
+    // Chat switch detection: when the user switches to a different contact in WhatsApp
+    if (chatData.contact_name && chatData.contact_name !== lastContactName) {
+      lastContactName = chatData.contact_name;
+      lastScannedFingerprint = "";
+      removeThreatBanner();
+      if (badge) {
+        badge.innerHTML = `<span class="kavach-status-dot" style="background:#f59e0b;"></span><span>🔄 Analyzing ${chatData.contact_name}...</span>`;
+      }
+    }
+
     const incoming = chatData.messages.filter((m) => m.sender !== "me");
     if (!incoming.length) {
+      removeThreatBanner();
       if (force && badge) {
-        badge.innerHTML = `<span class="kavach-status-dot" style="background:#10b981;"></span><span>✓ Outgoing chat · Safe</span>`;
+        badge.innerHTML = `<span class="kavach-status-dot" style="background:#10b981;"></span><span>✓ ${chatData.contact_name}: Safe</span>`;
         setTimeout(() => {
           badge.innerHTML = `<span class="kavach-status-dot"></span><span>🛡️ Kavach Active</span>`;
         }, 2500);
@@ -148,7 +170,7 @@
       return;
     }
 
-    const fingerprint = incoming.slice(-4).map((m) => m.text).join("::");
+    const fingerprint = `${chatData.contact_name}::` + incoming.slice(-4).map((m) => m.text).join("::");
     if (!force && fingerprint === lastScannedFingerprint) return;
     lastScannedFingerprint = fingerprint;
 
@@ -177,10 +199,35 @@
         }
 
         const verdict = response.data;
-        if (verdict.severity !== "low" && verdict.category !== "safe") {
-          displayThreatBanner(verdict, chatData);
+        if (verdict.severity !== "low" && verdict.category !== "safe" && verdict.risk_score >= 50) {
+          // Automatic Alert Dispatch when Threat Score >= 90
+          let isAutoDispatched = false;
+          if (verdict.risk_score >= 90 && !autoAlertDispatched.has(fingerprint)) {
+            autoAlertDispatched.add(fingerprint);
+            isAutoDispatched = true;
+            getGeolocation((loc) => {
+              chrome.runtime?.sendMessage?.({
+                type: "TRIGGER_AUTO_ALERT",
+                payload: {
+                  category: verdict.category,
+                  risk_score: verdict.risk_score,
+                  reason: verdict.reason,
+                  sender: chatData.contact_name,
+                  guardian_advice: verdict.guardian_advice,
+                  lat: loc?.lat,
+                  lng: loc?.lng,
+                },
+              }, (alertResp) => {
+                console.log("Kavach Auto-Alert Dispatched:", alertResp);
+              });
+            });
+          } else if (autoAlertDispatched.has(fingerprint)) {
+            isAutoDispatched = true;
+          }
+
+          displayThreatBanner(verdict, chatData, isAutoDispatched);
           if (badge) {
-            badge.innerHTML = `<span class="kavach-status-dot" style="background:#ef4444;"></span><span>🚨 Threat Flagged</span>`;
+            badge.innerHTML = `<span class="kavach-status-dot" style="background:#ef4444;"></span><span>🚨 Threat Flagged (${verdict.risk_score})</span>`;
           }
           chrome.runtime?.sendMessage?.({
             type: "THREAT_DETECTED",
@@ -190,9 +237,10 @@
             sender: chatData.contact_name,
           });
         } else {
+          // Safely remove banner if conversation is clean
           removeThreatBanner();
           if (badge) {
-            badge.innerHTML = `<span class="kavach-status-dot" style="background:#10b981;"></span><span>🟢 ${chatData.messages.length} msgs · Safe</span>`;
+            badge.innerHTML = `<span class="kavach-status-dot" style="background:#10b981;"></span><span>🟢 ${chatData.contact_name}: Safe · 0 Threats</span>`;
             setTimeout(() => {
               badge.innerHTML = `<span class="kavach-status-dot"></span><span>🛡️ Kavach Active</span>`;
             }, 3500);
@@ -203,7 +251,7 @@
   }
 
   // Display high-visibility fixed banner
-  function displayThreatBanner(verdict, chatData) {
+  function displayThreatBanner(verdict, chatData, isAutoDispatched = false) {
     let existing = document.getElementById("kavach-threat-banner");
     if (!existing) {
       existing = document.createElement("div");
@@ -215,6 +263,17 @@
     const categoryLabel = (verdict.category || "THREAT").replace(/_/g, " ").toUpperCase();
     const senderName = chatData.contact_name || "Sender";
 
+    const autoAlertHtml = isAutoDispatched || verdict.risk_score >= 90
+      ? `<div style="background:rgba(239, 68, 68, 0.2); border:1px solid rgba(239, 68, 68, 0.5); padding:8px 12px; border-radius:6px; margin-top:8px; font-size:12px; font-weight:600; color:#fca5a5; display:flex; align-items:center; gap:8px;">
+          <span>⚡</span>
+          <span><strong>AUTO-ALERT DISPATCHED:</strong> Critical Threat Score ${verdict.risk_score}/100. Emergency alert with live GPS coordinates and supportive parental guidance was automatically sent to your guardians via Telegram and Email.</span>
+        </div>`
+      : "";
+
+    const sosBtnText = isAutoDispatched || verdict.risk_score >= 90
+      ? "✓ SOS Dispatched to Guardians"
+      : "🚨 Trigger SOS to Guardians";
+
     existing.innerHTML = `
       <div class="kavach-banner-top">
         <span class="kavach-threat-badge">🚨 KAVACH SHIELD: ${categoryLabel}</span>
@@ -223,10 +282,11 @@
       <div class="kavach-banner-body">
         <strong>Harassment / Extortion Warning: Threat detected from ${senderName}:</strong>
         <br/><span style="opacity:0.95; font-size:12.5px; margin-top:4px; display:inline-block;">${verdict.reason}</span>
+        ${autoAlertHtml}
       </div>
       <div class="kavach-banner-acts">
         <button type="button" class="kavach-btn" id="kavach-act-vault">🔒 Save Evidence to Vault</button>
-        <button type="button" class="kavach-btn kavach-btn-sos" id="kavach-act-sos">🚨 Trigger SOS to Guardians</button>
+        <button type="button" class="kavach-btn kavach-btn-sos" id="kavach-act-sos">${sosBtnText}</button>
         <button type="button" class="kavach-btn" id="kavach-act-dismiss">Dismiss</button>
       </div>
     `;

@@ -33,7 +33,7 @@
     window.kavachResponders?.close();
     window.kavachProfile?.close();
 
-    const views = ["#import-view", "#vault-view", "#complaint-view", "#guardians-view", "#responders-view", "#profile-view"];
+    const views = ["#import-view", "#vault-view", "#complaint-view", "#guardians-view", "#safetyspace-view", "#responders-view", "#profile-view"];
     views.forEach((sel) => {
       const el = document.querySelector(sel);
       if (el) el.hidden = true;
@@ -53,29 +53,24 @@
     leaveHome();
     closeAllViews();
 
-    if (where === "shield") {
-      const chatArea = document.querySelector("#chat-area");
-      if (chatArea) chatArea.hidden = false;
-      if (phone.matches) {
-        mobile.show("list");
-        mobile.pill(null);
-      } else {
-        window.kavach.openShield();
-      }
-      setActive("shield");
+    if (where === "safetyspace" || where === "shield") {
+      window.kavachSos?.open();
+      const el = document.querySelector("#safetyspace-view");
+      if (el) el.hidden = false;
+      setActive("safetyspace");
+    } else if (where === "guardians" || where === "sos") {
+      window.kavachSos?.open();
+      const el = document.querySelector("#guardians-view");
+      if (el) el.hidden = false;
+      setActive("guardians");
     } else if (where === "scan") {
       document.querySelector("#import-btn")?.click();
-      setActive("shield");
+      setActive("safetyspace");
     } else if (where === "vault") {
       window.kavachVault?.open();
       const el = document.querySelector("#vault-view");
       if (el) el.hidden = false;
       setActive("vault");
-    } else if (where === "guardians" || where === "sos" || where === "safetyspace") {
-      window.kavachSos?.open();
-      const el = document.querySelector("#guardians-view");
-      if (el) el.hidden = false;
-      setActive("guardians");
     } else if (where === "responders") {
       window.kavachResponders?.open();
       const el = document.querySelector("#responders-view");

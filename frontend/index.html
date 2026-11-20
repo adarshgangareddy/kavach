@@ -24,8 +24,8 @@
       Kavach
     </button>
     <nav class="nav" aria-label="Main">
-      <button class="nav-link" data-nav="shield" type="button">Garden</button>
-      <button class="nav-link" id="guardians-btn" data-nav="guardians" type="button">Safety Space & Guardians</button>
+      <button class="nav-link" id="guardians-btn" data-nav="guardians" type="button">Guardians</button>
+      <button class="nav-link" id="safetyspace-btn" data-nav="safetyspace" type="button">Safety Space</button>
       <button class="nav-link" id="vault-btn" data-nav="vault" type="button">Vault <span id="vault-count" class="nav-count">0</span></button>
       <button class="nav-link" id="responders-btn" data-nav="responders" type="button">Responders</button>
     </nav>
@@ -255,23 +255,21 @@
         </div>
       </section>
 
-      <!-- Safety Space: Real Working Stealth Phone Call Prototype + Guardians & Contacts Hub -->
-      <section id="guardians-view" class="vault" hidden>
+      <!-- Safety Space: Dedicated Stealth Phone Call Simulator & Calming De-Escalation Screen -->
+      <section id="safetyspace-view" class="vault" hidden>
         <header class="vault__head">
           <div>
-            <div class="chat__name">Safety Space & Guardians</div>
-            <div class="muted small">Stealth de-escalation phone call simulator + trusted contacts who receive real-time emergency alerts & GPS tracking.</div>
+            <div class="chat__name">Safety Space — Discreet De-Escalation Call</div>
+            <div class="muted small">Stealth de-escalation phone call simulator. Tap to ring · Hold Decline 2s for Silent SOS.</div>
           </div>
-          <span id="channels-status" class="setup__chips"></span>
         </header>
 
-        <div class="safetyspace-container">
-          <!-- LEFT: Real Working Interactive Stealth Phone -->
-          <div class="glass-panel" style="padding: 20px; display: flex; flex-direction: column; align-items: center;">
-            <div style="width: 100%; display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px;">
+        <div class="vault__body" style="max-width: 680px; margin: 0 auto; padding: 24px;">
+          <div class="glass-panel" style="padding: 24px; display: flex; flex-direction: column; align-items: center;">
+            <div style="width: 100%; display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px;">
               <div>
-                <strong style="font-size: 14px; color: var(--text);">Discreet De-Escalation Call</strong>
-                <small style="display: block; color: var(--muted); font-size: 11px;">Tap to ring · Hold Decline 2s for Silent SOS</small>
+                <strong style="font-size: 15px; color: var(--text);">Discreet De-Escalation Call Simulator</strong>
+                <small style="display: block; color: var(--muted); font-size: 12px;">Pretend an incoming family call · Hold Decline 2s for Silent SOS</small>
               </div>
               <span class="glass-badge" style="color: #3ecf8e; border-color: rgba(62,207,142,0.3);">Prototype Active</span>
             </div>
@@ -343,79 +341,89 @@
             </div>
 
             <!-- Phone Simulator Controls -->
-            <div style="width: 100%; margin-top: 18px; display: flex; flex-direction: column; gap: 10px;">
-              <label style="display:flex; justify-content:space-between; align-items:center; font-size:12px; color:var(--muted);">
+            <div style="width: 100%; max-width: 440px; margin-top: 20px; display: flex; flex-direction: column; gap: 12px;">
+              <label style="display:flex; justify-content:space-between; align-items:center; font-size:12.5px; color:var(--muted);">
                 Caller Identity:
-                <input id="caller-input" value="Mom" class="glass-input" style="width:130px; padding:6px 10px; font-size:12px;" />
+                <input id="caller-input" value="Mom" class="glass-input" style="width:140px; padding:6px 12px; font-size:12px;" />
               </label>
-              <button type="button" id="ring-btn" class="btn btn--block" style="background:linear-gradient(135deg, #f2b8c6, #b9a6e8); color:#0c0e12; font-weight:700; border:none; padding:10px;">
+              <button type="button" id="ring-btn" class="btn btn--block" style="background:linear-gradient(135deg, #f2b8c6, #b9a6e8); color:#0c0e12; font-weight:700; border:none; padding:11px; font-size:13px;">
                 📞 Ring Fake Call (With Ringtone Audio)
               </button>
-              <div style="display:grid; grid-template-columns: 1fr 1fr; gap:8px;">
-                <button type="button" id="siren-toggle-btn" class="btn btn--ghost" style="border-color:#ef4444; color:#ef4444; font-size:11.5px; font-weight:600; padding:8px;">
+              <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
+                <button type="button" id="siren-toggle-btn" class="btn btn--ghost" style="border-color:#ef4444; color:#ef4444; font-size:12px; font-weight:600; padding:9px;">
                   🔊 Sound Alarm Siren
                 </button>
-                <button type="button" id="trigger-sos-btn" class="btn btn--primary" style="background:#ef4444; border-color:#ef4444; font-size:11.5px; font-weight:700; padding:8px;">
+                <button type="button" id="trigger-sos-btn" class="btn btn--primary" style="background:#ef4444; border-color:#ef4444; font-size:12px; font-weight:700; padding:9px;">
                   🚨 Trigger Silent SOS
                 </button>
               </div>
             </div>
           </div>
+        </div>
+      </section>
 
-          <!-- RIGHT: Real Guardians & Emergency Contacts Management -->
-          <div style="display:flex; flex-direction:column; gap:20px;">
-            <!-- Live Status & SOS Broadcast Banner -->
-            <div class="glass-card" style="padding: 16px 20px; background: linear-gradient(135deg, rgba(239, 68, 68, 0.12), rgba(239, 68, 68, 0.04)); border-color: rgba(239, 68, 68, 0.3);">
-              <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
-                <div>
-                  <strong style="color:#ef4444; font-size:15px; display:block; margin-bottom:2px;">🚨 Real-Time Emergency SOS Network</strong>
-                  <span id="gps-status" style="font-size:12px; color:var(--muted);">GPS: High-accuracy active geolocation tracking</span>
-                </div>
-                <button type="button" class="btn btn--ghost small" id="test-channels" style="font-size:11.5px;">Test Alert Channels</button>
+      <!-- Emergency Guardians & Contacts Network Screen -->
+      <section id="guardians-view" class="vault" hidden>
+        <header class="vault__head">
+          <div>
+            <div class="chat__name">Emergency Guardians & Contacts Network</div>
+            <div class="muted small">Trusted contacts who receive instant SOS sirens, live GPS coordinates, and automated safety alerts.</div>
+          </div>
+          <span id="channels-status" class="setup__chips"></span>
+        </header>
+
+        <div class="vault__body" style="max-width: 860px; margin: 0 auto; padding: 24px;">
+          <!-- Live Status & SOS Broadcast Banner -->
+          <div class="glass-card" style="padding: 16px 20px; margin-bottom: 24px; background: linear-gradient(135deg, rgba(239, 68, 68, 0.12), rgba(239, 68, 68, 0.04)); border-color: rgba(239, 68, 68, 0.3);">
+            <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
+              <div>
+                <strong style="color:#ef4444; font-size:15px; display:block; margin-bottom:2px;">🚨 Real-Time Emergency SOS Network</strong>
+                <span id="gps-status" style="font-size:12px; color:var(--muted);">GPS: High-accuracy active geolocation tracking</span>
               </div>
-              <p id="channel-problem" class="setup__warn" hidden style="margin-top:10px; margin-bottom:0; font-size:12px;"></p>
+              <button type="button" class="btn btn--ghost small" id="test-channels" style="font-size:11.5px;">Test Alert Channels</button>
+            </div>
+            <p id="channel-problem" class="setup__warn" hidden style="margin-top:10px; margin-bottom:0; font-size:12px;"></p>
+          </div>
+
+          <!-- Guardians List Card -->
+          <div class="glass-panel" style="padding: 24px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:18px;">
+              <div>
+                <strong style="font-size:16px; color:var(--text);">Trusted Emergency Guardians</strong>
+                <span id="contact-count" style="font-size:12px; color:var(--muted); margin-left:8px;">0 configured</span>
+              </div>
+              <span class="glass-badge" style="color:var(--brand); border-color:rgba(242,184,198,0.3);">Instant Dispatch</span>
             </div>
 
-            <!-- Guardians List Card -->
-            <div class="glass-panel" style="padding: 22px;">
-              <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
-                <div>
-                  <strong style="font-size:16px; color:var(--text);">Trusted Emergency Guardians</strong>
-                  <span id="contact-count" style="font-size:12px; color:var(--muted); margin-left:8px;">0 configured</span>
+            <!-- List rendered dynamically by sos.js -->
+            <ul class="contact-setup" id="contact-setup" style="display:flex; flex-direction:column; gap:12px; list-style:none; padding:0; margin:0 0 24px 0;"></ul>
+
+            <!-- Add Guardian Form -->
+            <div style="border-top:1px solid rgba(255,255,255,0.08); padding-top:20px;">
+              <strong style="display:block; margin-bottom:4px; font-size:14.5px; color:var(--text);">+ Add New Emergency Guardian</strong>
+              <p style="font-size:12px; color:var(--muted); margin-bottom:16px;">Added guardians receive automated email alerts, audio sirens, and instant GPS tracking coordinates during an emergency.</p>
+              <form class="add-contact" id="add-contact" style="display:flex; flex-direction:column; gap:14px;">
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                  <input name="name" placeholder="Guardian Full Name" required maxlength="60" autocomplete="off" class="glass-input" />
+                  <select name="relationship" class="glass-input" style="background:#0c0e12 !important;">
+                    <option value="Parent">Parent</option>
+                    <option value="Mother">Mother</option>
+                    <option value="Father">Father</option>
+                    <option value="Spouse">Spouse / Partner</option>
+                    <option value="Sibling">Sibling</option>
+                    <option value="Friend">Trusted Friend</option>
+                    <option value="Guardian">Legal Guardian</option>
+                  </select>
                 </div>
-                <span class="glass-badge" style="color:var(--brand); border-color:rgba(242,184,198,0.3);">Instant Dispatch</span>
-              </div>
-
-              <!-- List rendered dynamically by sos.js -->
-              <ul class="contact-setup" id="contact-setup" style="display:flex; flex-direction:column; gap:12px; list-style:none; padding:0; margin:0 0 20px 0;"></ul>
-
-              <!-- Add Guardian Form -->
-              <div style="border-top:1px solid rgba(255,255,255,0.08); padding-top:18px;">
-                <strong style="display:block; margin-bottom:4px; font-size:14px; color:var(--text);">+ Add New Emergency Guardian</strong>
-                <p style="font-size:12px; color:var(--muted); margin-bottom:14px;">Added guardians receive automated email alerts, audio sirens, and instant GPS tracking coordinates during an emergency.</p>
-                <form class="add-contact" id="add-contact" style="display:flex; flex-direction:column; gap:12px;">
-                  <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
-                    <input name="name" placeholder="Guardian Full Name" required maxlength="60" autocomplete="off" class="glass-input" />
-                    <select name="relationship" class="glass-input" style="background:#0c0e12 !important;">
-                      <option value="Parent">Parent</option>
-                      <option value="Mother">Mother</option>
-                      <option value="Father">Father</option>
-                      <option value="Spouse">Spouse / Partner</option>
-                      <option value="Sibling">Sibling</option>
-                      <option value="Friend">Trusted Friend</option>
-                      <option value="Guardian">Legal Guardian</option>
-                    </select>
-                  </div>
-                  <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
-                    <input name="phone" type="tel" placeholder="Mobile Phone (SMS & Voice)" maxlength="30" autocomplete="off" class="glass-input" />
-                    <input name="whatsapp" type="tel" placeholder="WhatsApp Number" maxlength="30" autocomplete="off" class="glass-input" />
-                  </div>
-                  <input name="email" type="email" placeholder="Emergency Notification Email (e.g. guardian@gmail.com)" maxlength="120" autocomplete="off" class="glass-input" />
-                  <button class="btn btn--primary" type="submit" style="padding:10px 22px; font-weight:600; font-size:13px; align-self:flex-start; margin-top:4px;">
-                    + Save & Add Guardian
-                  </button>
-                </form>
-              </div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                  <input name="phone" type="tel" placeholder="Mobile Phone (SMS & Voice)" maxlength="30" autocomplete="off" class="glass-input" />
+                  <input name="whatsapp" type="tel" placeholder="WhatsApp Number" maxlength="30" autocomplete="off" class="glass-input" />
+                </div>
+                <input name="email" type="email" placeholder="Emergency Notification Email (e.g. guardian@gmail.com)" maxlength="120" autocomplete="off" class="glass-input" />
+                <button class="btn btn--primary" type="submit" style="padding:10px 24px; font-weight:600; font-size:13px; align-self:flex-start; margin-top:4px;">
+                  + Save & Add Guardian
+                </button>
+              </form>
             </div>
           </div>
         </div>

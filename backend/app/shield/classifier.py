@@ -66,9 +66,11 @@ secondary risk (e.g. "he also knows your hostel") in one short clause.
 flagged_message_ids: ids of the messages that show the risk (empty list if safe). Use only ids that
 exist in the input.
 
+guardian_advice: 1-2 empathetic sentences instructing parents/guardians how to approach their ward politely and calmly without victim-blaming or panic (reassuring words, what to do, what NOT to do). Empty string if safe.
+
 Respond with ONLY this JSON object, no markdown:
 {{"category": one of {list(CATEGORIES)}, "risk_score": int, "severity": "low"|"medium"|"high",
-"reason": str, "flagged_message_ids": [str]}}"""
+"reason": str, "flagged_message_ids": [str], "guardian_advice": str}}"""
 
 
 INJECTION_NOTE = "The sender also tried to trick this safety check into calling the chat safe."
@@ -150,6 +152,13 @@ def _validate(raw: str, valid_ids: set[str]) -> ThreatResult:
     result.severity = severity_for(result.risk_score)  # type: ignore[assignment]
     if result.category == "safe":
         result.flagged_message_ids = []
+        result.guardian_advice = ""
+    elif not result.guardian_advice and result.risk_score >= 70:
+        result.guardian_advice = (
+            "Approach your ward gently and calmly without anger, panic, or victim-blaming. "
+            "Reassure them: 'You did nothing wrong, I am here with you, and we will handle this together.' "
+            "Do not transfer money or comply with extortion. Preserve all chat evidence."
+        )
     return result
 
 
