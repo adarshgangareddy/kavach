@@ -43,9 +43,8 @@
     } else if (where === "vault") {
       window.kavachVault.open();
       setActive("vault");
-    } else if (where === "guardians" || where === "sos") {
-      if (window.kavachGuardians?.open) window.kavachGuardians.open();
-      else window.kavachSos?.open();
+    } else if (where === "guardians" || where === "sos" || where === "safetyspace") {
+      window.kavachSos?.open();
       setActive("guardians");
     } else if (where === "responders") {
       window.kavachResponders?.open();
@@ -176,7 +175,7 @@
   function handleDeepLink() {
     const hash = (location.hash || "").replace("#", "").toLowerCase();
     if (!hash) return;
-    if (hash === "guardians" || hash === "sos") {
+    if (hash === "guardians" || hash === "sos" || hash === "safetyspace") {
       setTimeout(() => go("guardians"), 150);
     } else if (hash === "vault") {
       setTimeout(() => go("vault"), 150);

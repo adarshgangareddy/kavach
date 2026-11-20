@@ -25,7 +25,7 @@
     </button>
     <nav class="nav" aria-label="Main">
       <button class="nav-link" data-nav="shield" type="button">Garden</button>
-      <button class="nav-link" id="guardians-btn" data-nav="guardians" type="button">Guardians</button>
+      <button class="nav-link" id="guardians-btn" data-nav="guardians" type="button">Safety Space</button>
       <button class="nav-link" id="vault-btn" data-nav="vault" type="button">Vault <span id="vault-count" class="nav-count">0</span></button>
       <button class="nav-link" id="responders-btn" data-nav="responders" type="button">Responders</button>
       <button class="nav-link" id="profile-btn" data-nav="profile" type="button">Profile</button>
@@ -231,170 +231,326 @@
         </div>
       </section>
 
-      <!-- Guardians & Emergency Safety Center (Replaces Demo Phone) -->
+      <!-- Safety Space: Real Working Stealth Phone Call Prototype + Guardians & Contacts Hub -->
       <section id="guardians-view" class="vault" hidden>
         <header class="vault__head">
           <div>
-            <div class="chat__name">Guardians & Emergency Safety Center</div>
-            <div class="muted small">Trusted contacts who receive instant emergency alerts, automated emails, and live GPS pins.</div>
+            <div class="chat__name">Safety Space & Guardians</div>
+            <div class="muted small">Stealth de-escalation phone call simulator + trusted contacts who receive real-time emergency alerts & GPS tracking.</div>
           </div>
           <span id="channels-status" class="setup__chips"></span>
         </header>
 
-        <div class="vault__body" style="max-width: 820px; margin: 0 auto; padding: 20px;">
-          <!-- Emergency Action Bar -->
-          <div style="background: linear-gradient(135deg, rgba(239, 68, 68, 0.15), rgba(239, 68, 68, 0.05)); border: 1px solid rgba(239, 68, 68, 0.35); border-radius: 10px; padding: 18px; margin-bottom: 24px;">
-            <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
+        <!-- Hidden anchor for backwards compatibility -->
+        <div id="sos-view" style="display:none;"></div>
+
+        <div class="safetyspace-container">
+          <!-- LEFT: Real Working Interactive Stealth Phone -->
+          <div class="glass-panel" style="padding: 20px; display: flex; flex-direction: column; align-items: center;">
+            <div style="width: 100%; display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px;">
               <div>
-                <strong style="color:#ef4444; font-size:16px; display:block; margin-bottom:4px;">🚨 Immediate Emergency Dispatch</strong>
-                <span id="gps-status" style="font-size:12.5px; color:var(--muted);">GPS: High-accuracy active positioning</span>
+                <strong style="font-size: 14px; color: var(--text);">Discreet De-Escalation Call</strong>
+                <small style="display: block; color: var(--muted); font-size: 11px;">Tap to ring · Hold Decline 2s for Silent SOS</small>
               </div>
-              <div style="display:flex; gap:10px; flex-wrap:wrap;">
-                <button type="button" id="trigger-sos-btn" class="btn btn--primary" style="background:#ef4444; border-color:#ef4444; font-weight:700; padding:10px 18px;">🚨 Trigger SOS to All Guardians</button>
-                <button type="button" id="siren-toggle-btn" class="btn btn--ghost" style="border-color:#ef4444; color:#ef4444; font-weight:600; padding:10px 16px;">🔊 Sound Alarm Siren</button>
+              <span class="glass-badge" style="color: #3ecf8e; border-color: rgba(62,207,142,0.3);">Prototype Active</span>
+            </div>
+
+            <!-- Phone Shell -->
+            <div class="phone" id="phone" aria-label="Phone screen" style="margin: 0 auto; box-shadow: 0 16px 40px rgba(0,0,0,0.6);">
+              <div class="phone__notch"></div>
+              <div class="phone__status"><span id="phone-clock">9:41</span><span>●●● 4G ▮</span></div>
+
+              <!-- Incoming Screen -->
+              <div class="screen screen--incoming" data-screen="incoming">
+                <div class="caller">
+                  <div class="caller__avatar" id="caller-initial">M</div>
+                  <div class="caller__name" id="caller-name">Mom</div>
+                  <div class="caller__sub">mobile · incoming call…</div>
+                </div>
+                <div class="call-extras"><span>⏰<br>Remind me</span><span>💬<br>Message</span></div>
+                <div class="call-actions">
+                  <div>
+                    <button id="decline-btn" class="call-btn call-btn--decline" type="button" aria-label="Decline" title="Hold 2s for Silent SOS">
+                      <svg viewBox="0 0 24 24" width="28" height="28"><path fill="#fff" d="M12 9c-1.6 0-3.2.3-4.6.7v3.1c0 .4-.2.7-.6.9-1 .5-1.9 1.1-2.7 1.8-.2.2-.4.3-.7.3s-.5-.1-.7-.3L.3 13.1A1 1 0 0 1 0 12.4c0-.3.1-.5.3-.7C3.3 8.8 7.4 7 12 7s8.7 1.8 11.7 4.7c.2.2.3.4.3.7s-.1.5-.3.7l-2.4 2.4c-.2.2-.4.3-.7.3s-.5-.1-.7-.3l-2.7-1.8c-.4-.2-.6-.5-.6-.9V9.7C15.2 9.3 13.6 9 12 9z"/></svg>
+                    </button>
+                    <span class="call-act-label">Decline (Hold 2s SOS)</span>
+                  </div>
+                  <div>
+                    <button id="accept-btn" class="call-btn call-btn--accept ringing-pulse" type="button" aria-label="Accept">
+                      <svg viewBox="0 0 24 24" width="28" height="28"><path fill="#fff" d="M20 15.5c-1.2 0-2.4-.2-3.6-.6-.3-.1-.7 0-1 .2l-2.2 2.2c-2.8-1.4-5.1-3.8-6.6-6.6l2.2-2.2c.3-.3.4-.7.2-1-.3-1.1-.5-2.3-.5-3.5 0-.6-.4-1-1-1H4c-.6 0-1 .4-1 1 0 9.4 7.6 17 17 17 .6 0 1-.4 1-1v-3.5c0-.6-.4-1-1-1z"/></svg>
+                    </button>
+                    <span class="call-act-label">Accept Call</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- In-call Screen -->
+              <div class="screen screen--incall" data-screen="incall" hidden>
+                <div class="caller">
+                  <div class="caller__avatar" id="caller-initial-2">M</div>
+                  <div class="caller__name" id="caller-name-2">Mom</div>
+                  <div class="caller__sub" id="call-timer">00:00</div>
+                </div>
+                <div class="incall-grid">
+                  <div class="incall-item"><span>🔇</span><span>mute</span></div>
+                  <div class="incall-item"><span>⌨️</span><span>keypad</span></div>
+                  <div class="incall-item"><span>🔊</span><span>speaker</span></div>
+                  <div class="incall-item"><span>➕</span><span>add call</span></div>
+                  <div class="incall-item"><span>📹</span><span>FaceTime</span></div>
+                  <div class="incall-item"><span>👤</span><span>contacts</span></div>
+                </div>
+                <div class="call-actions" style="justify-content:center; margin-top:20px;">
+                  <button id="end-btn" class="call-btn call-btn--decline" type="button" aria-label="End call">
+                    <svg viewBox="0 0 24 24" width="28" height="28"><path fill="#fff" d="M12 9c-1.6 0-3.2.3-4.6.7v3.1c0 .4-.2.7-.6.9-1 .5-1.9 1.1-2.7 1.8-.2.2-.4.3-.7.3s-.5-.1-.7-.3L.3 13.1A1 1 0 0 1 0 12.4c0-.3.1-.5.3-.7C3.3 8.8 7.4 7 12 7s8.7 1.8 11.7 4.7c.2.2.3.4.3.7s-.1.5-.3.7l-2.4 2.4c-.2.2-.4.3-.7.3s-.5-.1-.7-.3l-2.7-1.8c-.4-.2-.6-.5-.6-.9V9.7C15.2 9.3 13.6 9 12 9z"/></svg>
+                  </button>
+                </div>
+              </div>
+
+              <!-- Lock / Home Screen -->
+              <div class="screen screen--home" data-screen="home" hidden>
+                <div class="lock-head">
+                  <div class="lock-head__time" id="lock-time">9:41</div>
+                  <div class="lock-head__date" id="lock-date">Friday, 20 November</div>
+                </div>
+                <div class="lock-notif">
+                  <div class="lock-notif__app"><span>📞</span><span>PHONE</span><span>now</span></div>
+                  <div class="lock-notif__title" id="missed-text">Missed call: Mom</div>
+                  <div class="lock-notif__body">Tap to call back or swipe up to dismiss.</div>
+                </div>
+                <div class="lock-foot"><span class="lock-btn">🔦</span><span class="lock-btn">📷</span></div>
+              </div>
+            </div>
+
+            <!-- Phone Simulator Controls -->
+            <div style="width: 100%; margin-top: 18px; display: flex; flex-direction: column; gap: 10px;">
+              <label style="display:flex; justify-content:space-between; align-items:center; font-size:12px; color:var(--muted);">
+                Caller Identity:
+                <input id="caller-input" value="Mom" class="glass-input" style="width:130px; padding:6px 10px; font-size:12px;" />
+              </label>
+              <button type="button" id="ring-btn" class="btn btn--block" style="background:linear-gradient(135deg, #f2b8c6, #b9a6e8); color:#0c0e12; font-weight:700; border:none; padding:10px;">
+                📞 Ring Fake Call (With Ringtone Audio)
+              </button>
+              <div style="display:grid; grid-template-columns: 1fr 1fr; gap:8px;">
+                <button type="button" id="siren-toggle-btn" class="btn btn--ghost" style="border-color:#ef4444; color:#ef4444; font-size:11.5px; font-weight:600; padding:8px;">
+                  🔊 Sound Alarm Siren
+                </button>
+                <button type="button" id="trigger-sos-btn" class="btn btn--primary" style="background:#ef4444; border-color:#ef4444; font-size:11.5px; font-weight:700; padding:8px;">
+                  🚨 Trigger Silent SOS
+                </button>
               </div>
             </div>
           </div>
 
-          <!-- Guardians List -->
-          <div style="margin-bottom: 28px;">
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
-              <div>
-                <strong style="font-size:15px;">Your Trusted Guardians</strong>
-                <span id="contact-count" style="font-size:12px; color:var(--muted); margin-left:6px;"></span>
+          <!-- RIGHT: Real Guardians & Emergency Contacts Management -->
+          <div style="display:flex; flex-direction:column; gap:20px;">
+            <!-- Live Status & SOS Broadcast Banner -->
+            <div class="glass-card" style="padding: 16px 20px; background: linear-gradient(135deg, rgba(239, 68, 68, 0.12), rgba(239, 68, 68, 0.04)); border-color: rgba(239, 68, 68, 0.3);">
+              <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
+                <div>
+                  <strong style="color:#ef4444; font-size:15px; display:block; margin-bottom:2px;">🚨 Real-Time Emergency SOS Network</strong>
+                  <span id="gps-status" style="font-size:12px; color:var(--muted);">GPS: High-accuracy active geolocation tracking</span>
+                </div>
+                <button type="button" class="btn btn--ghost small" id="test-channels" style="font-size:11.5px;">Test Alert Channels</button>
               </div>
-              <button type="button" class="btn btn--ghost small" id="test-channels" style="font-size:11.5px;">Test Alert Channels</button>
+              <p id="channel-problem" class="setup__warn" hidden style="margin-top:10px; margin-bottom:0; font-size:12px;"></p>
             </div>
-            <p id="channel-problem" class="setup__warn" hidden style="margin-bottom:12px;"></p>
-            <ul class="contact-setup" id="contact-setup" style="display:flex; flex-direction:column; gap:10px; list-style:none; padding:0; margin:0;"></ul>
-          </div>
 
-          <!-- Add Guardian Form -->
-          <div style="background:var(--surface-2); border:1px solid var(--border); border-radius:10px; padding:20px;">
-            <strong style="display:block; margin-bottom:4px; font-size:14px;">+ Add New Emergency Guardian</strong>
-            <p style="font-size:12px; color:var(--muted); margin-bottom:14px;">When added with an email, Kavach immediately sends an automated alert confirmation email to verify their contact channel.</p>
-            <form class="add-contact" id="add-contact" style="display:flex; flex-direction:column; gap:12px;">
-              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
-                <input name="name" placeholder="Guardian Full Name" required maxlength="60" autocomplete="off" style="padding:10px 12px; background:var(--surface); border:1px solid var(--border); border-radius:6px; color:var(--text); font-size:13px;" />
-                <select name="relationship" style="padding:10px 12px; background:var(--surface); border:1px solid var(--border); border-radius:6px; color:var(--text); font-size:13px;">
-                  <option value="Parent">Parent</option>
-                  <option value="Mother">Mother</option>
-                  <option value="Father">Father</option>
-                  <option value="Spouse">Spouse / Partner</option>
-                  <option value="Sibling">Sibling</option>
-                  <option value="Friend">Trusted Friend</option>
-                  <option value="Guardian">Legal Guardian</option>
-                </select>
+            <!-- Guardians List Card -->
+            <div class="glass-panel" style="padding: 22px;">
+              <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+                <div>
+                  <strong style="font-size:16px; color:var(--text);">Trusted Emergency Guardians</strong>
+                  <span id="contact-count" style="font-size:12px; color:var(--muted); margin-left:8px;">0 configured</span>
+                </div>
+                <span class="glass-badge" style="color:var(--brand); border-color:rgba(242,184,198,0.3);">Instant Dispatch</span>
               </div>
-              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
-                <input name="phone" type="tel" placeholder="Mobile Phone (for SMS/Calls)" maxlength="30" autocomplete="off" style="padding:10px 12px; background:var(--surface); border:1px solid var(--border); border-radius:6px; color:var(--text); font-size:13px;" />
-                <input name="whatsapp" type="tel" placeholder="WhatsApp Number" maxlength="30" autocomplete="off" style="padding:10px 12px; background:var(--surface); border:1px solid var(--border); border-radius:6px; color:var(--text); font-size:13px;" />
+
+              <!-- List rendered dynamically by sos.js -->
+              <ul class="contact-setup" id="contact-setup" style="display:flex; flex-direction:column; gap:12px; list-style:none; padding:0; margin:0 0 20px 0;"></ul>
+
+              <!-- Add Guardian Form -->
+              <div style="border-top:1px solid rgba(255,255,255,0.08); padding-top:18px;">
+                <strong style="display:block; margin-bottom:4px; font-size:14px; color:var(--text);">+ Add New Emergency Guardian</strong>
+                <p style="font-size:12px; color:var(--muted); margin-bottom:14px;">Added guardians receive automated email alerts, audio sirens, and instant GPS tracking coordinates during an emergency.</p>
+                <form class="add-contact" id="add-contact" style="display:flex; flex-direction:column; gap:12px;">
+                  <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                    <input name="name" placeholder="Guardian Full Name" required maxlength="60" autocomplete="off" class="glass-input" />
+                    <select name="relationship" class="glass-input" style="background:#0c0e12 !important;">
+                      <option value="Parent">Parent</option>
+                      <option value="Mother">Mother</option>
+                      <option value="Father">Father</option>
+                      <option value="Spouse">Spouse / Partner</option>
+                      <option value="Sibling">Sibling</option>
+                      <option value="Friend">Trusted Friend</option>
+                      <option value="Guardian">Legal Guardian</option>
+                    </select>
+                  </div>
+                  <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                    <input name="phone" type="tel" placeholder="Mobile Phone (SMS & Voice)" maxlength="30" autocomplete="off" class="glass-input" />
+                    <input name="whatsapp" type="tel" placeholder="WhatsApp Number" maxlength="30" autocomplete="off" class="glass-input" />
+                  </div>
+                  <input name="email" type="email" placeholder="Emergency Notification Email (e.g. guardian@gmail.com)" maxlength="120" autocomplete="off" class="glass-input" />
+                  <button class="btn btn--primary" type="submit" style="padding:10px 22px; font-weight:600; font-size:13px; align-self:flex-start; margin-top:4px;">
+                    + Save & Add Guardian
+                  </button>
+                </form>
               </div>
-              <input name="email" type="email" placeholder="Emergency Notification Email (e.g. parent@example.com)" maxlength="120" autocomplete="off" style="padding:10px 12px; background:var(--surface); border:1px solid var(--border); border-radius:6px; color:var(--text); font-size:13px;" />
-              <button class="btn btn--primary" type="submit" style="padding:10px 20px; font-weight:600; font-size:13px; align-self:flex-start;">+ Save & Add Guardian</button>
-            </form>
+            </div>
           </div>
         </div>
       </section>
-
-      <!-- Backwards compatible hidden alias for sos -->
-      <div id="sos-view" hidden></div>
 
       <!-- Responders & Emergency Helpdesks Screen -->
       <section id="responders-view" class="vault" hidden>
         <header class="vault__head">
           <div>
             <div class="chat__name">Emergency Responders & Helplines</div>
-            <div class="muted small">Direct emergency helplines, nearby police stations, and verified community first-responders.</div>
+            <div class="muted small">Direct 24/7 national safety helplines, police cyber cells, and verified community first-responder volunteers.</div>
           </div>
         </header>
-        <div class="vault__body" style="max-width: 820px; margin: 0 auto; padding: 20px;">
-          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 14px; margin-bottom: 24px;">
-            <div style="background:var(--surface-2); border:1px solid #ef4444; border-radius:8px; padding:18px; text-align:center;">
-              <div style="font-size:26px; font-weight:800; color:#ef4444;">112</div>
-              <strong style="display:block; margin:4px 0 2px;">National Emergency</strong>
-              <small style="color:var(--muted); display:block; margin-bottom:12px;">Police · Fire · Ambulance</small>
-              <a href="tel:112" class="btn btn--primary" style="display:inline-block; padding:8px 18px; font-size:12.5px; background:#ef4444; border-color:#ef4444;">📞 Dial 112</a>
+        <div class="vault__body" style="max-width: 960px; margin: 0 auto; padding: 24px;">
+          <!-- 24/7 Helplines -->
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; margin-bottom: 28px;">
+            <div class="glass-card" style="padding:22px; text-align:center; border-color:rgba(239, 68, 68, 0.4);">
+              <div style="font-size:32px; font-weight:800; color:#ef4444; letter-spacing:-0.02em;">112</div>
+              <strong style="display:block; margin:6px 0 2px; font-size:15px;">National Emergency</strong>
+              <small style="color:var(--muted); display:block; margin-bottom:14px;">Police · Fire · Medical Dispatch</small>
+              <a href="tel:112" class="btn btn--primary" style="display:inline-block; padding:8px 20px; font-size:13px; background:#ef4444; border-color:#ef4444;">📞 Call 112</a>
             </div>
-            <div style="background:var(--surface-2); border:1px solid #6366f1; border-radius:8px; padding:18px; text-align:center;">
-              <div style="font-size:26px; font-weight:800; color:#6366f1;">1091</div>
-              <strong style="display:block; margin:4px 0 2px;">Women Helpline</strong>
-              <small style="color:var(--muted); display:block; margin-bottom:12px;">24x7 Women in Distress</small>
-              <a href="tel:1091" class="btn btn--primary" style="display:inline-block; padding:8px 18px; font-size:12.5px; background:#6366f1; border-color:#6366f1;">📞 Dial 1091</a>
+            <div class="glass-card" style="padding:22px; text-align:center; border-color:rgba(99, 102, 241, 0.4);">
+              <div style="font-size:32px; font-weight:800; color:#6366f1; letter-spacing:-0.02em;">1091</div>
+              <strong style="display:block; margin:6px 0 2px; font-size:15px;">Women in Distress</strong>
+              <small style="color:var(--muted); display:block; margin-bottom:14px;">24x7 Safety & Legal Protection</small>
+              <a href="tel:1091" class="btn btn--primary" style="display:inline-block; padding:8px 20px; font-size:13px; background:#6366f1; border-color:#6366f1;">📞 Call 1091</a>
             </div>
-            <div style="background:var(--surface-2); border:1px solid #10b981; border-radius:8px; padding:18px; text-align:center;">
-              <div style="font-size:26px; font-weight:800; color:#10b981;">1930</div>
-              <strong style="display:block; margin:4px 0 2px;">Cyber Crime Helpline</strong>
-              <small style="color:var(--muted); display:block; margin-bottom:12px;">Financial Fraud & Harassment</small>
-              <a href="tel:1930" class="btn btn--primary" style="display:inline-block; padding:8px 18px; font-size:12.5px; background:#10b981; border-color:#10b981;">📞 Dial 1930</a>
+            <div class="glass-card" style="padding:22px; text-align:center; border-color:rgba(16, 185, 129, 0.4);">
+              <div style="font-size:32px; font-weight:800; color:#10b981; letter-spacing:-0.02em;">1930</div>
+              <strong style="display:block; margin:6px 0 2px; font-size:15px;">Cyber Crime Helpline</strong>
+              <small style="color:var(--muted); display:block; margin-bottom:14px;">Extortion, Stalking & Fraud</small>
+              <a href="tel:1930" class="btn btn--primary" style="display:inline-block; padding:8px 20px; font-size:13px; background:#10b981; border-color:#10b981;">📞 Call 1930</a>
             </div>
           </div>
 
-          <div style="background:var(--surface-2); border:1px solid var(--border); border-radius:10px; padding:18px;">
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
-              <strong>Nearby Police Stations & Verified Responders</strong>
-              <a href="/responder.html" target="_blank" rel="noopener" class="btn btn--ghost small" style="font-size:12px;">Open Live Responder Map ↗</a>
+          <!-- Active First Responders Grid & Registration -->
+          <div style="display: grid; grid-template-columns: 1fr 340px; gap: 24px; align-items: start;">
+            <!-- Active Responders List -->
+            <div class="glass-panel" style="padding: 22px;">
+              <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+                <div>
+                  <strong style="font-size:16px;">Registered Community Responders</strong>
+                  <small style="display:block; color:var(--muted); font-size:12px;">Verified volunteers within radius who receive dispatch alerts</small>
+                </div>
+                <a href="/responder.html" target="_blank" rel="noopener" class="btn btn--ghost small" style="font-size:11.5px;">Live Triage Console ↗</a>
+              </div>
+              <div id="responders-list" style="display:flex; flex-direction:column; gap:12px;">
+                <!-- Populated dynamically by profile.js -->
+              </div>
             </div>
-            <p style="font-size:12.5px; color:var(--muted); margin-bottom:14px; line-height:1.5;">
-              When SOS is dispatched, real-time encrypted pins are broadcast to verified responders within a 3km radius on Telegram.
-            </p>
-            <div style="display:flex; flex-direction:column; gap:10px;">
-              <div style="display:flex; justify-content:space-between; align-items:center; padding:12px; background:var(--surface); border:1px solid var(--border); border-radius:6px;">
-                <div>
-                  <div style="font-weight:600; font-size:13px;">Local Police Station & Cyber Cell</div>
-                  <small style="color:var(--muted);">Indiranagar / Bengaluru East · ~1.8 km</small>
-                </div>
-                <a href="tel:112" class="btn btn--ghost small" style="font-size:11.5px;">Call Station</a>
-              </div>
-              <div style="display:flex; justify-content:space-between; align-items:center; padding:12px; background:var(--surface); border:1px solid var(--border); border-radius:6px;">
-                <div>
-                  <div style="font-weight:600; font-size:13px;">Community Safety Volunteer Network</div>
-                  <small style="color:var(--muted);">Nearby verified Telegram First Responders (Radius: 3000m)</small>
-                </div>
-                <span class="ok-tag" style="background:#10b98122; color:#10b981; padding:3px 8px; border-radius:4px; font-size:11px; font-weight:600;">Active</span>
-              </div>
+
+            <!-- Register New Responder Form -->
+            <div class="glass-panel" style="padding: 22px;">
+              <strong style="font-size:15px; display:block; margin-bottom:4px;">+ Register as First Responder</strong>
+              <p style="font-size:12px; color:var(--muted); margin-bottom:16px;">Join the local safety volunteer network. Your contact details remain encrypted until an emergency dispatch is accepted.</p>
+              <form id="add-responder-form" style="display:flex; flex-direction:column; gap:12px;">
+                <input id="resp-name" placeholder="Full Volunteer Name" required maxlength="60" class="glass-input" />
+                <input id="resp-email" type="email" placeholder="Official / Contact Email" required maxlength="120" class="glass-input" />
+                <input id="resp-phone" type="tel" placeholder="Mobile Phone (+91...)" required maxlength="30" class="glass-input" />
+                <input id="resp-org" placeholder="Campus / Organization / Unit" maxlength="60" class="glass-input" />
+                <button type="submit" class="btn btn--primary" style="padding:10px 18px; font-weight:600; font-size:13px; margin-top:4px;">
+                  + Submit Registration
+                </button>
+              </form>
             </div>
           </div>
         </div>
       </section>
 
-      <!-- User Profile Screen -->
+      <!-- User Profile Screen: Modern E-Commerce / SaaS Account Dashboard -->
       <section id="profile-view" class="vault" hidden>
         <header class="vault__head">
           <div>
-            <div class="chat__name">User Profile & Legal Complainant Details</div>
-            <div class="muted small">Your details are automatically embedded into all drafted police cybercrime complaints.</div>
+            <div class="chat__name">User Profile & Complainant Details</div>
+            <div class="muted small">Personal and legal identity details automatically synchronized into police complaints.</div>
           </div>
         </header>
-        <div class="vault__body" style="max-width: 720px; margin: 0 auto; padding: 24px;">
-          <form id="profile-form" style="display:flex; flex-direction:column; gap:16px;">
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px;">
-              <label style="display:flex; flex-direction:column; gap:6px; font-size:13px; font-weight:500;">
-                Full Legal Name
-                <input id="prof-name" placeholder="e.g. Priya Sharma" style="padding:10px 12px; background:var(--surface-2); border:1px solid var(--border); border-radius:6px; color:var(--text); font-size:13px;" required />
-              </label>
-              <label style="display:flex; flex-direction:column; gap:6px; font-size:13px; font-weight:500;">
-                Mobile Phone
-                <input id="prof-phone" type="tel" placeholder="+91 98765 43210" style="padding:10px 12px; background:var(--surface-2); border:1px solid var(--border); border-radius:6px; color:var(--text); font-size:13px;" />
-              </label>
+        <div class="vault__body" style="max-width: 860px; margin: 0 auto; padding: 24px;">
+          <!-- E-Commerce Style Hero Banner -->
+          <div class="profile-hero">
+            <div class="profile-avatar">
+              <span id="prof-avatar-letter">U</span>
+              <span class="avatar-online-dot"></span>
             </div>
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px;">
-              <label style="display:flex; flex-direction:column; gap:6px; font-size:13px; font-weight:500;">
-                Email Address
-                <input id="prof-email" type="email" placeholder="priya@example.com" style="padding:10px 12px; background:var(--surface-2); border:1px solid var(--border); border-radius:6px; color:var(--text); font-size:13px;" />
-              </label>
-              <label style="display:flex; flex-direction:column; gap:6px; font-size:13px; font-weight:500;">
-                City / District / State
-                <input id="prof-city" placeholder="Bengaluru, Karnataka" style="padding:10px 12px; background:var(--surface-2); border:1px solid var(--border); border-radius:6px; color:var(--text); font-size:13px;" />
-              </label>
+            <div style="flex:1;">
+              <div style="display:flex; align-items:center; gap:10px; margin-bottom:4px;">
+                <h2 id="prof-display-name" style="margin:0; font-size:20px; font-weight:700;">Kavach User</h2>
+                <span class="glass-badge" style="color:#10b981; border-color:rgba(16,185,129,0.3);">Shield Active</span>
+              </div>
+              <div id="prof-display-email" style="font-size:13px; color:var(--muted); margin-bottom:8px;">user@kavach.safety</div>
+              <div style="display:flex; gap:16px; font-size:12px; color:var(--muted); flex-wrap:wrap;">
+                <span>🛡️ SHA-256 Vault Sealing</span>
+                <span>⚖️ BNS / IT Act Integration</span>
+                <span>📍 GPS Positioning Enabled</span>
+              </div>
             </div>
-            <label style="display:flex; flex-direction:column; gap:6px; font-size:13px; font-weight:500;">
-              Full Residential Address (for Police Jurisdiction)
-              <textarea id="prof-address" rows="3" placeholder="#42, 5th Cross, Indiranagar, Bengaluru - 560038" style="padding:10px 12px; background:var(--surface-2); border:1px solid var(--border); border-radius:6px; color:var(--text); font-size:13px; resize:vertical;"></textarea>
-            </label>
-            <div style="display:flex; gap:12px; margin-top:8px;">
-              <button type="submit" class="btn btn--primary" style="padding:10px 22px; font-size:13px; font-weight:600;">Save Profile Details</button>
-              <button type="button" class="btn btn--ghost" id="prof-reset-btn" style="padding:10px 16px; font-size:13px;">Clear Fields</button>
+          </div>
+
+          <!-- Profile Form with Two Cards -->
+          <form id="profile-form" style="display:flex; flex-direction:column; gap:20px;">
+            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:20px;">
+              <!-- Card 1: Legal Identity -->
+              <div class="glass-panel" style="padding:22px;">
+                <strong style="font-size:15px; display:block; margin-bottom:4px; color:var(--text);">Legal Identity Details</strong>
+                <p style="font-size:12px; color:var(--muted); margin-bottom:16px;">Used to identify the complainant in formal police petitions.</p>
+                <div style="display:flex; flex-direction:column; gap:12px;">
+                  <label style="display:flex; flex-direction:column; gap:6px; font-size:12.5px; font-weight:500;">
+                    Full Legal Name
+                    <input id="prof-name" placeholder="e.g. Priya Sharma" class="glass-input" required />
+                  </label>
+                  <label style="display:flex; flex-direction:column; gap:6px; font-size:12.5px; font-weight:500;">
+                    Primary Mobile Phone
+                    <input id="prof-phone" type="tel" placeholder="+91 98765 43210" class="glass-input" />
+                  </label>
+                  <label style="display:flex; flex-direction:column; gap:6px; font-size:12.5px; font-weight:500;">
+                    Email Address
+                    <input id="prof-email" type="email" placeholder="priya@example.com" class="glass-input" />
+                  </label>
+                  <label style="display:flex; flex-direction:column; gap:6px; font-size:12.5px; font-weight:500;">
+                    Alternate Emergency Phone
+                    <input id="prof-alt-phone" type="tel" placeholder="Alternative contact number" class="glass-input" />
+                  </label>
+                </div>
+              </div>
+
+              <!-- Card 2: Police Jurisdiction -->
+              <div class="glass-panel" style="padding:22px;">
+                <strong style="font-size:15px; display:block; margin-bottom:4px; color:var(--text);">Residential & Police Jurisdiction</strong>
+                <p style="font-size:12px; color:var(--muted); margin-bottom:16px;">Determines the official police station jurisdiction for filing.</p>
+                <div style="display:flex; flex-direction:column; gap:12px;">
+                  <label style="display:flex; flex-direction:column; gap:6px; font-size:12.5px; font-weight:500;">
+                    Residential Street Address
+                    <textarea id="prof-address" rows="2" placeholder="#42, 5th Cross, Indiranagar" class="glass-input" style="resize:vertical;"></textarea>
+                  </label>
+                  <label style="display:flex; flex-direction:column; gap:6px; font-size:12.5px; font-weight:500;">
+                    City / District & State
+                    <input id="prof-city" placeholder="Bengaluru, Karnataka" class="glass-input" />
+                  </label>
+                  <label style="display:flex; flex-direction:column; gap:6px; font-size:12.5px; font-weight:500;">
+                    Nearest Police Station
+                    <input id="prof-police-station" placeholder="Indiranagar Police Station" class="glass-input" />
+                  </label>
+                </div>
+              </div>
+            </div>
+
+            <!-- Complaint Sync Notice & Save Buttons -->
+            <div class="glass-card" style="padding:16px 20px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:14px;">
+              <div style="font-size:12.5px; color:var(--muted);">
+                <strong style="color:#10b981;">✓ Auto-Fill Enabled:</strong> These details will be automatically inserted into the complainant header of every generated cyber crime report.
+              </div>
+              <div style="display:flex; gap:10px;">
+                <button type="submit" class="btn btn--primary" style="padding:10px 24px; font-weight:600; font-size:13.5px;">Save Profile</button>
+                <button type="button" class="btn btn--ghost" id="prof-reset-btn" style="padding:10px 16px; font-size:13px;">Clear</button>
+              </div>
             </div>
           </form>
         </div>

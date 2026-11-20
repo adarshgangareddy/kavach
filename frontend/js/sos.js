@@ -118,24 +118,29 @@
       els.channels.innerHTML = `<span class="chan chan--warn">Kavach offline</span>`;
       return;
     }
-    if (document.activeElement !== els.herName) els.herName.value = setup.name === "Someone you know" ? "" : setup.name;
+    if (els.herName && document.activeElement !== els.herName) els.herName.value = setup.name === "Someone you know" ? "" : setup.name;
     const chip = (label, on, problem, title) =>
       `<span class="chan ${!on ? "" : problem ? "chan--warn" : "chan--on"}" title="${esc(title)}">${label}${!on ? " off" : problem ? " !" : ""}</span>`;
-    els.channels.innerHTML =
-      chip("Telegram", setup.telegram.on, setup.telegram.problem, setup.telegram.bot ? `@${setup.telegram.bot}` : "Not set up") +
-      chip("Email", setup.email_on, setup.email_problem, setup.email_on ? "Gmail connected" : "Not set up");
-    els.channelProblem.textContent = [setup.telegram.on && setup.telegram.problem, setup.email_on && setup.email_problem]
-      .filter(Boolean)
-      .join(" ");
-    els.channelProblem.hidden = !els.channelProblem.textContent;
-    els.testChannels.hidden = !setup.telegram.on && !setup.email_on;
-    els.invite.hidden = !setup.telegram.bot;
+    if (els.channels) {
+      els.channels.innerHTML =
+        chip("Telegram", setup.telegram.on, setup.telegram.problem, setup.telegram.bot ? `@${setup.telegram.bot}` : "Not set up") +
+        chip("Email", setup.email_on, setup.email_problem, setup.email_on ? "Gmail connected" : "Not set up");
+    }
+    if (els.channelProblem) {
+      els.channelProblem.textContent = [setup.telegram.on && setup.telegram.problem, setup.email_on && setup.email_problem]
+        .filter(Boolean)
+        .join(" ");
+      els.channelProblem.hidden = !els.channelProblem.textContent;
+    }
+    if (els.testChannels) els.testChannels.hidden = !setup.telegram.on && !setup.email_on;
+    if (els.invite) els.invite.hidden = !setup.telegram.bot;
     renderContacts();
   }
 
   function renderContacts() {
+    if (!els.contactList) return;
     const linked = setup.contacts.filter((c) => c.telegram_linked).length;
-    els.contactCount.textContent = setup.contacts.length ? `${setup.contacts.length} guardian(s) active · ${linked} on Telegram` : "";
+    if (els.contactCount) els.contactCount.textContent = setup.contacts.length ? `${setup.contacts.length} guardian(s) active · ${linked} on Telegram` : "";
     if (!setup.contacts.length) {
       els.contactList.innerHTML = `
         <li class="contact-empty" style="text-align:center; padding:32px 16px; border:1px dashed var(--border); border-radius:8px; list-style:none;">
@@ -173,10 +178,10 @@
   }
 
   let nameTimer = null;
-  els.herName.addEventListener("input", () => {
+  els.herName?.addEventListener("input", () => {
     clearTimeout(nameTimer);
     nameTimer = setTimeout(() => {
-      const name = els.herName.value.trim();
+      const name = els.herName?.value?.trim();
       if (name) api("/sos/profile", { method: "PUT", body: JSON.stringify({ name }) }).catch(() => {});
     }, 500);
   });
@@ -212,7 +217,8 @@
       sirenBtn.textContent = "Sending…";
       try {
         await api(`/people/${pid}/siren`, { method: "POST" });
-        window.kavach?.toast("🚨 Emergency siren alert dispatched to guardian!");
+        playAlertSound();
+        window.kavach?.toast("🚨 Emergency siren alert & email dispatched to guardian!");
       } catch (err) {
         window.kavach?.toast(`Alert error: ${err.message}`);
       } finally {
@@ -238,7 +244,6 @@
   });
 
   // Web Audio Alarm Siren
-  let audioCtx = null;
   let sirenOsc = null;
   let sirenInterval = null;
 
@@ -261,14 +266,14 @@
     }
 
     try {
-      audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-      sirenOsc = audioCtx.createOscillator();
-      const gain = audioCtx.createGain();
+      const actx = getAudioCtx();
+      sirenOsc = actx.createOscillator();
+      const gain = actx.createGain();
       sirenOsc.type = "sawtooth";
-      sirenOsc.frequency.setValueAtTime(650, audioCtx.currentTime);
-      gain.gain.setValueAtTime(0.6, audioCtx.currentTime);
+      sirenOsc.frequency.setValueAtTime(650, actx.currentTime);
+      gain.gain.setValueAtTime(0.6, actx.currentTime);
       sirenOsc.connect(gain);
-      gain.connect(audioCtx.destination);
+      gain.connect(actx.destination);
       sirenOsc.start();
 
       let up = true;
@@ -419,10 +424,98 @@
   // On a real phone the fake call takes over the whole screen; on a laptop it stays in the mockup.
   const isPhone = window.matchMedia("(max-width: 820px)");
 
+  // ---------- Audio Engine (Ringtone, De-escalation Speech, Alert Ping, Siren) ----------
+  let audioCtx = null;
+  let ringtoneInterval = null;
+  let isRinging = false;
+
+  function getAudioCtx() {
+    if (!audioCtx) {
+      const AudioContext = window.AudioContext || window.webkitAudioContext;
+      if (AudioContext) audioCtx = new AudioContext();
+    }
+    if (audioCtx && audioCtx.state === "suspended") audioCtx.resume();
+    return audioCtx;
+  }
+
+  function playRingtone() {
+    stopRingtone();
+    isRinging = true;
+    const ctx = getAudioCtx();
+    if (!ctx) return;
+
+    function playBurst() {
+      if (!isRinging) return;
+      const t = ctx.currentTime;
+      [853, 960].forEach((freq) => {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = "sine";
+        osc.frequency.setValueAtTime(freq, t);
+        gain.gain.setValueAtTime(0.08, t);
+        gain.gain.setValueAtTime(0.08, t + 1.5);
+        gain.gain.exponentialRampToValueAtTime(0.0001, t + 1.7);
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start(t);
+        osc.stop(t + 1.7);
+      });
+    }
+
+    playBurst();
+    ringtoneInterval = setInterval(playBurst, 3200);
+  }
+
+  function stopRingtone() {
+    isRinging = false;
+    if (ringtoneInterval) {
+      clearInterval(ringtoneInterval);
+      ringtoneInterval = null;
+    }
+  }
+
+  function playDeEscalationVoice() {
+    if ("speechSynthesis" in window) {
+      try {
+        window.speechSynthesis.cancel();
+        const caller = settings.caller || "Mom";
+        const text = `Hey sweetie, are you there? Dad and I are parked right outside in the car waiting for you. Come down right now, okay? We are right here outside.`;
+        const utterance = new SpeechSynthesisUtterance(text);
+        utterance.rate = 0.95;
+        utterance.pitch = 1.05;
+        const voices = window.speechSynthesis.getVoices();
+        const preferred = voices.find(v => v.lang.startsWith("en") && (v.name.includes("Female") || v.name.includes("Samantha") || v.name.includes("Zira")));
+        if (preferred) utterance.voice = preferred;
+        setTimeout(() => window.speechSynthesis.speak(utterance), 400);
+      } catch (err) {
+        console.warn("Speech synthesis notice:", err);
+      }
+    }
+  }
+
+  function playAlertSound() {
+    const ctx = getAudioCtx();
+    if (!ctx) return;
+    const t = ctx.currentTime;
+    [1000, 1400, 1800].forEach((freq, i) => {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = "sine";
+      osc.frequency.setValueAtTime(freq, t + i * 0.12);
+      gain.gain.setValueAtTime(0.18, t + i * 0.12);
+      gain.gain.exponentialRampToValueAtTime(0.0001, t + i * 0.12 + 0.22);
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start(t + i * 0.12);
+      osc.stop(t + i * 0.12 + 0.22);
+    });
+  }
+
   function ring() {
     clearInterval(callTimer);
     applyCaller();
     show("incoming");
+    playRingtone();
   }
 
   function startCall() {
@@ -459,6 +552,8 @@
   );
 
   function goHome() {
+    stopRingtone();
+    if ("speechSynthesis" in window) window.speechSynthesis.cancel();
     clearInterval(callTimer);
     show("home");
     lockShownAt = Date.now();
@@ -474,6 +569,7 @@
     holdTimer = setTimeout(() => {
       firedThisPress = true;
       navigator.vibrate?.(30); // one tiny buzz so she knows it worked; nothing visible
+      stopRingtone();
       goHome();
       sendSos("long_press_decline");
     }, HOLD_MS);
@@ -481,7 +577,10 @@
   function pressEnd(e) {
     e.preventDefault();
     clearTimeout(holdTimer);
-    if (!firedThisPress) goHome(); // an ordinary tap: just decline
+    if (!firedThisPress) {
+      stopRingtone();
+      goHome(); // an ordinary tap: just decline
+    }
   }
   els.decline.addEventListener("pointerdown", pressStart);
   els.decline.addEventListener("pointerup", pressEnd);
@@ -491,12 +590,15 @@
   els.decline.addEventListener("keydown", (e) => {
     if (e.key !== "Enter") return;
     e.preventDefault();
+    stopRingtone();
     goHome();
     if (e.shiftKey) sendSos("long_press_decline");
   });
 
   els.accept.addEventListener("click", () => {
+    stopRingtone();
     show("incall");
+    playDeEscalationVoice();
     const start = Date.now();
     clearInterval(callTimer);
     callTimer = setInterval(() => {
@@ -504,11 +606,22 @@
       els.timer.textContent = `${String(Math.floor(s / 60)).padStart(2, "0")}:${String(s % 60).padStart(2, "0")}`;
     }, 500);
   });
-  els.end.addEventListener("click", goHome);
+  els.end.addEventListener("click", () => {
+    stopRingtone();
+    if ("speechSynthesis" in window) window.speechSynthesis.cancel();
+    goHome();
+  });
   els.ring.addEventListener("click", startCall);
+
+  // Trigger Silent SOS from the button in the action bar
+  document.querySelector("#trigger-sos-btn")?.addEventListener("click", () => {
+    stopRingtone();
+    sendSos("manual");
+  });
 
   // ---------- the silent SOS ----------
   async function sendSos(trigger) {
+    playAlertSound();
     log = [];
     current = null;
     addLog(`Decline held ${HOLD_MS / 1000} s. Screen shows a normal declined call.`);

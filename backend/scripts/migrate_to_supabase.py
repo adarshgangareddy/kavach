@@ -51,6 +51,22 @@ def main():
         pg_conn = psycopg.connect(database_url, autocommit=True)
     except Exception as exc:
         print(f"\n❌ Failed to connect to Supabase: {exc}")
+        if "Network is unreachable" in str(exc) or "2406:" in str(exc):
+            print("\n" + "!" * 70)
+            print("💡 REASON FOR FAILURE: IPv6 NOT ROUTABLE ON YOUR CURRENT NETWORK")
+            print("!" * 70)
+            print("Supabase's direct connection (db.[ref].supabase.co) uses IPv6.")
+            print("Because your local internet/Wi-Fi router does not route IPv6 packets,")
+            print("you must use Supabase's IPv4 Connection Pooler!")
+            print("\nHOW TO GET YOUR SUPABASE IPv4 POOLER URI (Takes 15 seconds):")
+            print("1. Open your Supabase Dashboard: https://supabase.com/dashboard")
+            print("2. In the top right navbar, click the 'Connect' button (or Project Settings -> Database).")
+            print("3. In the modal, under 'Connection string', choose Method: 'Connection pooler'.")
+            print("4. Select Mode: 'Session' (port 5432) or 'Transaction' (port 6543).")
+            print("5. Copy the URI. It will look like:")
+            print("   postgresql://postgres.ycxioyzpthpdqvjnivqt:[PASSWORD]@aws-0-[REGION].pooler.supabase.com:6543/postgres")
+            print("6. Paste this URI into backend/.env as DATABASE_URL and run this script again!")
+            print("!" * 70 + "\n")
         sys.exit(1)
 
     print("✓ Successfully connected to Supabase PostgreSQL!")
