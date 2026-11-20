@@ -25,11 +25,37 @@
     mobile.pill(null);
   }
 
+  function closeAllViews() {
+    window.kavachVault?.close();
+    window.kavachImport?.close();
+    window.kavachComplaint?.close();
+    window.kavachSos?.close();
+    window.kavachResponders?.close();
+    window.kavachProfile?.close();
+
+    const views = ["#import-view", "#vault-view", "#complaint-view", "#guardians-view", "#responders-view", "#profile-view"];
+    views.forEach((sel) => {
+      const el = document.querySelector(sel);
+      if (el) el.hidden = true;
+    });
+
+    const chatArea = document.querySelector("#chat-area");
+    if (chatArea) chatArea.hidden = true;
+
+    body.classList.remove("vaulting", "sosing", "calling");
+  }
+
   function go(where) {
-    if (where === "home") return goHome();
+    if (where === "home") {
+      closeAllViews();
+      return goHome();
+    }
     leaveHome();
+    closeAllViews();
+
     if (where === "shield") {
-      // On a phone, Shield starts at the chat list; on a laptop, straight into a chat.
+      const chatArea = document.querySelector("#chat-area");
+      if (chatArea) chatArea.hidden = false;
       if (phone.matches) {
         mobile.show("list");
         mobile.pill(null);
@@ -38,19 +64,27 @@
       }
       setActive("shield");
     } else if (where === "scan") {
-      document.querySelector("#import-btn").click();
+      document.querySelector("#import-btn")?.click();
       setActive("shield");
     } else if (where === "vault") {
-      window.kavachVault.open();
+      window.kavachVault?.open();
+      const el = document.querySelector("#vault-view");
+      if (el) el.hidden = false;
       setActive("vault");
     } else if (where === "guardians" || where === "sos" || where === "safetyspace") {
       window.kavachSos?.open();
+      const el = document.querySelector("#guardians-view");
+      if (el) el.hidden = false;
       setActive("guardians");
     } else if (where === "responders") {
       window.kavachResponders?.open();
+      const el = document.querySelector("#responders-view");
+      if (el) el.hidden = false;
       setActive("responders");
     } else if (where === "profile") {
       window.kavachProfile?.open();
+      const el = document.querySelector("#profile-view");
+      if (el) el.hidden = false;
       setActive("profile");
     }
   }
@@ -88,13 +122,10 @@
   document.querySelector("#import-btn").addEventListener("click", () => mobile.show("main"));
 
   // ---------- top nav + tab bar ----------
-  // Vault and SOS nav buttons also have their own click handlers (vault.js, sos.js),
-  // so for those we only need to leave home and set the highlight.
+  // Top nav bar: clicking any section switches directly to it
   links.forEach((l) =>
     l.addEventListener("click", () => {
-      if (l.dataset.nav === "shield") return go("shield");
-      leaveHome();
-      setActive(l.dataset.nav);
+      go(l.dataset.nav);
     })
   );
   tabs.forEach((t) => t.addEventListener("click", () => go(t.dataset.tab)));
@@ -129,6 +160,7 @@
   applyPreferences();
   setActive(null);
   window.kavachHome = goHome;
+  window.kavachNav = { go, goHome, closeAllViews, setActive };
 
   // ---------- Reset everything (before a demo) ----------
   // The server ends any running SOS and clears the Vault and SOS history; reloading

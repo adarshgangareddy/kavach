@@ -23,6 +23,15 @@
   const profDisplayName = $("#prof-display-name");
   const profDisplayEmail = $("#prof-display-email");
 
+  // Google Top-Right Account Popover Elements
+  const googleAccountBtn = $("#google-account-btn");
+  const googleAccountPopover = $("#google-account-popover");
+  const topAvatarLetter = $("#top-avatar-letter");
+  const popoverAvatarLetter = $("#popover-avatar-letter");
+  const popoverName = $("#popover-name");
+  const popoverEmail = $("#popover-email");
+  const popoverProfileBtn = $("#popover-profile-btn");
+
   // Responders Elements
   const respView = $("#responders-view");
   const respList = $("#responders-list");
@@ -62,6 +71,12 @@
         if (profAvatar) profAvatar.textContent = (name[0] || "U").toUpperCase();
         if (profDisplayName) profDisplayName.textContent = name;
         if (profDisplayEmail) profDisplayEmail.textContent = email;
+
+        // Sync top-right Google avatar and popover card
+        if (topAvatarLetter) topAvatarLetter.textContent = (name[0] || "U").toUpperCase();
+        if (popoverAvatarLetter) popoverAvatarLetter.textContent = (name[0] || "U").toUpperCase();
+        if (popoverName) popoverName.textContent = name;
+        if (popoverEmail) popoverEmail.textContent = email;
 
         if (profName) profName.value = u.full_name || u.username || "";
         if (profPhone) profPhone.value = u.phone || "";
@@ -238,6 +253,30 @@
       }
     } catch (err) {
       window.kavach?.toast("Network error: " + err.message);
+    }
+  });
+
+  // ---------- Google Account Popover Controller ----------
+  googleAccountBtn?.addEventListener("click", (e) => {
+    e.stopPropagation();
+    if (!googleAccountPopover) return;
+    const isHidden = googleAccountPopover.style.display === "none" || !googleAccountPopover.style.display;
+    googleAccountPopover.style.display = isHidden ? "block" : "none";
+  });
+
+  popoverProfileBtn?.addEventListener("click", (e) => {
+    e.stopPropagation();
+    if (googleAccountPopover) googleAccountPopover.style.display = "none";
+    if (window.kavachNav) {
+      window.kavachNav.go("profile");
+    } else {
+      openProfile();
+    }
+  });
+
+  document.addEventListener("click", (e) => {
+    if (googleAccountPopover && !googleAccountPopover.contains(e.target) && !googleAccountBtn?.contains(e.target)) {
+      googleAccountPopover.style.display = "none";
     }
   });
 

@@ -66,7 +66,7 @@
 
   // Log out: ends the session on the server, then back to the login screen.
   document.addEventListener("click", async (e) => {
-    if (!e.target.closest("#logout-btn")) return;
+    if (!e.target.closest("#logout-btn, #popover-logout-btn")) return;
     if (!(await show("Log out of Kavach on this device?", { ok: "Log out" }))) return;
     await nativeFetch("/auth/logout", { method: "POST", credentials: "same-origin" }).catch(() => {});
     location.replace("/login.html");
