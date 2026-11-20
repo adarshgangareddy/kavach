@@ -18,7 +18,39 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
       const apiUrl = cfg.kavachApiUrl || "http://localhost:8000";
       fetch(`${apiUrl}/analyze`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          "X-Kavach-Client": "extension"
+        },
+        credentials: "include",
+        body: JSON.stringify(msg.payload),
+      })
+        .then(async (res) => {
+          if (!res.ok) {
+            const errText = await res.text();
+            sendResponse({ ok: false, error: errText || `HTTP ${res.status}` });
+          } else {
+            const data = await res.json();
+            sendResponse({ ok: true, data });
+          }
+        })
+        .catch((err) => {
+          sendResponse({ ok: false, error: err.message });
+        });
+    });
+    return true; // Keep message channel open for async sendResponse
+  }
+
+  if (msg.type === "SAVE_TO_VAULT") {
+    chrome.storage.sync.get(["kavachApiUrl"], (cfg) => {
+      const apiUrl = cfg.kavachApiUrl || "http://localhost:8000";
+      fetch(`${apiUrl}/evidence`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "X-Kavach-Client": "extension"
+        },
+        credentials: "include",
         body: JSON.stringify(msg.payload),
       })
         .then(async (res) => {

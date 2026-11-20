@@ -203,8 +203,11 @@
   function render() {
     renderPill();
     if (!records.length) {
-      els.body.innerHTML = `<div class="empty"><p>Nothing sealed yet.</p>
-        <p class="small">Scan a chat, then press <strong>Seal as evidence</strong>.</p></div>`;
+      els.body.innerHTML = `<div class="empty">
+        <div style="font-size:32px; margin-bottom:12px;">🔒</div>
+        <p style="font-size:16px; font-weight:600; color:var(--text); margin-bottom:6px;">Evidence Vault is Empty</p>
+        <p class="small" style="max-width:380px; margin:0 auto; opacity:0.85; line-height:1.5;">When a threat is flagged on WhatsApp Web or Telegram, click <strong>Save Evidence to Vault</strong> on the Kavach banner to seal the chat messages here with SHA-256 cryptographic verification.</p>
+      </div>`;
       return;
     }
     const captures = new Map();

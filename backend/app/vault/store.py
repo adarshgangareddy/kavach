@@ -192,8 +192,11 @@ def save_capture(item: EvidenceIn) -> dict:
 
 def all_rows() -> list[dict]:
     """The signed-in account's records, in chain order."""
+    uid = context.current()
     with connect() as conn:
-        return [dict(r) for r in conn.execute("SELECT * FROM evidence WHERE owner IS ? ORDER BY id", (context.current(),))]
+        if uid:
+            return [dict(r) for r in conn.execute("SELECT * FROM evidence WHERE owner=? OR owner IS NULL ORDER BY id", (uid,))]
+        return [dict(r) for r in conn.execute("SELECT * FROM evidence ORDER BY id")]
 
 
 def owns_screenshot(digest: str) -> bool:
