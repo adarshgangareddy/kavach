@@ -308,9 +308,23 @@
                 <p class="setup__label"><span class="setup__num">2</span>Trusted contacts <span class="setup__count" id="contact-count"></span></p>
                 <ul class="contact-setup" id="contact-setup"></ul>
                 <form class="add-contact" id="add-contact">
-                  <input name="name" placeholder="Name" required maxlength="60" autocomplete="off" />
-                  <input name="email" type="email" placeholder="Gmail / email for SOS alerts" maxlength="120" autocomplete="off" />
-                  <button class="btn" type="submit">Add</button>
+                  <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px; width: 100%;">
+                    <input name="name" placeholder="Guardian Name" required maxlength="60" autocomplete="off" />
+                    <select name="relationship" style="background:var(--surface-2); border:1px solid var(--border); border-radius:4px; padding:6px 8px; color:var(--text); font-size:12px;">
+                      <option value="Parent">Parent</option>
+                      <option value="Mother">Mother</option>
+                      <option value="Father">Father</option>
+                      <option value="Guardian">Guardian</option>
+                      <option value="Sibling">Sibling</option>
+                      <option value="Friend">Trusted Friend</option>
+                    </select>
+                  </div>
+                  <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px; width: 100%;">
+                    <input name="phone" type="tel" placeholder="Mobile Phone" maxlength="30" autocomplete="off" />
+                    <input name="whatsapp" type="tel" placeholder="WhatsApp Number" maxlength="30" autocomplete="off" />
+                  </div>
+                  <input name="email" type="email" placeholder="Email for emergency backup" maxlength="120" autocomplete="off" />
+                  <button class="btn btn--primary" type="submit">+ Add Guardian</button>
                 </form>
                 <button type="button" class="setup__invite" id="invite-btn" hidden>
                   <span class="setup__invite-icon" aria-hidden="true">

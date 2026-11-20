@@ -25,7 +25,7 @@ DATABASE_URL = os.getenv("DATABASE_URL", "").strip()
 # Local files: the SQLite database when DATABASE_URL is blank, and the embedding model cache.
 DATA_DIR = Path(os.getenv("KAVACH_DATA_DIR", str(BACKEND_DIR / "data")))
 # Enables the "simulate tampering" and "reset vault" endpoints for the live demo.
-DEMO_MODE = os.getenv("KAVACH_DEMO", "1").strip() == "1"
+DEMO_MODE = os.getenv("KAVACH_DEMO", "0").strip() == "1"
 
 # ---------- SOS alerts ----------
 # Telegram bot from @BotFather; contacts and responders tap Start on it once.

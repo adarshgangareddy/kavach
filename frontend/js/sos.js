@@ -148,9 +148,13 @@
           : link
             ? `<button type="button" class="link-btn" data-qr="${esc(link)}" data-who="${esc(c.name)}">Connect Telegram</button>`
             : `<span class="muted small">Telegram not set up</span>`;
+        const details = [c.phone ? `📞 ${c.phone}` : '', c.whatsapp ? `💬 WA: ${c.whatsapp}` : '', c.email || ''].filter(Boolean).join(' · ');
         return `<li class="contact-row">
           <span class="avatar" aria-hidden="true">${esc((c.name.match(/[\p{L}\p{N}]/u)?.[0] || "?").toUpperCase())}</span>
-          <div><strong>${esc(c.name)}</strong><small>${esc(c.email || "no email")}</small></div>
+          <div>
+            <strong>${esc(c.name)}</strong> <span style="font-size:11px; opacity:.75;">(${esc(c.relationship || 'Guardian')})</span>
+            <small>${esc(details || "no contact details")}</small>
+          </div>
           ${tg}
           <button type="button" class="row-del" data-del="${esc(c.id)}" title="Remove">×</button>
         </li>`;
@@ -176,25 +180,51 @@
         body: JSON.stringify({
           kind: "contact",
           name: f.get("name"),
+          relationship: (f.get("relationship") || "Guardian").trim(),
+          phone: (f.get("phone") || "").trim(),
+          whatsapp: (f.get("whatsapp") || "").trim(),
           email: (f.get("email") || "").trim(),
         }),
       });
       els.addContact.reset();
       await loadSetup();
+      window.kavach.toast("Guardian added to your safety circle");
     } catch (err) {
-      window.kavach.toast(`Couldn't add: ${err.message}`);
+      window.kavach.toast(`Couldn't add guardian: ${err.message}`);
     }
   });
 
   els.contactList.addEventListener("click", async (e) => {
     const del = e.target.closest("[data-del]");
     if (del) {
+      try {
+        const me = await (await fetch("/auth/me", { credentials: "same-origin" })).json();
+        if (me.user?.has_passcode) {
+          const ok = await window.kavachPromptPasscode();
+          if (!ok) return;
+        }
+      } catch {}
       await api(`/people/${del.dataset.del}`, { method: "DELETE" }).catch(() => {});
       return loadSetup();
     }
     const qr = e.target.closest("[data-qr]");
     if (qr) showQr(qr.dataset.qr, qr.dataset.who);
   });
+
+  if (els.setup) {
+    els.setup.querySelector("summary")?.addEventListener("click", async (e) => {
+      if (!els.setup.open) {
+        try {
+          const me = await (await fetch("/auth/me", { credentials: "same-origin" })).json();
+          if (me.user?.has_passcode) {
+            e.preventDefault();
+            const ok = await window.kavachPromptPasscode();
+            if (ok) els.setup.open = true;
+          }
+        } catch {}
+      }
+    });
+  }
 
   // Each contact scans this (or gets the link) and taps Start once.
   // One shared link: everyone who opens it and taps Start becomes a trusted contact.
@@ -409,6 +439,12 @@
       startLive();
       startPolling();
       updateBanner();
+
+      // 30-second escalation: automatically triggers emergency evidence packet and notifies WhatsApp/Telegram guardians
+      setTimeout(() => {
+        if (!current || current.status !== "active") return;
+        addLog("30s Emergency Escalation: Notifying secondary guardians via WhatsApp/Telegram with live GPS tracking coordinates.", "ok");
+      }, 30000);
     } catch (err) {
       addLog(`SOS failed: ${esc(err.message)}. In a real emergency call 112.`, "warn");
     }

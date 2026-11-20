@@ -25,14 +25,16 @@ def _now() -> str:
 def public(p: dict) -> dict:
     """What the browser may see: never the Telegram chat id."""
     return {
-        "id": p["id"], "kind": p["kind"], "name": p["name"], "phone": p["phone"] or "", "email": p["email"] or "",
+        "id": p["id"], "kind": p["kind"], "name": p["name"], "phone": p["phone"] or "",
+        "whatsapp": p.get("whatsapp") or "", "email": p["email"] or "",
+        "relationship": p.get("relationship") or "Guardian",
         "telegram_linked": p["telegram_chat_id"] is not None, "link_code": p["link_code"],
         "verified": bool(p["verified"]), "opted_in": bool(p["opted_in"]),
         "has_location": p["lat"] is not None, "lat": p["lat"], "lng": p["lng"], "location_at": p["location_at"],
     }
 
 
-def create(kind: str, name: str, phone: str = "", email: str = "", lat=None, lng=None, owner=None) -> dict:
+def create(kind: str, name: str, phone: str = "", email: str = "", lat=None, lng=None, owner=None, relationship: str = "Guardian", whatsapp: str = "") -> dict:
     if kind not in ("contact", "responder"):
         raise PeopleError("kind must be contact or responder")
     if not name.strip():
@@ -44,9 +46,10 @@ def create(kind: str, name: str, phone: str = "", email: str = "", lat=None, lng
     with db.lock:
         db.run(
             "INSERT INTO people (id, kind, name, phone, email, link_code, verified, opted_in, lat, lng, location_at,"
-            " created_at, owner) VALUES (?, ?, ?, ?, ?, ?, ?, 1, ?, ?, ?, ?, ?)",
+            " created_at, owner, relationship, whatsapp) VALUES (?, ?, ?, ?, ?, ?, ?, 1, ?, ?, ?, ?, ?, ?, ?)",
             pid, kind, name.strip(), phone.strip(), email.strip(), secrets.token_urlsafe(6),
             1 if kind == "contact" else 0, lat, lng, _now() if lat is not None else None, _now(), owner,
+            relationship.strip() or "Guardian", whatsapp.strip(),
         )
     return public(get(pid))
 
@@ -79,7 +82,7 @@ def linked_contacts(owner=None) -> list[dict]:
 
 def update(pid: str, **fields) -> dict:
     get(pid)
-    allowed = {"name", "phone", "email", "opted_in", "lat", "lng"}
+    allowed = {"name", "phone", "email", "opted_in", "lat", "lng", "relationship", "whatsapp"}
     sets = {k: v for k, v in fields.items() if k in allowed and v is not None}
     if "lat" in sets or "lng" in sets:
         _check_location(sets.get("lat"), sets.get("lng"))

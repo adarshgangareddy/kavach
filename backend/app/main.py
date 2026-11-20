@@ -87,6 +87,16 @@ async def session(request: Request, call_next):
         context.reset(token)
 
 
+@app.exception_handler(404)
+async def custom_404_handler(request: Request, exc: HTTPException):
+    accept = request.headers.get("accept", "")
+    if "text/html" in accept and not request.url.path.startswith("/api"):
+        not_found_file = config.FRONTEND_DIR / "404.html"
+        if not_found_file.exists():
+            return Response(content=not_found_file.read_text(), status_code=404, media_type="text/html")
+    return JSONResponse(status_code=404, content={"detail": exc.detail or "Not Found"})
+
+
 def require_user() -> str:
     uid = context.current()
     if not uid:
@@ -565,7 +575,18 @@ def people_list(kind: str = "contact"):
 async def people_create(body: PersonIn):
     if body.kind == "contact":
         require_user()
-    p = _sos_call(people.create, body.kind, body.name, body.phone, body.email, body.lat, body.lng)
+    p = _sos_call(
+        people.create,
+        body.kind,
+        body.name,
+        body.phone,
+        body.email,
+        body.lat,
+        body.lng,
+        None,
+        body.relationship,
+        body.whatsapp,
+    )
     return {**p, "telegram_link": await notify.link_for(p)}
 
 

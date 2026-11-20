@@ -66,5 +66,7 @@ lock = threading.RLock()
 database.schema("sos", SCHEMA, add_columns=[
     ("sos", "has_location", "INTEGER NOT NULL DEFAULT 1"),  # databases created before this column existed
     ("people", "owner", "TEXT"),  # databases created before accounts
+    ("people", "relationship", "TEXT"),
+    ("people", "whatsapp", "TEXT"),
 ])
 connect, rows, one, run = database.connect, database.rows, database.one, database.run

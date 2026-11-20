@@ -302,16 +302,26 @@
           const ended = a.sos_status !== "active";
           const from = a.my_position ? `${a.my_position.lat},${a.my_position.lng}` : "";
           const exact = a.exact
-            ? `<div class="exact">Exact location shared with you only.<br><a href="https://www.google.com/maps/dir/?api=1${from ? `&origin=${from}` : ""}&destination=${a.exact.lat},${a.exact.lng}" target="_blank" rel="noopener">Get directions ↗</a></div>` : "";
+            ? `<div class="exact" style="display:flex; flex-direction:column; gap:8px;">
+                <span>🎯 <strong>Exact live location revealed (Confidential)</strong></span>
+                <div style="display:flex; gap:6px;">
+                  <a class="btn btn--primary" style="flex:1; text-align:center; text-decoration:none;" href="https://www.google.com/maps/dir/?api=1${from ? `&origin=${from}` : ""}&destination=${a.exact.lat},${a.exact.lng}" target="_blank" rel="noopener">Navigate in Google Maps ↗</a>
+                  <a class="btn" style="background:#ff4757; color:#fff; text-decoration:none; padding:8px 12px;" href="tel:112" title="Call Emergency Services">112</a>
+                </div>
+              </div>` : "";
           const updated = !ended && a.updated_at && a.updated_at !== a.created_at
-            ? `<div class="row muted">Location updated ${new Date(a.updated_at).toLocaleTimeString("en-IN")}</div>` : "";
-          const acts = ended ? `<p class="note">${a.sos_status === "expired" ? "Alert expired." : "She marked herself safe. Thank you."}</p>`
-            : a.my_status === "pending" ? `<div class="acts"><button class="btn accept" data-act="accept" data-id="${a.sos_id}">Accept</button><button class="btn" data-act="decline" data-id="${a.sos_id}">Decline</button></div>`
-            : a.my_status === "declined" ? `<p class="note">You declined this alert.</p>` : "";
+            ? `<div class="row muted">Location refreshed ${new Date(a.updated_at).toLocaleTimeString("en-IN")}</div>` : "";
+          const acts = ended ? `<p class="note">${a.sos_status === "expired" ? "Alert expired." : "User marked safe. Incident resolved."}</p>`
+            : a.my_status === "pending" ? `<div class="acts"><button class="btn accept" data-act="accept" data-id="${a.sos_id}">Accept & Respond</button><button class="btn" data-act="decline" data-id="${a.sos_id}">Decline</button></div>`
+            : a.my_status === "declined" ? `<p class="note">You declined this alert.</p>`
+            : `<div class="acts"><button class="btn small" style="background:var(--surface-2); border:1px solid var(--border);" data-act="decline" data-id="${a.sos_id}">Stand Down</button></div>`;
           return `<div class="card alert-card ${a.sos_id === selected ? "selected" : ""}" data-sel="${a.sos_id}">
-            <div class="row"><h2>SOS nearby</h2><span class="state ${ended ? "excluded" : a.my_status}">${ended ? "ended" : a.my_status}</span></div>
-            <div class="row"><span>${new Date(a.created_at).toLocaleTimeString("en-IN")}</span><span>${a.approx_distance_km ?? "?"} km from you</span></div>
-            ${a.others_accepted ? `<div class="row muted">${a.others_accepted} other responder(s) on the way</div>` : ""}
+            <div class="row">
+              <h2>🚨 Emergency Alert</h2>
+              <span class="state ${ended ? "excluded" : a.my_status}">${ended ? "resolved" : a.my_status.toUpperCase()}</span>
+            </div>
+            <div class="row"><span>Triggered ${new Date(a.created_at).toLocaleTimeString("en-IN")}</span><span><strong>${a.approx_distance_km ?? "?"} km</strong> away</span></div>
+            ${a.others_accepted ? `<div class="row muted">👥 ${a.others_accepted} other responder(s) coordinating on-scene</div>` : ""}
             ${updated}${exact}${acts}
           </div>`;
         }).join("");
