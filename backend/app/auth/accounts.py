@@ -213,6 +213,33 @@ def user_for_session(token: str | None) -> dict | None:
     }
 
 
+def login_or_create_google(email: str, full_name: str = "", sub: str = "") -> dict:
+    """Finds or registers a user via Google OAuth2."""
+    clean_email = email.strip().lower()
+    if not clean_email or "@" not in clean_email:
+        raise AuthError("Invalid Google email address", status=400)
+    _init()
+    user = db.one("SELECT * FROM users WHERE email = ?", clean_email)
+    if user:
+        return _format_user(user)
+    base_user = re.sub(r"[^a-z0-9]", "", clean_email.split("@")[0])[:20] or f"user{sub[:6]}"
+    username = base_user
+    count = 1
+    while db.one("SELECT id FROM users WHERE username = ?", username):
+        username = f"{base_user[:15]}_{count}"
+        count += 1
+    now = datetime.now(timezone.utc).isoformat()
+    uid = secrets.token_hex(8)
+    dummy_pass_hash = _ph.hash(secrets.token_urlsafe(24))
+    with db.lock:
+        db.run(
+            "INSERT INTO users (id, username, password_hash, created_at, full_name, email, email_verified)"
+            " VALUES (?, ?, ?, ?, ?, ?, ?)",
+            uid, username, dummy_pass_hash, now, full_name or username, clean_email, 1
+        )
+    return _format_user(db.one("SELECT * FROM users WHERE id = ?", uid))
+
+
 def logout(token: str | None) -> None:
     if token:
         _init()

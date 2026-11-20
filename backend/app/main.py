@@ -161,6 +161,71 @@ def auth_logout(request: Request):
     return response
 
 
+@app.get("/auth/google/callback")
+def auth_google_callback():
+    """Serves the client-side token receiver for Google OAuth2 implicit flow."""
+    html_content = """<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Kavach — Authenticating with Google...</title>
+  <style>body { background:#0a0c10; color:#fff; font-family:system-ui,sans-serif; display:flex; height:100vh; align-items:center; justify-content:center; margin:0; }</style>
+</head>
+<body>
+  <div style="text-align:center;">
+    <div style="font-size:28px; margin-bottom:12px;">🛡️</div>
+    <div style="font-size:14px; opacity:0.8;">Completing Google authentication…</div>
+  </div>
+  <script>
+    (async () => {
+      const hash = window.location.hash.substring(1);
+      const params = new URLSearchParams(hash);
+      const token = params.get("access_token");
+      if (!token) {
+        window.location.href = "/login.html?error=google_denied";
+        return;
+      }
+      try {
+        const uRes = await fetch("https://www.googleapis.com/oauth2/v3/userinfo", {
+          headers: { Authorization: "Bearer " + token }
+        });
+        if (!uRes.ok) throw new Error("Failed to fetch Google profile");
+        const u = await uRes.json();
+        const res = await fetch("/auth/google/verify", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email: u.email, full_name: u.name, sub: u.sub })
+        });
+        if (res.ok) {
+          window.location.href = "/";
+        } else {
+          window.location.href = "/login.html?error=account_creation_failed";
+        }
+      } catch (err) {
+        window.location.href = "/login.html?error=" + encodeURIComponent(err.message);
+      }
+    })();
+  </script>
+</body>
+</html>"""
+    return Response(content=html_content, media_type="text/html")
+
+
+@app.post("/auth/google/verify")
+async def auth_google_verify(request: Request):
+    data = await request.json()
+    email = data.get("email")
+    if not email:
+        raise HTTPException(400, "Missing email from Google profile")
+    try:
+        user = accounts.login_or_create_google(email, data.get("full_name", ""), data.get("sub", ""))
+    except accounts.AuthError as exc:
+        raise HTTPException(exc.status, str(exc)) from exc
+    response = JSONResponse({"user": user})
+    _set_session(response, request, accounts.new_session(user["id"]))
+    return response
+
+
 @app.get("/auth/me")
 def auth_me(request: Request):
     user = accounts.user_for_session(request.cookies.get(SESSION_COOKIE))
