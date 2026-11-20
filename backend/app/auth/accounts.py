@@ -191,6 +191,18 @@ def new_session(user_id: str) -> str:
     return token
 
 
+def _format_user(row: dict) -> dict:
+    return {
+        "id": row["id"],
+        "username": row["username"],
+        "full_name": row.get("full_name") or "",
+        "email": row.get("email") or "",
+        "phone": row.get("phone") or "",
+        "email_verified": bool(row.get("email_verified")),
+        "has_passcode": bool(row.get("passcode_hash")),
+    }
+
+
 def user_for_session(token: str | None) -> dict | None:
     if not token or len(token) > 100:
         return None
@@ -202,15 +214,7 @@ def user_for_session(token: str | None) -> dict | None:
     )
     if not row or row["expires"] < time.time():
         return None
-    return {
-        "id": row["id"],
-        "username": row["username"],
-        "full_name": row.get("full_name") or "",
-        "email": row.get("email") or "",
-        "phone": row.get("phone") or "",
-        "email_verified": bool(row.get("email_verified")),
-        "has_passcode": bool(row.get("passcode_hash")),
-    }
+    return _format_user(row)
 
 
 def login_or_create_google(email: str, full_name: str = "", sub: str = "") -> dict:

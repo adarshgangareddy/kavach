@@ -173,8 +173,9 @@ def auth_google_callback():
 </head>
 <body>
   <div style="text-align:center;">
-    <div style="font-size:28px; margin-bottom:12px;">🛡️</div>
-    <div style="font-size:14px; opacity:0.8;">Completing Google authentication…</div>
+    <div style="font-size:32px; margin-bottom:12px;">🛡️</div>
+    <div style="font-size:15px; font-weight:600;">Completing Google authentication…</div>
+    <div style="font-size:12px; color:#888; margin-top:6px;">Redirecting you to Kavach Dashboard</div>
   </div>
   <script>
     (async () => {
@@ -182,27 +183,36 @@ def auth_google_callback():
       const params = new URLSearchParams(hash);
       const token = params.get("access_token");
       if (!token) {
-        window.location.href = "/login.html?error=google_denied";
+        alert("Google Sign-In canceled or denied.");
+        window.location.replace("/login.html");
         return;
       }
       try {
         const uRes = await fetch("https://www.googleapis.com/oauth2/v3/userinfo", {
           headers: { Authorization: "Bearer " + token }
         });
-        if (!uRes.ok) throw new Error("Failed to fetch Google profile");
+        if (!uRes.ok) throw new Error("Failed to retrieve Google user profile");
         const u = await uRes.json();
         const res = await fetch("/auth/google/verify", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
+          credentials: "include",
           body: JSON.stringify({ email: u.email, full_name: u.name, sub: u.sub })
         });
         if (res.ok) {
-          window.location.href = "/";
+          const body = await res.json().catch(() => ({}));
+          if (body.user && body.user.id) {
+            try { localStorage.setItem("kavach.lastUser", body.user.id); } catch {}
+          }
+          window.location.replace("/index.html");
         } else {
-          window.location.href = "/login.html?error=account_creation_failed";
+          const err = await res.json().catch(() => ({}));
+          alert("Login error: " + (err.detail || "Authentication verification failed"));
+          window.location.replace("/login.html");
         }
       } catch (err) {
-        window.location.href = "/login.html?error=" + encodeURIComponent(err.message);
+        alert("Google Error: " + err.message);
+        window.location.replace("/login.html");
       }
     })();
   </script>
