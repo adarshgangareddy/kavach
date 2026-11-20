@@ -166,6 +166,15 @@ def auth_logout(request: Request):
     return response
 
 
+@app.get("/auth/callback")
+def auth_callback_alias(request: Request):
+    """Alias for /auth/google/callback — handles Google OAuth redirects regardless of which URI is registered."""
+    from fastapi.responses import RedirectResponse
+    # Preserve the full query string and fragment (fragment is client-side only, can't redirect it)
+    # We serve the same HTML page — just reuse the google callback handler
+    return auth_google_callback()
+
+
 @app.get("/auth/google/callback")
 def auth_google_callback():
     """Serves the client-side token receiver for Google OAuth2."""

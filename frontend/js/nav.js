@@ -64,6 +64,7 @@
       const el = document.querySelector("#safetyspace-view");
       if (el) el.hidden = false;
       body.classList.remove("left-collapsed");
+      body.classList.remove("shield-mode");
       if (stTrigger) stTrigger.style.display = "block";
       if (contactsEyebrow) contactsEyebrow.textContent = "Live Detections";
       setActive("safetyspace");
@@ -72,16 +73,19 @@
       const el = document.querySelector("#guardians-view");
       if (el) el.hidden = false;
       body.classList.add("left-collapsed");
+      body.classList.remove("shield-mode");
       if (stTrigger) stTrigger.style.display = "none";
       setActive("guardians");
     } else if (where === "scan") {
       document.querySelector("#import-btn")?.click();
+      body.classList.add("shield-mode");
       setActive("safetyspace");
     } else if (where === "vault") {
       window.kavachVault?.open();
       const el = document.querySelector("#vault-view");
       if (el) el.hidden = false;
       body.classList.remove("left-collapsed");
+      body.classList.remove("shield-mode");
       if (stTrigger) stTrigger.style.display = "none";
       if (contactsEyebrow) contactsEyebrow.textContent = "Previous Evidence";
       setActive("vault");
@@ -90,6 +94,7 @@
       const el = document.querySelector("#responders-view");
       if (el) el.hidden = false;
       body.classList.add("left-collapsed");
+      body.classList.remove("shield-mode");
       if (stTrigger) stTrigger.style.display = "none";
       setActive("responders");
     } else if (where === "profile") {
@@ -97,6 +102,7 @@
       const el = document.querySelector("#profile-view");
       if (el) el.hidden = false;
       body.classList.add("left-collapsed");
+      body.classList.remove("shield-mode");
       if (stTrigger) stTrigger.style.display = "none";
       setActive("profile");
     }

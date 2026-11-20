@@ -3374,6 +3374,10 @@ body.at-home .app {
 }
 
 /* ---------- flow bar: Scan → Check → Seal → Report ---------- */
+/* Only show flowbar in shield/scan mode; hide for all other sections */
+body:not(.shield-mode) .flowbar {
+  display: none !important;
+}
 :root {
   --flowbar: 44px;
 }
