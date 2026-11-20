@@ -39,6 +39,9 @@
       if (el) el.hidden = true;
     });
 
+    const mc = document.querySelector("#mock-chat-container");
+    if (mc) mc.hidden = true;
+
     const chatArea = document.querySelector("#chat-area");
     if (chatArea) chatArea.hidden = true;
 
@@ -53,15 +56,23 @@
     leaveHome();
     closeAllViews();
 
+    const stTrigger = document.querySelector("#safetyspace-mobile-trigger");
+    const contactsEyebrow = document.querySelector("#contacts-eyebrow");
+
     if (where === "safetyspace" || where === "shield") {
       window.kavachSos?.open();
       const el = document.querySelector("#safetyspace-view");
       if (el) el.hidden = false;
+      body.classList.remove("left-collapsed");
+      if (stTrigger) stTrigger.style.display = "block";
+      if (contactsEyebrow) contactsEyebrow.textContent = "Live Detections";
       setActive("safetyspace");
     } else if (where === "guardians" || where === "sos") {
       window.kavachSos?.open();
       const el = document.querySelector("#guardians-view");
       if (el) el.hidden = false;
+      body.classList.add("left-collapsed");
+      if (stTrigger) stTrigger.style.display = "none";
       setActive("guardians");
     } else if (where === "scan") {
       document.querySelector("#import-btn")?.click();
@@ -70,19 +81,39 @@
       window.kavachVault?.open();
       const el = document.querySelector("#vault-view");
       if (el) el.hidden = false;
+      body.classList.remove("left-collapsed");
+      if (stTrigger) stTrigger.style.display = "none";
+      if (contactsEyebrow) contactsEyebrow.textContent = "Previous Evidence";
       setActive("vault");
     } else if (where === "responders") {
       window.kavachResponders?.open();
       const el = document.querySelector("#responders-view");
       if (el) el.hidden = false;
+      body.classList.add("left-collapsed");
+      if (stTrigger) stTrigger.style.display = "none";
       setActive("responders");
     } else if (where === "profile") {
       window.kavachProfile?.open();
       const el = document.querySelector("#profile-view");
       if (el) el.hidden = false;
+      body.classList.add("left-collapsed");
+      if (stTrigger) stTrigger.style.display = "none";
       setActive("profile");
     }
   }
+
+  // Sidebar Toggles (Left Collapsible Sidebar & Right AI Drawer)
+  document.querySelector("#toggle-left-sidebar-btn")?.addEventListener("click", () => {
+    body.classList.toggle("left-collapsed");
+  });
+
+  document.querySelector("#toggle-ai-sidebar-btn")?.addEventListener("click", () => {
+    body.classList.toggle("shield-open");
+  });
+
+  document.querySelector("#close-ai-panel-btn")?.addEventListener("click", () => {
+    body.classList.remove("shield-open");
+  });
 
   // ---------- phone layout: one pane at a time ----------
   const pill = document.querySelector("#m-pill");

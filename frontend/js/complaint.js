@@ -157,6 +157,8 @@
     window.kavachImport?.close();
     window.kavachVault?.close();
     window.kavachSos?.close();
+    const mc = document.querySelector("#mock-chat-container");
+    if (mc) mc.hidden = true;
     window.kavachFlow?.set(4);
     window.kavachMobile?.show("main");
     window.kavachMobile?.pill("Laws & filing ›");

@@ -134,6 +134,17 @@
     }
     if (els.testChannels) els.testChannels.hidden = !setup.telegram.on && !setup.email_on;
     if (els.invite) els.invite.hidden = !setup.telegram.bot;
+    if (setup.contacts && setup.contacts.length > 0) {
+      const primary = setup.contacts[0];
+      if (primary && primary.name) {
+        settings.caller = primary.name;
+        if (els.callerInput) els.callerInput.value = primary.name;
+        saveSettings();
+        applyCaller();
+        const stName = document.getElementById("stealth-primary-name");
+        if (stName) stName.textContent = primary.name;
+      }
+    }
     renderContacts();
   }
 
@@ -168,6 +179,7 @@
             </div>
           </div>
           <div style="display:flex; align-items:center; gap:8px;">
+            ${c.phone ? `<a href="tel:${esc(c.phone)}" class="btn btn--primary small" style="background:#10b981; border-color:#10b981; color:#fff; font-size:11px; padding:4px 9px; text-decoration:none; display:inline-flex; align-items:center; gap:3px; font-weight:600;">📞 Call</a>` : ""}
             ${tg}
             <button type="button" class="btn btn--ghost small" data-siren="${esc(c.id)}" style="color:#ef4444; border-color:#ef4444; font-size:11px; padding:4px 8px;">🚨 Alert</button>
             <button type="button" class="row-del" data-del="${esc(c.id)}" title="Remove" style="background:transparent; border:none; color:var(--muted); font-size:18px; cursor:pointer; padding:4px 8px;">×</button>
@@ -310,6 +322,12 @@
       window.kavach?.toast("Audio siren error: " + err.message);
     }
   }
+
+  document.getElementById("open-stealth-phone-btn")?.addEventListener("click", () => {
+    if (window.kavachNav) window.kavachNav.go("safetyspace");
+    ring();
+    document.getElementById("phone")?.scrollIntoView({ behavior: "smooth", block: "center" });
+  });
 
   document.getElementById("siren-toggle-btn")?.addEventListener("click", toggleAudioSiren);
 
@@ -908,6 +926,8 @@
     window.kavachComplaint?.close();
     window.kavachProfile?.close();
     window.kavachResponders?.close();
+    const mc = document.querySelector("#mock-chat-container");
+    if (mc) mc.hidden = true;
     isOpen = true;
     document.body.classList.add("sosing");
     els.view.hidden = false;

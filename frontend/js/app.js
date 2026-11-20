@@ -155,6 +155,12 @@
     window.kavachVault?.close();
     window.kavachComplaint?.close();
     window.kavachSos?.close();
+    window.kavachProfile?.close();
+    window.kavachResponders?.close();
+    const mc = document.querySelector("#mock-chat-container");
+    if (mc) mc.hidden = false;
+    document.body.classList.remove("left-collapsed");
+    document.body.classList.add("shield-open");
     window.kavachMobile?.show("main");
     activeId = id;
     renderContacts();
@@ -404,6 +410,10 @@
 
   // Opens active chat or ready view
   function openShield() {
+    const mc = document.querySelector("#mock-chat-container");
+    if (mc) mc.hidden = false;
+    document.body.classList.remove("left-collapsed");
+    document.body.classList.add("shield-open");
     if (conversations.length) {
       openChat(activeId || conversations[0].id);
     } else {

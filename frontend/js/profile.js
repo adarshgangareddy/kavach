@@ -49,6 +49,10 @@
     window.kavachGuardians?.close();
     window.kavachSos?.close();
     window.kavachResponders?.close();
+    const mc = document.querySelector("#mock-chat-container");
+    if (mc) mc.hidden = true;
+    document.body.classList.add("left-collapsed");
+    document.body.classList.remove("shield-open");
     window.kavachMobile?.show("main");
     if (profView) profView.hidden = false;
     document.body.classList.remove("at-home");
@@ -159,6 +163,10 @@
     window.kavachGuardians?.close();
     window.kavachSos?.close();
     window.kavachProfile?.close();
+    const mc = document.querySelector("#mock-chat-container");
+    if (mc) mc.hidden = true;
+    document.body.classList.add("left-collapsed");
+    document.body.classList.remove("shield-open");
     window.kavachMobile?.show("main");
     if (respView) respView.hidden = false;
     document.body.classList.remove("at-home");

@@ -752,10 +752,31 @@ textarea {
 
 .app {
   display: grid;
-  grid-template-columns: 250px minmax(0, 1fr) 360px;
+  grid-template-columns: 250px minmax(0, 1fr) 0px;
   gap: 0;
   height: calc(100vh - var(--topbar));
   padding: 0;
+  transition: grid-template-columns 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+body:not(.shield-open) .shield {
+  display: none !important;
+}
+
+body.shield-open .app {
+  grid-template-columns: 250px minmax(0, 1fr) 360px;
+}
+
+body.left-collapsed .contacts {
+  display: none !important;
+}
+
+body.left-collapsed .app {
+  grid-template-columns: minmax(0, 1fr) 0px;
+}
+
+body.left-collapsed.shield-open .app {
+  grid-template-columns: minmax(0, 1fr) 360px;
 }
 
 /* ---------- contacts ---------- */
