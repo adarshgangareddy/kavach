@@ -44,17 +44,22 @@ function updateUI(enabled) {
   }
 }
 
-// Test trigger in the active WhatsApp/Telegram tab
+// Send test message directly to active tab
 testBtn?.addEventListener("click", () => {
   chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-    if (!tabs || !tabs[0]) return;
-    chrome.scripting?.executeScript?.({
-      target: { tabId: tabs[0].id },
-      func: () => {
-        const badge = document.getElementById("kavach-live-badge");
-        if (badge) badge.click();
-        else alert("Open WhatsApp Web or Telegram Web tab first to see the in-chat banner!");
-      },
+    if (!tabs || !tabs[0] || !tabs[0].id) return;
+    chrome.tabs.sendMessage(tabs[0].id, { action: "TRIGGER_TEST_BANNER" }, (response) => {
+      if (chrome.runtime.lastError) {
+        // Tab was opened before extension was loaded or needs a refresh
+        chrome.scripting?.executeScript({
+          target: { tabId: tabs[0].id },
+          func: () => {
+            alert("Please refresh this WhatsApp Web tab (Press F5 or Ctrl+R) so Kavach can connect to it!");
+          },
+        });
+      } else {
+        window.close(); // Close popup so user sees the banner immediately!
+      }
     });
   });
 });
