@@ -32,6 +32,7 @@ from app.sos.schemas import LocationIn, PersonIn, PersonPatch, ProfileIn, Respon
 from app.vault import index as evidence_index
 from app.vault import report, store
 from app.vault.schemas import EvidenceIn, TamperIn
+from app.security.router import router as security_router
 
 logging.basicConfig(level=logging.INFO, format="%(levelname)s %(name)s: %(message)s")
 # httpx logs every request URL, and Telegram API URLs contain the bot token.
@@ -626,6 +627,8 @@ def responders():
 def responder_alerts(responder_id: str):
     return {"alerts": _sos_call(sos.alerts_for, responder_id)}
 
+
+app.include_router(security_router)
 
 # Mounted last so API routes take precedence over static files.
 app.mount("/", StaticFiles(directory=config.FRONTEND_DIR, html=True), name="frontend")

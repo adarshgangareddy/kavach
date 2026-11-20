@@ -175,3 +175,43 @@ This document tracks all requirements, design decisions, architectural component
 * **Database Schema Migrations:** Auto-registered `relationship` and `whatsapp` columns on `people` table.
 
 ---
+
+
+---
+
+## Log Entry: Step 7 — Google Cloud AI Platform (Gemini Primary + Fallback), AppSec Intelligence Pipeline & Audio Dispatch Responders Console
+
+### 1. User Requirements
+* **Google Cloud Dual-System Priority:** Google Cloud services (Gemini models, Google Maps, Google OAuth) as first preference. When quota is exhausted or credentials are unset, automatically and silently fall back to local/open-source engines (Groq, FastEmbed, OpenStreetMap) without downtime.
+* **AppSec Security & Compliance Architecture:** Build an AI-assisted security and compliance engineering platform:
+  1. Static analysis (Python AST visitor detecting SQL Injection, Command Injection, Insecure Deserialization, Broken Cryptography, Hardcoded Secrets).
+  2. Dependency auditing against CVE database (OSV format).
+  3. Security Knowledge & RAG (CWE, OWASP Top 10, SOC 2 Type II, ISO 27001, NIST CSF 2.0).
+  4. Multi-agent orchestration (Investigator, RAG Researcher, Risk Prioritizer, Remediation, Verification, Compliance).
+  5. Deterministic verification: Prove the vulnerability is eliminated without regressions.
+* **Meta-Grade Responder Dashboard (`responder.html`):**
+  - Synthesized Web Audio API emergency alert tone / audio dispatch chime.
+  - Active duty status toggle (On-Duty receiving dispatches / Off-Duty standby).
+  - Proximity triage badges (Critical Proximity < 1.2km, In Vicinity).
+  - "Accept & En Route" and "Mark Arrived On-Scene" status updates.
+  - One-click Google Maps turn-by-turn navigation and emergency 112 relay.
+
+### 2. Technologies & Primitives Used
+* **Google Cloud Gemini (`gemini-2.5-flash` / `gemini-1.5-flash`):** Primary LLM engine via REST API with automatic failover to Groq (`openai/gpt-oss-120b`).
+* **Google Cloud `text-embedding-004` (Matryoshka 384 dimensions):** Primary vector embedding engine with automatic fallback to local `BAAI/bge-small-en-v1.5` FastEmbed.
+* **Python AST (`ast.NodeVisitor`):** Deterministic parser inspecting syntax trees for taint flows, format strings in database queries, and unsafe subprocess parameters.
+* **Web Audio API (`AudioContext`, `OscillatorNode`):** Client-side synthesized multi-tone emergency chime.
+* **SOC 2 Type II / ISO 27001:2022 / NIST CSF 2.0 Control Matrix:** Enterprise compliance mapping engine in `app.security.knowledge`.
+
+### 3. How It Works
+1. **Security Scan (`POST /security/scan`):** AST visitor walks Python code, detects high-risk vulnerabilities, scans requirements against CVE tables, and returns structured findings.
+2. **6-Agent Workflow (`POST /security/pipeline`):**
+   - *Investigator:* Extracts taint paths and surrounding code context.
+   - *RAG Researcher:* Pulls CWE and OWASP remediation guidelines.
+   - *Risk Prioritizer:* Calculates CVSS scores and urgency ratings.
+   - *Remediation Agent:* Generates AST-preserving code patch and diff using Gemini.
+   - *Verification Agent:* Deterministically re-parses patched code to prove the vulnerability is resolved.
+   - *Compliance Agent:* Maps findings to SOC 2, ISO 27001, and NIST CSF audit controls.
+3. **Emergency Dispatch Console:** Responder connects via WebSocket/polling, hears audio chime upon new incident, reviews triage proximity, and navigates directly with Google Maps.
+
+---

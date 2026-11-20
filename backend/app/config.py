@@ -40,7 +40,14 @@ PUBLIC_URL = os.getenv("PUBLIC_URL", "").strip().rstrip("/")
 # Responders within this distance of her are alerted.
 SOS_RADIUS_M = int(os.getenv("SOS_RADIUS_M", "3000"))
 
-# ---------- Google Cloud & Maps ----------
+# ---------- Google Cloud & Gemini AI ----------
+# Primary AI reasoning engine. Get key at https://aistudio.google.com/ or Google Cloud Vertex AI
+GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY", os.getenv("GEMINI_API_KEY", "")).strip()
+GEMINI_API_KEY = GOOGLE_API_KEY
+GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-2.5-flash").strip()
+GEMINI_FALLBACK_MODEL = os.getenv("GEMINI_FALLBACK_MODEL", "gemini-1.5-flash").strip()
+GEMINI_TIMEOUT = float(os.getenv("GEMINI_TIMEOUT", "15"))
+
 # Google Maps JavaScript API key (https://console.cloud.google.com/google/maps-apis)
 GOOGLE_MAPS_API_KEY = os.getenv("GOOGLE_MAPS_API_KEY", "").strip()
 # Google OAuth Client ID for Continue with Google (optional)
