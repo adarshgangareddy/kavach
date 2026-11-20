@@ -3,6 +3,7 @@ const liveDot = document.getElementById("live-dot");
 const liveText = document.getElementById("live-text");
 const apiStatus = document.getElementById("api-status");
 const threatCount = document.getElementById("threat-count");
+const testBtn = document.getElementById("test-banner-btn");
 
 chrome.storage.sync.get(["kavachEnabled", "threatCount", "kavachApiUrl"], async (data) => {
   const enabled = data.kavachEnabled !== false;
@@ -10,7 +11,6 @@ chrome.storage.sync.get(["kavachEnabled", "threatCount", "kavachApiUrl"], async 
   updateUI(enabled);
   threatCount.textContent = data.threatCount || 0;
 
-  // Clear badge upon opening popup
   chrome.action.setBadgeText({ text: "" });
 
   const apiUrl = data.kavachApiUrl || "http://localhost:8000";
@@ -44,3 +44,17 @@ function updateUI(enabled) {
   }
 }
 
+// Test trigger in the active WhatsApp/Telegram tab
+testBtn?.addEventListener("click", () => {
+  chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+    if (!tabs || !tabs[0]) return;
+    chrome.scripting?.executeScript?.({
+      target: { tabId: tabs[0].id },
+      func: () => {
+        const badge = document.getElementById("kavach-live-badge");
+        if (badge) badge.click();
+        else alert("Open WhatsApp Web or Telegram Web tab first to see the in-chat banner!");
+      },
+    });
+  });
+});

@@ -1,18 +1,18 @@
 /**
  * Kavach Live Chat Shield — Content Script for WhatsApp Web & Telegram Web
  * Automatically reads active chat messages via DOM MutationObserver,
- * streams them to the local Kavach Smart Shield API, and displays real-time threat warnings.
+ * streams them via the background service worker to the local Kavach API,
+ * and displays real-time threat warnings directly in the chat.
  */
 
 (() => {
-  const KAVACH_API = "http://localhost:8000";
   let activePlatform = location.host.includes("whatsapp.com") ? "whatsapp" : "telegram";
   let lastScannedFingerprint = "";
   let scanDebounceTimer = null;
   let isProtectionEnabled = true;
 
   // Retrieve user settings from chrome.storage
-  chrome.storage?.sync?.get(["kavachEnabled", "kavachApiUrl"], (res) => {
+  chrome.storage?.sync?.get(["kavachEnabled"], (res) => {
     if (res?.kavachEnabled !== undefined) isProtectionEnabled = res.kavachEnabled;
   });
 
@@ -23,37 +23,37 @@
     badge.id = "kavach-live-badge";
     badge.className = "kavach-status-badge";
     badge.innerHTML = `<span class="kavach-status-dot"></span><span>Kavach Active</span>`;
-    badge.title = "Kavach Live Shield is monitoring incoming messages for threats & harassment.";
-    badge.onclick = () => window.open(KAVACH_API, "_blank");
+    badge.title = "Kavach Live Shield is monitoring incoming messages for threats & harassment. Click to test simulation.";
+    badge.onclick = () => {
+      // Allow testing directly by clicking the badge!
+      simulateTestThreat();
+    };
     document.body.appendChild(badge);
   }
 
   // Extract messages from WhatsApp Web DOM
   function parseWhatsAppMessages() {
-    const main = document.querySelector("#main, div[role='region']");
+    const main = document.querySelector("#main, div[role='region'], div[data-testid='conversation-panel-wrapper']");
     if (!main) return null;
 
-    const contactHeader = main.querySelector("header span[dir='auto'], header span[title]");
+    const contactHeader = main.querySelector("header span[dir='auto'], header span[title], header div[role='button'] span");
     const contactName = contactHeader?.textContent?.trim() || "Sender";
 
-    const msgNodes = main.querySelectorAll(".message-in, .message-out");
+    const msgNodes = main.querySelectorAll(".message-in, .message-out, div[data-id]");
     if (!msgNodes.length) return null;
 
     const messages = [];
     msgNodes.forEach((node, idx) => {
       const isOut = node.classList.contains("message-out");
-      const textNode = node.querySelector(".selectable-text, .copyable-text span");
+      const textNode = node.querySelector(".selectable-text, .copyable-text span, div[data-pre-plain-text]");
       const text = textNode?.textContent?.trim();
       if (!text) return;
-
-      const timeNode = node.querySelector("span[dir='auto'][class*='time'], span[data-testid*='time']");
-      const time = timeNode?.textContent?.trim() || "";
 
       messages.push({
         id: `wa-${idx}-${text.slice(0, 10).replace(/\s/g, "_")}`,
         sender: isOut ? "me" : contactName,
         text: text,
-        timestamp: time,
+        timestamp: "",
       });
     });
 
@@ -61,26 +61,26 @@
       platform: "whatsapp-web",
       self_handle: "me",
       contact_name: contactName,
-      messages: messages.slice(-20), // Analyze the last 20 messages for context
+      messages: messages.slice(-20),
       containerNode: main,
     };
   }
 
-  // Extract messages from Telegram Web DOM (both WebK and WebA versions)
+  // Extract messages from Telegram Web DOM
   function parseTelegramMessages() {
-    const main = document.querySelector(".messages-container, .bubbles-group, .chat-info");
+    const main = document.querySelector(".messages-container, .bubbles-group, .chat-info, .history");
     if (!main) return null;
 
-    const header = document.querySelector(".chat-info .peer-title, .top .name, .chat-title");
+    const header = document.querySelector(".chat-info .peer-title, .top .name, .chat-title, .user-title");
     const contactName = header?.textContent?.trim() || "Sender";
 
-    const msgNodes = document.querySelectorAll(".bubble, .message");
+    const msgNodes = document.querySelectorAll(".bubble, .message, .bubble-content");
     if (!msgNodes.length) return null;
 
     const messages = [];
     msgNodes.forEach((node, idx) => {
       const isOut = node.classList.contains("is-out") || node.classList.contains("own");
-      const textNode = node.querySelector(".message-content, .text-content, .bubble-content");
+      const textNode = node.querySelector(".message-content, .text-content, .bubble-content, .message");
       const text = textNode?.textContent?.trim();
       if (!text) return;
 
@@ -101,50 +101,45 @@
     };
   }
 
-  // Analyze active chat
-  async function performScan() {
+  // Analyze active chat via background worker (avoids mixed content / CORS in Brave & Chrome)
+  function performScan() {
     if (!isProtectionEnabled) return;
 
     const chatData = activePlatform === "whatsapp" ? parseWhatsAppMessages() : parseTelegramMessages();
     if (!chatData || !chatData.messages.length) return;
 
-    // Build fingerprint of last 3 incoming messages to avoid redundant scans
     const incoming = chatData.messages.filter((m) => m.sender !== "me");
     if (!incoming.length) return;
     const fingerprint = incoming.slice(-3).map((m) => m.text).join("::");
     if (fingerprint === lastScannedFingerprint) return;
     lastScannedFingerprint = fingerprint;
 
-    try {
-      const res = await fetch(`${KAVACH_API}/analyze`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
+    chrome.runtime?.sendMessage?.(
+      {
+        type: "ANALYZE_CHAT",
+        payload: {
           platform: chatData.platform,
           self_handle: "me",
           messages: chatData.messages,
-        }),
-      });
-
-      if (!res.ok) return;
-      const verdict = await res.json();
-
-      // Show alert banner if high/medium risk is detected
-      if (verdict.severity !== "low" && verdict.category !== "safe") {
-        displayThreatBanner(chatData.containerNode, verdict, chatData.contact_name);
-        chrome.runtime?.sendMessage?.({
-          type: "THREAT_DETECTED",
-          category: verdict.category,
-          severity: verdict.severity,
-          reason: verdict.reason,
-          sender: chatData.contact_name,
-        });
-      } else {
-        removeThreatBanner();
+        },
+      },
+      (response) => {
+        if (!response || !response.ok) return;
+        const verdict = response.data;
+        if (verdict.severity !== "low" && verdict.category !== "safe") {
+          displayThreatBanner(chatData.containerNode, verdict, chatData.contact_name);
+          chrome.runtime?.sendMessage?.({
+            type: "THREAT_DETECTED",
+            category: verdict.category,
+            severity: verdict.severity,
+            reason: verdict.reason,
+            sender: chatData.contact_name,
+          });
+        } else {
+          removeThreatBanner();
+        }
       }
-    } catch (err) {
-      // Local Kavach backend offline or starting up
-    }
+    );
   }
 
   function displayThreatBanner(container, verdict, senderName) {
@@ -153,11 +148,11 @@
       existing = document.createElement("div");
       existing.id = "kavach-threat-banner";
       existing.className = "kavach-shield-banner";
-      const insertionPoint = container.querySelector(".copyable-area, .messages-container") || container;
+      const insertionPoint = container.querySelector(".copyable-area, .messages-container, div[role='region']") || container;
       insertionPoint.prepend(existing);
     }
 
-    const categoryLabel = verdict.category.replace(/_/g, " ").toUpperCase();
+    const categoryLabel = (verdict.category || "THREAT").replace(/_/g, " ").toUpperCase();
     existing.innerHTML = `
       <div class="kavach-banner-top">
         <span class="kavach-threat-badge">🚨 KAVACH SHIELD: ${categoryLabel}</span>
@@ -168,17 +163,17 @@
         <br/><span style="opacity:0.85;">${verdict.reason}</span>
       </div>
       <div class="kavach-banner-acts">
-        <button type="button" class="kavach-btn" id="kavach-act-vault">🔒 Save Tamper-Proof Evidence</button>
+        <button type="button" class="kavach-btn" id="kavach-act-vault">🔒 Save Evidence to Vault</button>
         <button type="button" class="kavach-btn kavach-btn-sos" id="kavach-act-sos">🚨 Trigger SOS to Guardians</button>
         <button type="button" class="kavach-btn" id="kavach-act-dismiss">Dismiss</button>
       </div>
     `;
 
     document.getElementById("kavach-act-vault").onclick = () => {
-      window.open(`${KAVACH_API}/index.html#vault`, "_blank");
+      window.open("http://localhost:8000/index.html#vault", "_blank");
     };
     document.getElementById("kavach-act-sos").onclick = () => {
-      window.open(`${KAVACH_API}/index.html#sos`, "_blank");
+      window.open("http://localhost:8000/index.html#sos", "_blank");
     };
     document.getElementById("kavach-act-dismiss").onclick = () => {
       existing.remove();
@@ -190,22 +185,35 @@
     if (existing) existing.remove();
   }
 
+  // Quick Simulation Test
+  function simulateTestThreat() {
+    const main = document.querySelector("#main, div[role='region'], .messages-container") || document.body;
+    displayThreatBanner(
+      main,
+      {
+        category: "stalking",
+        risk_score: 92,
+        severity: "high",
+        reason: "Simulated live threat: Unwanted tracking and aggressive intimidation patterns detected by Groq AI.",
+      },
+      "Test Contact"
+    );
+  }
+
   // Observe DOM changes on WhatsApp / Telegram
   function setupObserver() {
     const observer = new MutationObserver(() => {
       clearTimeout(scanDebounceTimer);
-      scanDebounceTimer = setTimeout(performScan, 1400); // 1.4s debounce after typing/updates
+      scanDebounceTimer = setTimeout(performScan, 1400);
     });
 
     observer.observe(document.body, { childList: true, subtree: true });
     injectStatusBadge();
   }
 
-  // Start when page is loaded
   if (document.readyState === "loading") {
     document.addEventListener("DOMContentLoaded", setupObserver);
   } else {
     setupObserver();
   }
 })();
-

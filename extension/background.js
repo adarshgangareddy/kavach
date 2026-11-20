@@ -1,6 +1,7 @@
 /**
  * Background Service Worker for Kavach Live Chat Shield.
- * Handles desktop push notifications and badging when a threat is identified.
+ * Handles desktop push notifications, badging, and background API proxying
+ * (avoids mixed-content / CORS blocking from HTTPS WhatsApp Web to HTTP localhost).
  */
 
 chrome.runtime.onInstalled.addListener(() => {
@@ -12,6 +13,30 @@ chrome.runtime.onInstalled.addListener(() => {
 });
 
 chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
+  if (msg.type === "ANALYZE_CHAT") {
+    chrome.storage.sync.get(["kavachApiUrl"], (cfg) => {
+      const apiUrl = cfg.kavachApiUrl || "http://localhost:8000";
+      fetch(`${apiUrl}/analyze`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(msg.payload),
+      })
+        .then(async (res) => {
+          if (!res.ok) {
+            const errText = await res.text();
+            sendResponse({ ok: false, error: errText || `HTTP ${res.status}` });
+          } else {
+            const data = await res.json();
+            sendResponse({ ok: true, data });
+          }
+        })
+        .catch((err) => {
+          sendResponse({ ok: false, error: err.message });
+        });
+    });
+    return true; // Keep message channel open for async sendResponse
+  }
+
   if (msg.type === "THREAT_DETECTED") {
     // Set badge warning on extension icon
     chrome.action.setBadgeText({ text: "!" });
@@ -31,7 +56,6 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
       message: `Threat from ${msg.sender}: ${msg.reason.slice(0, 100)}...`,
       priority: 2,
     });
+    sendResponse({ received: true });
   }
-  sendResponse({ received: true });
 });
-
