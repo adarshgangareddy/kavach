@@ -215,3 +215,33 @@ This document tracks all requirements, design decisions, architectural component
 3. **Emergency Dispatch Console:** Responder connects via WebSocket/polling, hears audio chime upon new incident, reviews triage proximity, and navigates directly with Google Maps.
 
 ---
+
+## Log Entry: Step 8 — Automated Real-Time Chat Ingestion (WhatsApp Web & Telegram Shield)
+
+### 1. User Requirements
+* Automatically read WhatsApp Web and Telegram chat messages in real time without requiring the victim or parent to manually take screenshots, crop images, or wait for OCR parsing.
+* Eliminate manual friction by embedding a background observer that watches incoming messages and screens them against the Kavach Smart Shield API (`/analyze`).
+* Provide an in-chat visual indicator and action banner whenever a threat (harassment, stalking, blackmail) is detected.
+
+### 2. Technologies & Primitives Used
+* **Chrome / Chromium Browser Extension (Manifest V3):**
+  - Host permissions on `web.whatsapp.com` and `web.telegram.org`.
+  - DOM `MutationObserver` on chat container nodes (`.message-in`, `.copyable-text`, `.bubble:not(.is-out)`).
+  - High-efficiency debounce algorithm (1.4s) to aggregate conversational message batches without flooding the backend API.
+  - Injected CSS & DOM Banner: High-contrast alert badge displaying threat categorization, risk score (0-100), and one-click actions:
+    - `🔒 Save Tamper-Proof Evidence`: Directly commits the incident to Kavach Evidence Vault.
+    - `🚨 Trigger SOS to Guardians`: Instant safety escalation.
+* **Telegram Bot & Webhook Live Listener (`scripts/telegram_live_monitor.py`):**
+  - Direct asynchronous ingestion pipeline using Telegram Bot / MTProto API for background terminal or server-side monitoring.
+* **Expanded Session Auth Middleware (`backend/app/main.py`):**
+  - Supports `Authorization: Bearer <token>` and `X-Kavach-Token` alongside standard HttpOnly cookies, enabling extensions and headless daemons to authenticate cleanly.
+
+### 3. How It Works
+1. **WhatsApp Web Monitoring:**
+   - As the user chats on `web.whatsapp.com`, the content script monitors incoming message nodes.
+   - When a new message arrives, it extracts the contact name and text, checks the cache fingerprint, and sends a structured JSON payload to `http://localhost:8000/analyze`.
+   - If the risk score is $\ge 50$ or severity is `medium`/`high`, the script injects the safety banner above the message and triggers a desktop push notification.
+2. **Telegram Web / Bot Monitoring:**
+   - Either via the same browser extension on `web.telegram.org` or headless via `python scripts/telegram_live_monitor.py`.
+
+---

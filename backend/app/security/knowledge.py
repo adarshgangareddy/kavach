@@ -72,3 +72,4 @@ def lookup_cwe(cwe_id: str) -> dict:
             "remediation_best_practice": "Review code in accordance with OWASP Secure Coding Practices.",
         },
     )
+

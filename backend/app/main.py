@@ -77,8 +77,16 @@ _PRIVATE_PAGES = {"/", "/index.html"}
 
 @app.middleware("http")
 async def session(request: Request, call_next):
-    """Reads the session cookie and sets the signed-in account for this request."""
-    user = accounts.user_for_session(request.cookies.get(SESSION_COOKIE))
+    """Reads the session cookie or Authorization Bearer header and sets the signed-in account for this request."""
+    raw_token = request.cookies.get(SESSION_COOKIE)
+    if not raw_token:
+        auth_h = request.headers.get("Authorization", "")
+        if auth_h.startswith("Bearer "):
+            raw_token = auth_h[7:].strip()
+        elif "X-Kavach-Token" in request.headers:
+            raw_token = request.headers["X-Kavach-Token"].strip()
+
+    user = accounts.user_for_session(raw_token) if raw_token else None
     if request.method == "GET" and request.url.path in _PRIVATE_PAGES and not user:
         return RedirectResponse("/login.html", status_code=303)
     token = context.set_current(user["id"] if user else None)

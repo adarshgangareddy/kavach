@@ -111,3 +111,4 @@ async def compliance_report_endpoint(req: ScanRequest) -> dict[str, Any]:
     findings = ast_findings + dep_findings
 
     return SecurityAgentPipeline.step_6_compliance(findings)
+

@@ -189,3 +189,4 @@ class SecurityAgentPipeline:
                 f"Identified impacts across {len(soc2_map)} SOC 2 controls and {len(iso_map)} ISO 27001 controls."
             ),
         }
+
