@@ -43,3 +43,4 @@ function updateUI(enabled) {
     liveText.textContent = "Shield Paused";
   }
 }
+

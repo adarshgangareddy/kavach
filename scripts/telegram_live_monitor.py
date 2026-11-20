@@ -78,3 +78,4 @@ if __name__ == "__main__":
         asyncio.run(run_poll_bot())
     except KeyboardInterrupt:
         print("\nExiting Kavach Live Monitor.")
+
