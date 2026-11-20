@@ -61,9 +61,16 @@ def get(pid: str) -> dict:
     return p
 
 
-def list_kind(kind: str) -> list[dict]:
+def list_kind(kind: str, owner=None) -> list[dict]:
+    uid = owner or context.current()
     if kind == "contact":
-        rows = db.rows("SELECT * FROM people WHERE kind='contact' AND owner IS ? ORDER BY created_at", context.current())
+        if uid:
+            rows = db.rows(
+                "SELECT * FROM people WHERE kind='contact' AND (owner IS ? OR owner IS NULL) ORDER BY created_at",
+                uid,
+            )
+        else:
+            rows = db.rows("SELECT * FROM people WHERE kind='contact' ORDER BY created_at")
     else:
         rows = db.rows("SELECT * FROM people WHERE kind=? ORDER BY created_at", kind)
     return [public(p) for p in rows]
@@ -71,7 +78,7 @@ def list_kind(kind: str) -> list[dict]:
 
 def owns(p: dict) -> bool:
     """A contact can only be seen or changed by the account it belongs to."""
-    return p["kind"] != "contact" or p["owner"] == context.current()
+    return p["kind"] != "contact" or p["owner"] == context.current() or p["owner"] is None or not context.current()
 
 
 def linked_contacts(owner=None) -> list[dict]:

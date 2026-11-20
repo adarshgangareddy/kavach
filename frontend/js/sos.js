@@ -118,6 +118,10 @@
       els.channels.innerHTML = `<span class="chan chan--warn">Kavach offline</span>`;
       return;
     }
+    setup = setup || {};
+    setup.contacts = setup.contacts || [];
+    setup.telegram = setup.telegram || { on: false, bot: null };
+
     if (els.herName && document.activeElement !== els.herName) els.herName.value = setup.name === "Someone you know" ? "" : setup.name;
     const chip = (label, on, problem, title) =>
       `<span class="chan ${!on ? "" : problem ? "chan--warn" : "chan--on"}" title="${esc(title)}">${label}${!on ? " off" : problem ? " !" : ""}</span>`;
@@ -150,9 +154,10 @@
 
   function renderContacts() {
     if (!els.contactList) return;
-    const linked = setup.contacts.filter((c) => c.telegram_linked).length;
-    if (els.contactCount) els.contactCount.textContent = setup.contacts.length ? `${setup.contacts.length} guardian(s) active · ${linked} on Telegram` : "";
-    if (!setup.contacts.length) {
+    const contacts = setup?.contacts || [];
+    const linked = contacts.filter((c) => c.telegram_linked).length;
+    if (els.contactCount) els.contactCount.textContent = contacts.length ? `${contacts.length} guardian(s) active · ${linked} on Telegram` : "0 configured";
+    if (!contacts.length) {
       els.contactList.innerHTML = `
         <li class="contact-empty" style="text-align:center; padding:32px 16px; border:1px dashed var(--border); border-radius:8px; list-style:none;">
           <div style="font-size:32px; margin-bottom:8px;">👥</div>
@@ -161,7 +166,7 @@
         </li>`;
       return;
     }
-    els.contactList.innerHTML = setup.contacts
+    els.contactList.innerHTML = contacts
       .map((c) => {
         const link = setup.telegram.bot ? `https://t.me/${setup.telegram.bot}?start=${c.link_code}` : null;
         const tg = c.telegram_linked
@@ -984,5 +989,6 @@
 
   els.btn.addEventListener("click", open);
   applyCaller();
-  window.kavachSos = { open, close, markSafe, openLive };
+  loadSetup();
+  window.kavachSos = { open, close, markSafe, openLive, loadSetup };
 })();

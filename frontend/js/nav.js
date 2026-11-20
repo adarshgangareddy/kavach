@@ -70,6 +70,7 @@
       setActive("safetyspace");
     } else if (where === "guardians" || where === "sos") {
       window.kavachSos?.open();
+      window.kavachSos?.loadSetup?.();
       const el = document.querySelector("#guardians-view");
       if (el) el.hidden = false;
       body.classList.add("left-collapsed");

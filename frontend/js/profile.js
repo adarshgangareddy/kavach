@@ -267,9 +267,12 @@
   // ---------- Google Account Popover Controller ----------
   googleAccountBtn?.addEventListener("click", (e) => {
     e.stopPropagation();
-    if (!googleAccountPopover) return;
-    const isHidden = googleAccountPopover.style.display === "none" || !googleAccountPopover.style.display;
-    googleAccountPopover.style.display = isHidden ? "block" : "none";
+    if (googleAccountPopover) googleAccountPopover.style.display = "none";
+    if (window.kavachNav) {
+      window.kavachNav.go("profile");
+    } else {
+      openProfile();
+    }
   });
 
   popoverProfileBtn?.addEventListener("click", (e) => {
