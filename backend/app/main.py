@@ -11,7 +11,14 @@ from app import config
 from app.agent.guardian import run_agent
 from app.agent.schemas import AgentIn
 from app.auth import accounts, context
-from app.auth.schemas import LoginIn, SignupIn
+from app.auth.schemas import (
+    ForgotPasswordIn,
+    LoginIn,
+    PasscodeSetIn,
+    PasscodeVerifyIn,
+    ResetPasswordIn,
+    SignupIn,
+)
 from app.schemas import AnalyzeRequest, AnalyzeResponse
 from app.shield.classifier import analyze
 from app.complaint.drafting import ComplaintError, build_complaint
@@ -102,7 +109,13 @@ def _set_session(response: Response, request: Request, token: str) -> None:
 @app.post("/auth/signup")
 def auth_signup(body: SignupIn, request: Request):
     try:
-        user = accounts.signup(body.username, body.password)
+        user = accounts.signup(
+            username=body.username,
+            password=body.password,
+            full_name=body.full_name,
+            email=body.email,
+            phone=body.phone,
+        )
     except accounts.AuthError as exc:
         raise HTTPException(exc.status, str(exc)) from exc
     response = JSONResponse({"user": user})
@@ -137,6 +150,59 @@ def auth_me(request: Request):
     return {"user": user}
 
 
+@app.post("/auth/forgot-password")
+def auth_forgot_password(body: ForgotPasswordIn):
+    try:
+        return accounts.forgot_password(body.email_or_username)
+    except accounts.AuthError as exc:
+        raise HTTPException(exc.status, str(exc)) from exc
+
+
+@app.post("/auth/reset-password")
+def auth_reset_password(body: ResetPasswordIn):
+    try:
+        accounts.reset_password(body.token, body.new_password)
+        return {"ok": True, "message": "Your password has been reset successfully. Please log in."}
+    except accounts.AuthError as exc:
+        raise HTTPException(exc.status, str(exc)) from exc
+
+
+@app.post("/auth/passcode/set")
+def auth_set_passcode(body: PasscodeSetIn, user_id: str = Depends(require_user)):
+    try:
+        accounts.set_passcode(user_id, body.passcode)
+        return {"ok": True, "message": "App passcode configured successfully."}
+    except accounts.AuthError as exc:
+        raise HTTPException(exc.status, str(exc)) from exc
+
+
+@app.post("/auth/passcode/verify")
+def auth_verify_passcode(body: PasscodeVerifyIn, user_id: str = Depends(require_user)):
+    try:
+        valid = accounts.verify_passcode(user_id, body.passcode)
+        if not valid:
+            raise HTTPException(401, "Incorrect passcode.")
+        return {"ok": True, "valid": True}
+    except accounts.AuthError as exc:
+        raise HTTPException(exc.status, str(exc)) from exc
+
+
+@app.delete("/auth/me")
+def auth_delete_me(request: Request, user_id: str = Depends(require_user)):
+    accounts.delete_account(user_id)
+    response = JSONResponse({"ok": True, "message": "Account and all associated safety data permanently deleted."})
+    response.delete_cookie(SESSION_COOKIE, path="/")
+    return response
+
+
+@app.get("/maps/config")
+def maps_config():
+    return {
+        "google_maps_api_key": config.GOOGLE_MAPS_API_KEY,
+        "google_client_id": config.GOOGLE_CLIENT_ID,
+    }
+
+
 @app.get("/health")
 def health():
     return {
@@ -146,6 +212,7 @@ def health():
         "demo_mode": config.DEMO_MODE,
         "telegram_on": notify.telegram_on(),
         "email_on": notify.email_on(),
+        "google_maps_configured": bool(config.GOOGLE_MAPS_API_KEY),
     }
 
 

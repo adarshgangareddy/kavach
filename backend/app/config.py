@@ -39,3 +39,9 @@ SMTP_PASSWORD = os.getenv("SMTP_PASSWORD", "").replace(" ", "").strip()
 PUBLIC_URL = os.getenv("PUBLIC_URL", "").strip().rstrip("/")
 # Responders within this distance of her are alerted.
 SOS_RADIUS_M = int(os.getenv("SOS_RADIUS_M", "3000"))
+
+# ---------- Google Cloud & Maps ----------
+# Google Maps JavaScript API key (https://console.cloud.google.com/google/maps-apis)
+GOOGLE_MAPS_API_KEY = os.getenv("GOOGLE_MAPS_API_KEY", "").strip()
+# Google OAuth Client ID for Continue with Google (optional)
+GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID", "").strip()

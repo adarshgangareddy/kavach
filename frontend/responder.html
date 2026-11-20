@@ -69,7 +69,24 @@
       const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
       const ME_KEY = "kavach.responderId";
       const map = L.map("map").setView([12.9352, 77.6245], 13);
-      L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", { maxZoom: 19, attribution: "&copy; OpenStreetMap contributors" }).addTo(map);
+      let tileLayer = L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
+        maxZoom: 20, attribution: "&copy; OpenStreetMap contributors"
+      }).addTo(map);
+
+      // Automatically enable Google Maps when GOOGLE_MAPS_API_KEY is configured in backend/.env
+      (async () => {
+        try {
+          const cfg = await (await fetch("/maps/config")).json();
+          if (cfg.google_maps_api_key) {
+            map.removeLayer(tileLayer);
+            tileLayer = L.tileLayer(
+              `https://mt1.google.com/vt/lyrs=m&x={x}&y={y}&z={z}&key=${encodeURIComponent(cfg.google_maps_api_key)}`,
+              { maxZoom: 20, attribution: "&copy; Google Maps" }
+            ).addTo(map);
+          }
+        } catch {}
+      })();
+
       const layer = L.layerGroup().addTo(map);
       // Leaflet measures its box once; re-measure after layout so no grey strip remains.
       setTimeout(() => map.invalidateSize(), 300);
@@ -148,8 +165,12 @@
             <span class="chip ${r.has_location ? "chip-ok" : "chip-wait"}">${r.has_location ? "✓ Location" : "No location"}</span>
           </div>
           <label class="switch"><input type="checkbox" id="optin" ${r.opted_in ? "checked" : ""} /> Receive SOS alerts</label>
+          <div style="font-size:12px; color:var(--muted); padding:6px 0; display:flex; align-items:center; gap:6px;">
+            <span style="display:inline-block; width:8px; height:8px; border-radius:50%; background:var(--risk-low); animation:pulse-bg 2s infinite;"></span>
+            <span>Auto location sync: <strong>every 15 min</strong> (<span id="loc-last-synced">${r.location_at ? new Date(r.location_at).toLocaleTimeString() : 'Pending'}</span>)</span>
+          </div>
           <div class="acts">
-            <button type="button" class="btn" id="relocate">Update my location</button>
+            <button type="button" class="btn" id="relocate">Update location now</button>
             ${!r.telegram_linked && tgLink ? `<button type="button" class="btn btn--primary" id="tg">Connect Telegram</button>` : `<span></span>`}
           </div>
           <div id="tg-box"></div>
@@ -157,13 +178,7 @@
         </div>`;
         $("#signout").onclick = () => { me = null; store.set(null); $("#who").value = ""; renderMe(); refresh(); };
         $("#optin").onchange = async (e) => { await api(`/people/${r.id}`, { method: "PATCH", body: JSON.stringify({ opted_in: e.target.checked }) }); loadResponders(); };
-        $("#relocate").onclick = async () => {
-          try {
-            const p = await locate();
-            await api(`/people/${r.id}`, { method: "PATCH", body: JSON.stringify(p) });
-            loadResponders();
-          } catch (err) { kavachAlert(err.message); }
-        };
+        $("#relocate").onclick = () => updateMyLocation(true);
         $("#leave").onclick = async () => {
           if (!(await kavachConfirm("Leave the responder network? Your name, location and alerts are deleted.", { ok: "Leave", danger: true }))) return;
           try {
@@ -183,6 +198,23 @@
         $("#tg-box").innerHTML = `<div class="qr">${svg}</div>
           <p class="note">On this phone, <a href="${esc(link)}" target="_blank" rel="noopener">open Telegram</a> and tap <strong>Start</strong>. On a laptop, scan the code with your phone.</p>`;
       }
+
+      async function updateMyLocation(interactive = false) {
+        if (!me) return;
+        try {
+          const p = await locate();
+          await api(`/people/${me}`, { method: "PATCH", body: JSON.stringify(p) });
+          await loadResponders();
+          const syncSpan = $("#loc-last-synced");
+          if (syncSpan) syncSpan.textContent = new Date().toLocaleTimeString();
+          if (interactive) kavachAlert("Location updated successfully.");
+        } catch (err) {
+          if (interactive) kavachAlert(err.message);
+        }
+      }
+
+      // Auto update location every 15 minutes (900,000 ms)
+      setInterval(() => updateMyLocation(false), 15 * 60 * 1000);
 
       function locate() {
         return new Promise((resolve, reject) => {
