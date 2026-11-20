@@ -25,10 +25,11 @@ _RULES: dict[str, list[tuple[str, int]]] = {
         (r"\b(viral|leak) kar (dunga|dungi|denge)\b", 40),
         (r"\b(viral|leak) maad(thini|tini|tene|bidthini)\b", 40),
         (r"\b(pics?|photos?|videos?|vids?)\b.{0,40}\b(daal dunga|daal dungi|dikhaunga|dikha dunga|bhej dunga|haakthini|haaktini|haakbidthini|kalisthini|kalsthini|toristhini)\b", 40),
-        (r"\b(pay|send|transfer)\b.{0,25}\b(or|warna|illandre|illa andre)\b", 30),
-        (r"\b(paise|paisa|money|rs\.?|₹|\d{3,}\s?(rs|rupees))\b.{0,40}\b(warna|or else|illandre)\b", 30),
-        (r"\b(your|tera|teri|tumhara|ninna) (family|parents|ghar wale|papa|appa|amma)\b.{0,40}\b(show|send|dikha|tell|bata|helthini)\b", 30),
-        (r"\bblackmail\b", 35),
+        (r"\b(pay|send|transfer|arrange|give)\b.{0,35}\b(or|warna|illandre|illa andre|otherwise)\b", 35),
+        (r"\b(paise|paisa|money|rs\.?|₹|\d{1,}\s?(crores?|cr|lakhs?|rupees|rs))\b.{0,40}\b(warna|or else|illandre|within|arrange|demand)\b", 40),
+        (r"\b(expose|exposing|ruin|destroy|defame|headlines|news)\b.{0,40}\b(wife|husband|family|parents|ghar wale|story|police)\b", 40),
+        (r"\b(your|tera|teri|tumhara|ninna) (family|parents|ghar wale|papa|appa|amma|wife|husband)\b.{0,40}\b(show|send|dikha|tell|bata|helthini|expose)\b", 35),
+        (r"\b(blackmail|extort|extortion|ransom)\b", 40),
     ],
     "threat_of_violence": [
         (r"\b(kill|murder|stab|shoot|rape|acid|beat you|hurt you|finish you)\b", 40),
@@ -70,12 +71,12 @@ _RULES: dict[str, list[tuple[str, int]]] = {
 # not be waved through as "clearly safe" without the LLM looking at it.
 _ATTENTION = re.compile(
     r"\b(pics?|photos?|videos?|vids?|selfies?|dp|screenshots?)\b"
-    r"|\b(your|tera|teri|tere|ninna|nimma) (house|home|ghar|mane|building|room|hostel|pg|office|college|family|parents?|mom|dad|amma|appa|papa|mummy)\b"
-    r"|\b(amma|appa|papa|mummy|parents?|family) ?(ge|ko|ki|ke)\b"
+    r"|\b(your|tera|teri|tere|ninna|nimma) (house|home|ghar|mane|building|room|hostel|pg|office|college|family|parents?|mom|dad|amma|appa|papa|mummy|wife|husband)\b"
+    r"|\b(amma|appa|papa|mummy|parents?|family|wife|husband) ?(ge|ko|ki|ke)\b"
     r"|\b(come down|come out|bahar (aa|nikal)|horage baa|waiting for you|i'?m outside)\b"
     r"|\b(warna|illandre|illa andre|otherwise|or else|regret|pachtayegi|pachtaogi)\b"
     r"|\b(daal dunga|dikhaunga|bataunga|batata hoon|haakthini|kalisthini|nodkothini|bidalla)\b"
-    r"|\b(money|paise|paisa|pay|transfer|upi|gpay|phonepe|paytm|link|account)\b",
+    r"|\b(money|paise|paisa|pay|transfer|upi|gpay|phonepe|paytm|link|account|crores?|cr|lakhs?|ransom|extort|expose|exposing|headlines|news)\b",
     re.IGNORECASE,
 )
 

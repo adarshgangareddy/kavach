@@ -46,9 +46,7 @@ Only choose a category whose definition is actually met; a vague phrase is not a
 - harassment: insults, sexual comments, slurs, unwanted sexual requests, persistent unwanted contact,
   vague intimidation without a physical-harm threat ("I'll make your life hell", "you'll regret it")
 - threat_of_violence: EXPLICIT threats of physical harm: kill, beat, stab, rape, acid attack
-- sextortion_blackmail: threatening to post, share or send HER photos, videos or private chats (to a
-  group, social media, her family) to make her do something: pay, talk, meet, send more images, not
-  block. The images need not be described as intimate; the coercion is what matters. Always high.
+- sextortion_blackmail: threatening to post, share, leak or expose private photos, videos, chats, or alleged misconduct/affairs (to spouse, wife, husband, family, media, or public) to extort money (demanding crores, lakhs, cash, ransom) or coerce compliance. Always high risk.
 - stalking: tracking location, routine, clothing, home/college/office; "I know where you live";
   turning up at or waiting outside her home/hostel/college; new accounts after being blocked
 - impersonation: fake profiles using her identity, or someone posing as police/officials/known contacts
