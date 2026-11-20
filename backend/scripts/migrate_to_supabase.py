@@ -83,11 +83,9 @@ def main():
     config.DATABASE_URL = database_url
     for name, (ddl, add_cols) in database._schemas.items():
         print(f"  • Registering schema: {name}")
+        conn_adapter = database.Conn(pg_conn, pg=True)
+        conn_adapter.script(ddl)
         with pg_conn.cursor() as cur:
-            for stmt in database._pg_ddl(ddl).split(";"):
-                stmt = stmt.strip()
-                if stmt:
-                    cur.execute(stmt)
             for table, col, col_type in add_cols:
                 cur.execute(f"ALTER TABLE {table} ADD COLUMN IF NOT EXISTS {col} {col_type};")
 

@@ -168,56 +168,95 @@ def auth_logout(request: Request):
 
 @app.get("/auth/google/callback")
 def auth_google_callback():
-    """Serves the client-side token receiver for Google OAuth2 implicit flow."""
+    """Serves the client-side token receiver for Google OAuth2."""
     html_content = """<!doctype html>
 <html>
 <head>
   <meta charset="utf-8">
   <title>Kavach — Authenticating with Google...</title>
-  <style>body { background:#0a0c10; color:#fff; font-family:system-ui,sans-serif; display:flex; height:100vh; align-items:center; justify-content:center; margin:0; }</style>
+  <style>
+    body { background:#0a0c10; color:#fff; font-family:system-ui,-apple-system,sans-serif; display:flex; height:100vh; align-items:center; justify-content:center; margin:0; }
+    .card { background: rgba(18, 24, 38, 0.85); border: 1px solid rgba(255,255,255,0.1); border-radius: 14px; padding: 32px; max-width: 400px; width: 90%; text-align: center; box-shadow: 0 16px 40px rgba(0,0,0,0.5); }
+    .spinner { display: inline-block; width: 36px; height: 36px; border: 3px solid rgba(255,255,255,0.1); border-top-color: #f2b8c6; border-radius: 50%; animation: spin 1s linear infinite; margin-bottom: 16px; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .btn { display: inline-block; background: #ef4444; color: #fff; padding: 10px 18px; border-radius: 6px; text-decoration: none; font-size: 13px; font-weight: 600; margin-top: 16px; }
+  </style>
 </head>
 <body>
-  <div style="text-align:center;">
-    <div style="font-size:32px; margin-bottom:12px;">🛡️</div>
-    <div style="font-size:15px; font-weight:600;">Completing Google authentication…</div>
-    <div style="font-size:12px; color:#888; margin-top:6px;">Redirecting you to Kavach Dashboard</div>
+  <div class="card" id="card">
+    <div class="spinner" id="spinner"></div>
+    <div style="font-size:16px; font-weight:700; margin-bottom:6px;" id="title">Completing Google Authentication…</div>
+    <div style="font-size:12.5px; color:#8c8c8c; line-height:1.5;" id="desc">Verifying your secure credentials with Kavach Safety...</div>
+    <div id="err-box" style="display:none; margin-top:16px; color:#ef4444; font-size:13px; background:rgba(239,68,68,0.1); padding:10px; border-radius:6px; border:1px solid rgba(239,68,68,0.3);"></div>
   </div>
   <script>
     (async () => {
       const hash = window.location.hash.substring(1);
-      const params = new URLSearchParams(hash);
+      const search = window.location.search.substring(1);
+      const params = new URLSearchParams(hash || search);
       const token = params.get("access_token");
-      if (!token) {
-        alert("Google Sign-In canceled or denied.");
-        window.location.replace("/login.html");
-        return;
+      const errBox = document.getElementById("err-box");
+      const title = document.getElementById("title");
+      const desc = document.getElementById("desc");
+      const spinner = document.getElementById("spinner");
+
+      function fail(msg) {
+        spinner.style.display = "none";
+        title.textContent = "Authentication Error";
+        title.style.color = "#ef4444";
+        desc.textContent = "Could not complete sign-in.";
+        errBox.textContent = msg;
+        errBox.style.display = "block";
+        const btn = document.createElement("a");
+        btn.href = "/login.html";
+        btn.className = "btn";
+        btn.textContent = "← Back to Login";
+        document.getElementById("card").appendChild(btn);
       }
+
+      if (!token) {
+        const errorParam = params.get("error_description") || params.get("error");
+        return fail(errorParam || "No access token found in Google callback.");
+      }
+
+      let email = "", full_name = "", sub = "";
       try {
         const uRes = await fetch("https://www.googleapis.com/oauth2/v3/userinfo", {
           headers: { Authorization: "Bearer " + token }
         });
-        if (!uRes.ok) throw new Error("Failed to retrieve Google user profile");
-        const u = await uRes.json();
+        if (uRes.ok) {
+          const u = await uRes.json();
+          email = u.email || "";
+          full_name = u.name || "";
+          sub = u.sub || "";
+        }
+      } catch (e) {
+        // Ignored: Brave Shields might block cross-origin client fetch; backend verifies with httpx directly
+      }
+
+      try {
+        desc.textContent = "Setting up your secure session in Supabase...";
         const res = await fetch("/auth/google/verify", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           credentials: "include",
-          body: JSON.stringify({ email: u.email, full_name: u.name, sub: u.sub })
+          body: JSON.stringify({ access_token: token, email, full_name, sub })
         });
-        if (res.ok) {
-          const body = await res.json().catch(() => ({}));
-          if (body.user && body.user.id) {
-            try { localStorage.setItem("kavach.lastUser", body.user.id); } catch {}
-          }
-          window.location.replace("/index.html");
-        } else {
-          const err = await res.json().catch(() => ({}));
-          alert("Login error: " + (err.detail || "Authentication verification failed"));
-          window.location.replace("/login.html");
+        const body = await res.json().catch(() => ({}));
+        if (!res.ok) {
+          return fail(body.detail || "Server rejected Google verification");
         }
+        if (body.user && body.user.id) {
+          try { localStorage.setItem("kavach.lastUser", body.user.id); } catch {}
+        }
+        title.textContent = "Success!";
+        title.style.color = "#10b981";
+        desc.textContent = "Redirecting to your Kavach Safety Dashboard...";
+        setTimeout(() => {
+          window.location.replace("/index.html");
+        }, 300);
       } catch (err) {
-        alert("Google Error: " + err.message);
-        window.location.replace("/login.html");
+        fail("Network error reaching Kavach server: " + err.message);
       }
     })();
   </script>
@@ -229,13 +268,40 @@ def auth_google_callback():
 @app.post("/auth/google/verify")
 async def auth_google_verify(request: Request):
     data = await request.json()
+    token = data.get("access_token")
     email = data.get("email")
+    full_name = data.get("full_name", "")
+    sub = data.get("sub", "")
+
+    # If email wasn't provided or access_token was passed, verify via Google API from backend
+    if not email and token:
+        import httpx
+        try:
+            async with httpx.AsyncClient(timeout=10.0) as client:
+                resp = await client.get(
+                    "https://www.googleapis.com/oauth2/v3/userinfo",
+                    headers={"Authorization": f"Bearer {token}"}
+                )
+                if resp.status_code == 200:
+                    info = resp.json()
+                    email = info.get("email")
+                    full_name = info.get("name", "")
+                    sub = info.get("sub", "")
+                else:
+                    raise HTTPException(400, f"Google token rejected: {resp.text}")
+        except Exception as exc:
+            if isinstance(exc, HTTPException):
+                raise
+            raise HTTPException(502, f"Failed to contact Google servers: {exc}") from exc
+
     if not email:
         raise HTTPException(400, "Missing email from Google profile")
+
     try:
-        user = accounts.login_or_create_google(email, data.get("full_name", ""), data.get("sub", ""))
+        user = accounts.login_or_create_google(email, full_name, sub)
     except accounts.AuthError as exc:
         raise HTTPException(exc.status, str(exc)) from exc
+
     response = JSONResponse({"user": user})
     _set_session(response, request, accounts.new_session(user["id"]))
     return response
