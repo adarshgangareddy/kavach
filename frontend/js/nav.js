@@ -165,6 +165,22 @@
     navigator.serviceWorker.register("/sw.js").catch(() => {});
   }
 
+  // Handle deep-links from WhatsApp extension or direct URLs (#sos, #vault, #shield, #scan)
+  function handleDeepLink() {
+    const hash = (location.hash || "").replace("#", "").toLowerCase();
+    if (!hash) return;
+    if (hash === "sos") {
+      setTimeout(() => go("sos"), 150);
+    } else if (hash === "vault") {
+      setTimeout(() => go("vault"), 150);
+    } else if (hash === "shield" || hash === "scan") {
+      setTimeout(() => go(hash), 150);
+    }
+  }
+
+  window.addEventListener("hashchange", handleDeepLink);
+  setTimeout(handleDeepLink, 250);
+
   (async () => {
     const status = document.querySelector("#nav-status");
     try {
