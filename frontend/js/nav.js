@@ -43,9 +43,16 @@
     } else if (where === "vault") {
       window.kavachVault.open();
       setActive("vault");
-    } else if (where === "sos") {
-      window.kavachSos.open();
-      setActive("sos");
+    } else if (where === "guardians" || where === "sos") {
+      if (window.kavachGuardians?.open) window.kavachGuardians.open();
+      else window.kavachSos?.open();
+      setActive("guardians");
+    } else if (where === "responders") {
+      window.kavachResponders?.open();
+      setActive("responders");
+    } else if (where === "profile") {
+      window.kavachProfile?.open();
+      setActive("profile");
     }
   }
 
@@ -165,14 +172,18 @@
     navigator.serviceWorker.register("/sw.js").catch(() => {});
   }
 
-  // Handle deep-links from WhatsApp extension or direct URLs (#sos, #vault, #shield, #scan)
+  // Handle deep-links from WhatsApp extension or direct URLs (#guardians, #sos, #vault, #shield, #scan, #responders, #profile)
   function handleDeepLink() {
     const hash = (location.hash || "").replace("#", "").toLowerCase();
     if (!hash) return;
-    if (hash === "sos") {
-      setTimeout(() => go("sos"), 150);
+    if (hash === "guardians" || hash === "sos") {
+      setTimeout(() => go("guardians"), 150);
     } else if (hash === "vault") {
       setTimeout(() => go("vault"), 150);
+    } else if (hash === "responders") {
+      setTimeout(() => go("responders"), 150);
+    } else if (hash === "profile") {
+      setTimeout(() => go("profile"), 150);
     } else if (hash === "shield" || hash === "scan") {
       setTimeout(() => go(hash), 150);
     }

@@ -15,8 +15,8 @@
   const SETTINGS_KEY = "kavach.sosSettings";
 
   const els = {
-    btn: $("#sos-btn"),
-    view: $("#sos-view"),
+    btn: $("#guardians-btn") || $("#sos-btn"),
+    view: $("#guardians-view") || $("#sos-view"),
     phone: $("#phone"),
     decline: $("#decline-btn"),
     accept: $("#accept-btn"),
@@ -135,28 +135,38 @@
 
   function renderContacts() {
     const linked = setup.contacts.filter((c) => c.telegram_linked).length;
-    els.contactCount.textContent = setup.contacts.length ? `${setup.contacts.length} added · ${linked} on Telegram` : "";
+    els.contactCount.textContent = setup.contacts.length ? `${setup.contacts.length} guardian(s) active · ${linked} on Telegram` : "";
     if (!setup.contacts.length) {
-      els.contactList.innerHTML = `<li class="contact-empty">No one yet. Add at least one person who should get your SOS.</li>`;
+      els.contactList.innerHTML = `
+        <li class="contact-empty" style="text-align:center; padding:32px 16px; border:1px dashed var(--border); border-radius:8px; list-style:none;">
+          <div style="font-size:32px; margin-bottom:8px;">👥</div>
+          <strong style="display:block; margin-bottom:4px; font-size:14px;">No Guardians Added Yet</strong>
+          <p style="margin:0; font-size:12.5px; opacity:0.8;">Add trusted contacts below (parents, friends). Once added, Kavach immediately sends an automated confirmation email and alerts them with live GPS if you trigger SOS.</p>
+        </li>`;
       return;
     }
     els.contactList.innerHTML = setup.contacts
       .map((c) => {
         const link = setup.telegram.bot ? `https://t.me/${setup.telegram.bot}?start=${c.link_code}` : null;
         const tg = c.telegram_linked
-          ? `<span class="ok-tag">✓ Telegram</span>`
+          ? `<span class="ok-tag" style="background:#10b98122; color:#10b981; padding:3px 8px; border-radius:4px; font-size:11px; font-weight:600;">✓ Telegram</span>`
           : link
-            ? `<button type="button" class="link-btn" data-qr="${esc(link)}" data-who="${esc(c.name)}">Connect Telegram</button>`
-            : `<span class="muted small">Telegram not set up</span>`;
+            ? `<button type="button" class="link-btn" data-qr="${esc(link)}" data-who="${esc(c.name)}" style="font-size:11px;">Connect Telegram</button>`
+            : `<span class="muted small">Telegram off</span>`;
         const details = [c.phone ? `📞 ${c.phone}` : '', c.whatsapp ? `💬 WA: ${c.whatsapp}` : '', c.email || ''].filter(Boolean).join(' · ');
-        return `<li class="contact-row">
-          <span class="avatar" aria-hidden="true">${esc((c.name.match(/[\p{L}\p{N}]/u)?.[0] || "?").toUpperCase())}</span>
-          <div>
-            <strong>${esc(c.name)}</strong> <span style="font-size:11px; opacity:.75;">(${esc(c.relationship || 'Guardian')})</span>
-            <small>${esc(details || "no contact details")}</small>
+        return `<li class="contact-row" style="display:flex; justify-content:space-between; align-items:center; padding:12px 14px; background:var(--surface-2); border:1px solid var(--border); border-radius:8px; list-style:none;">
+          <div style="display:flex; align-items:center; gap:12px;">
+            <span class="avatar" style="width:36px; height:36px; border-radius:50%; background:var(--surface-3); display:flex; align-items:center; justify-content:center; font-weight:700;">${esc((c.name.match(/[\p{L}\p{N}]/u)?.[0] || "?").toUpperCase())}</span>
+            <div>
+              <div style="font-weight:600; font-size:13.5px;">${esc(c.name)} <span style="font-size:11px; opacity:.75; background:var(--surface-3); padding:2px 6px; border-radius:4px; margin-left:4px;">${esc(c.relationship || 'Guardian')}</span></div>
+              <small style="color:var(--muted);">${esc(details || "no contact details")}</small>
+            </div>
           </div>
-          ${tg}
-          <button type="button" class="row-del" data-del="${esc(c.id)}" title="Remove">×</button>
+          <div style="display:flex; align-items:center; gap:8px;">
+            ${tg}
+            <button type="button" class="btn btn--ghost small" data-siren="${esc(c.id)}" style="color:#ef4444; border-color:#ef4444; font-size:11px; padding:4px 8px;">🚨 Alert</button>
+            <button type="button" class="row-del" data-del="${esc(c.id)}" title="Remove" style="background:transparent; border:none; color:var(--muted); font-size:18px; cursor:pointer; padding:4px 8px;">×</button>
+          </div>
         </li>`;
       })
       .join("");
@@ -195,6 +205,22 @@
   });
 
   els.contactList.addEventListener("click", async (e) => {
+    const sirenBtn = e.target.closest("[data-siren]");
+    if (sirenBtn) {
+      const pid = sirenBtn.dataset.siren;
+      sirenBtn.disabled = true;
+      sirenBtn.textContent = "Sending…";
+      try {
+        await api(`/people/${pid}/siren`, { method: "POST" });
+        window.kavach?.toast("🚨 Emergency siren alert dispatched to guardian!");
+      } catch (err) {
+        window.kavach?.toast(`Alert error: ${err.message}`);
+      } finally {
+        sirenBtn.disabled = false;
+        sirenBtn.textContent = "🚨 Alert";
+      }
+      return;
+    }
     const del = e.target.closest("[data-del]");
     if (del) {
       try {
@@ -209,6 +235,78 @@
     }
     const qr = e.target.closest("[data-qr]");
     if (qr) showQr(qr.dataset.qr, qr.dataset.who);
+  });
+
+  // Web Audio Alarm Siren
+  let audioCtx = null;
+  let sirenOsc = null;
+  let sirenInterval = null;
+
+  function toggleAudioSiren() {
+    const btn = document.getElementById("siren-toggle-btn");
+    if (sirenOsc) {
+      try {
+        sirenOsc.stop();
+        sirenOsc.disconnect();
+      } catch {}
+      sirenOsc = null;
+      if (sirenInterval) clearInterval(sirenInterval);
+      if (btn) {
+        btn.textContent = "🔊 Sound Alarm Siren";
+        btn.style.background = "";
+        btn.style.color = "#ef4444";
+      }
+      window.kavach?.toast("Siren alarm stopped");
+      return;
+    }
+
+    try {
+      audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      sirenOsc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      sirenOsc.type = "sawtooth";
+      sirenOsc.frequency.setValueAtTime(650, audioCtx.currentTime);
+      gain.gain.setValueAtTime(0.6, audioCtx.currentTime);
+      sirenOsc.connect(gain);
+      gain.connect(audioCtx.destination);
+      sirenOsc.start();
+
+      let up = true;
+      sirenInterval = setInterval(() => {
+        if (!sirenOsc || !audioCtx) return;
+        try {
+          sirenOsc.frequency.linearRampToValueAtTime(up ? 1150 : 650, audioCtx.currentTime + 0.45);
+          up = !up;
+        } catch {}
+      }, 450);
+
+      if (btn) {
+        btn.textContent = "🔇 Stop Siren";
+        btn.style.background = "#ef4444";
+        btn.style.color = "#ffffff";
+      }
+      window.kavach?.toast("🔊 EMERGENCY SIREN ACTIVE");
+    } catch (err) {
+      window.kavach?.toast("Audio siren error: " + err.message);
+    }
+  }
+
+  document.getElementById("siren-toggle-btn")?.addEventListener("click", toggleAudioSiren);
+
+  document.getElementById("trigger-sos-btn")?.addEventListener("click", async () => {
+    if (!confirm("🚨 Trigger Emergency SOS to all your guardians and responders now?")) return;
+    const btn = document.getElementById("trigger-sos-btn");
+    btn.disabled = true;
+    btn.textContent = "🚨 Dispatching SOS…";
+    try {
+      await fireSos();
+      window.kavach?.toast("🚨 EMERGENCY SOS DISPATCHED: Live location sent to all guardians!");
+    } catch (err) {
+      window.kavach?.toast("SOS dispatch error: " + err.message);
+    } finally {
+      btn.disabled = false;
+      btn.textContent = "🚨 Trigger SOS to All Guardians";
+    }
   });
 
   if (els.setup) {
@@ -680,15 +778,14 @@
     window.kavachImport?.close();
     window.kavachVault?.close();
     window.kavachComplaint?.close();
+    window.kavachProfile?.close();
+    window.kavachResponders?.close();
     isOpen = true;
     document.body.classList.add("sosing");
     els.view.hidden = false;
     els.btn.classList.add("active");
     window.kavach.deselect("");
     window.kavachMobile?.show("main");
-    window.kavachMobile?.pill("SOS status ›");
-    ring();
-    renderPanel();
     loadSetup();
     restoreActive();
   }

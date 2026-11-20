@@ -274,7 +274,7 @@
     };
 
     document.getElementById("kavach-act-sos").onclick = () => {
-      window.open("http://localhost:8000/index.html#sos", "_blank");
+      window.open("http://localhost:8000/index.html#guardians", "_blank");
     };
 
     document.getElementById("kavach-act-dismiss").onclick = () => {

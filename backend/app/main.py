@@ -16,6 +16,7 @@ from app.auth.schemas import (
     LoginIn,
     PasscodeSetIn,
     PasscodeVerifyIn,
+    ProfileUpdateIn,
     ResetPasswordIn,
     SignupIn,
 )
@@ -246,6 +247,22 @@ def auth_me(request: Request):
     if not user:
         raise HTTPException(401, "Please log in")
     return {"user": user}
+
+
+@app.get("/auth/profile", dependencies=signed_in)
+def get_user_profile():
+    uid = require_user()
+    u = accounts.user_for_id(uid)
+    if not u:
+        raise HTTPException(404, "User not found")
+    return {"user": u}
+
+
+@app.put("/auth/profile", dependencies=signed_in)
+def update_user_profile(body: ProfileUpdateIn):
+    uid = require_user()
+    updated = accounts.update_profile(uid, **body.model_dump(exclude_unset=True))
+    return {"user": updated}
 
 
 @app.post("/auth/forgot-password")
@@ -660,7 +677,7 @@ def people_list(kind: str = "contact"):
 
 
 @app.post("/people")
-async def people_create(body: PersonIn):
+async def people_create(body: PersonIn, request: Request):
     if body.kind == "contact":
         require_user()
     p = _sos_call(
@@ -675,7 +692,32 @@ async def people_create(body: PersonIn):
         body.relationship,
         body.whatsapp,
     )
-    return {**p, "telegram_link": await notify.link_for(p)}
+    tg_link = await notify.link_for(p)
+    if body.kind == "contact" and body.email:
+        raw_token = request.cookies.get(SESSION_COOKIE)
+        curr_user = accounts.user_for_session(raw_token) if raw_token else None
+        user_name = curr_user.get("full_name") or curr_user.get("username") if curr_user else "A Kavach user"
+        asyncio.create_task(notify.send_guardian_welcome_email(body.email, body.name, user_name, tg_link))
+    return {**p, "telegram_link": tg_link}
+
+
+@app.post("/people/{pid}/siren")
+async def people_siren(pid: str, request: Request):
+    p = _person(pid)
+    raw_token = request.cookies.get(SESSION_COOKIE)
+    curr_user = accounts.user_for_session(raw_token) if raw_token else None
+    user_name = curr_user.get("full_name") or curr_user.get("username") if curr_user else "User"
+    email_status = "no email"
+    if p.get("email"):
+        email_status = await notify.send_siren_alert_email(p["email"], p["name"], user_name)
+    tg_status = "not linked"
+    if p.get("telegram_chat_id"):
+        try:
+            await notify.tg("sendMessage", chat_id=p["telegram_chat_id"], text=f"🚨 URGENT EMERGENCY SIREN: {user_name} has triggered an emergency distress alarm right now! Please call or assist immediately.")
+            tg_status = "sent"
+        except Exception as exc:
+            tg_status = f"failed: {exc}"
+    return {"ok": True, "email": email_status, "telegram": tg_status}
 
 
 @app.patch("/people/{pid}")

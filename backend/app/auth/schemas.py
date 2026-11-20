@@ -30,3 +30,11 @@ class PasscodeSetIn(BaseModel):
 
 class PasscodeVerifyIn(BaseModel):
     passcode: str = Field(min_length=1, max_length=32)
+
+
+class ProfileUpdateIn(BaseModel):
+    full_name: str | None = Field(default=None, max_length=100)
+    phone: str | None = Field(default=None, max_length=30)
+    city: str | None = Field(default=None, max_length=100)
+    address: str | None = Field(default=None, max_length=300)
+

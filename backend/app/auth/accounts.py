@@ -60,6 +60,8 @@ _ADD_COLUMNS = [
     ("users", "email", "TEXT"),
     ("users", "phone", "TEXT"),
     ("users", "full_name", "TEXT"),
+    ("users", "city", "TEXT"),
+    ("users", "address", "TEXT"),
     ("users", "email_verified", "INTEGER DEFAULT 0"),
     ("users", "passcode_hash", "TEXT"),
     ("users", "reset_token", "TEXT"),
@@ -198,9 +200,40 @@ def _format_user(row: dict) -> dict:
         "full_name": row.get("full_name") or "",
         "email": row.get("email") or "",
         "phone": row.get("phone") or "",
+        "city": row.get("city") or "",
+        "address": row.get("address") or "",
         "email_verified": bool(row.get("email_verified")),
         "has_passcode": bool(row.get("passcode_hash")),
     }
+
+
+def user_for_id(uid: str) -> dict | None:
+    _init()
+    u = db.one("SELECT * FROM users WHERE id = ?", uid)
+    return _format_user(u) if u else None
+
+
+def update_profile(user_id: str, full_name: str | None = None, phone: str | None = None, city: str | None = None, address: str | None = None) -> dict:
+    _init()
+    fields, vals = [], []
+    if full_name is not None:
+        fields.append("full_name = ?")
+        vals.append(full_name.strip())
+    if phone is not None:
+        fields.append("phone = ?")
+        vals.append(phone.strip())
+    if city is not None:
+        fields.append("city = ?")
+        vals.append(city.strip())
+    if address is not None:
+        fields.append("address = ?")
+        vals.append(address.strip())
+    if fields:
+        vals.append(user_id)
+        with db.lock:
+            db.run(f"UPDATE users SET {', '.join(fields)} WHERE id = ?", *vals)
+    u = db.one("SELECT * FROM users WHERE id = ?", user_id)
+    return _format_user(u)
 
 
 def user_for_session(token: str | None) -> dict | None:
@@ -208,7 +241,7 @@ def user_for_session(token: str | None) -> dict | None:
         return None
     _init()
     row = db.one(
-        "SELECT u.id, u.username, u.full_name, u.email, u.phone, u.email_verified, u.passcode_hash, s.expires "
+        "SELECT u.*, s.expires "
         "FROM sessions s JOIN users u ON u.id=s.user_id WHERE s.token_sha256=?",
         _digest(token)
     )

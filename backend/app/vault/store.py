@@ -194,9 +194,9 @@ def all_rows() -> list[dict]:
     """The signed-in account's records, in chain order."""
     uid = context.current()
     with connect() as conn:
-        if uid:
+        if uid is not None:
             return [dict(r) for r in conn.execute("SELECT * FROM evidence WHERE owner=? OR owner IS NULL ORDER BY id", (uid,))]
-        return [dict(r) for r in conn.execute("SELECT * FROM evidence ORDER BY id")]
+        return [dict(r) for r in conn.execute("SELECT * FROM evidence WHERE owner IS NULL ORDER BY id")]
 
 
 def owns_screenshot(digest: str) -> bool:

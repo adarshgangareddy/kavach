@@ -386,7 +386,7 @@
     } catch {
       demoMode = false;
     }
-    refreshCount();
+    await load({ verified: true }).catch(() => refreshCount());
   })();
 
   window.kavachVault = { save, open, close, screenshotsFor, refreshCount };
