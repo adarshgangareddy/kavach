@@ -387,15 +387,35 @@ def sync_location(body: LocationSyncIn, request: Request):
 
 
 @app.get("/api/location/detect")
-def detect_location(request: Request):
-    """Fallback location detector when device geolocation is unavailable on insecure LAN contexts."""
+async def detect_location(request: Request):
+    """Network IP location detector when device geolocation is unavailable on insecure LAN contexts or WiFi."""
+    try:
+        import httpx
+        async with httpx.AsyncClient(timeout=2.0) as client:
+            resp = await client.get("http://ip-api.com/json/")
+            if resp.status_code == 200:
+                data = resp.json()
+                if data.get("status") == "success" and data.get("lat") and data.get("lon"):
+                    return {
+                        "lat": float(data["lat"]),
+                        "lng": float(data["lon"]),
+                        "label": f"{data.get('city', 'Bengaluru')}, {data.get('regionName', 'Karnataka')}",
+                        "city": data.get("city", "Bengaluru"),
+                        "region": data.get("regionName", "Karnataka"),
+                        "is_fallback": False,
+                        "source": "network_ip"
+                    }
+    except Exception as exc:
+        logging.warning("Network IP location lookup: %s", exc)
+
     return {
         "lat": 12.9716,
         "lng": 77.5946,
-        "label": "Bengaluru",
+        "label": "Bengaluru, Karnataka",
         "city": "Bengaluru",
         "region": "Karnataka",
-        "is_fallback": True
+        "is_fallback": True,
+        "source": "default_coords"
     }
 
 
@@ -891,7 +911,7 @@ async def sos_auto_alert(req: AutoAlertRequest, request: Request):
     user_name = (curr_user.get("full_name") or curr_user.get("username") if curr_user else None) or "Your ward"
     user_id = curr_user["id"] if curr_user else None
 
-    contacts = people.list_kind("contact", owner_id=user_id) if user_id else people.list_kind("contact")
+    contacts = people.list_kind("contact", owner=user_id) if user_id else people.list_kind("contact")
     if not contacts:
         contacts = people.list_kind("contact")
 

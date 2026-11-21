@@ -5098,6 +5098,51 @@ body.sosing .app {
     padding: 16px !important;
   }
 
+  /* Profile Mobile Layout Improvements */
+  .profile-hero {
+    flex-direction: column !important;
+    align-items: center !important;
+    text-align: center !important;
+    gap: 16px !important;
+    padding: 20px 16px !important;
+  }
+
+  .profile-hero > div {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    width: 100% !important;
+  }
+
+  .profile-avatar {
+    width: 68px !important;
+    height: 68px !important;
+    font-size: 24px !important;
+    margin: 0 auto !important;
+  }
+
+  #profile-view #prof-back-btn,
+  #profile-view #prof-next-btn {
+    flex: 1 1 0 !important;
+    justify-content: center !important;
+    text-align: center !important;
+    font-size: 12px !important;
+    padding: 9px 8px !important;
+    white-space: nowrap !important;
+  }
+
+  #profile-sections-view .glass-panel > div[style*="justify-content:space-between"] {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 6px !important;
+    padding: 14px 16px !important;
+  }
+
+  #profile-sections-view .glass-panel > div[style*="justify-content:space-between"] > span[style*="width:180px"] {
+    width: 100% !important;
+    font-size: 11px !important;
+  }
+
   .topbar {
     padding: env(safe-area-inset-top) 12px 10px !important;
     display: flex !important;

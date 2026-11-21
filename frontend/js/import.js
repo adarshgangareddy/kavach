@@ -49,7 +49,6 @@
     window.kavachNav?.leaveHome();
     document.body.classList.remove("at-home");
     document.body.classList.remove("menu-open");
-    if (isOpen) return;
     window.kavachVault?.close();
     window.kavachComplaint?.close();
     window.kavachSos?.close();
@@ -75,9 +74,9 @@
     els.view.classList.remove("has-shots");
     renderRows();
     document.body.classList.add("importing");
-    els.view.hidden = false;
-    window.kavach.deselect("Paste a chat screenshot. Kavach reads it on this device, then you check the messages and scan.");
-    els.dropzone.focus();
+    if (els.view) els.view.hidden = false;
+    window.kavach?.deselect?.("Paste a chat screenshot. Kavach reads it on this device, then you check the messages and scan.");
+    els.dropzone?.focus();
   }
 
   function close() {

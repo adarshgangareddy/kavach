@@ -66,7 +66,7 @@ def list_kind(kind: str, owner=None) -> list[dict]:
     if kind == "contact":
         if uid:
             rows = db.rows(
-                "SELECT * FROM people WHERE kind='contact' AND (owner IS ? OR owner IS NULL) ORDER BY created_at",
+                "SELECT * FROM people WHERE kind='contact' AND (owner = ? OR owner IS NULL) ORDER BY created_at",
                 uid,
             )
         else:

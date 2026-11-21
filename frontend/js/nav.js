@@ -78,12 +78,14 @@
       body.classList.remove("shield-mode");
       setActive("guardians");
     } else if (where === "scan") {
+      closeAllViews();
       window.kavachSos?.close();
-      const ssView = document.querySelector("#safetyspace-view");
-      if (ssView) ssView.hidden = true;
-      document.querySelector("#import-btn")?.click();
+      window.kavachImport?.open();
+      const iv = document.querySelector("#import-view");
+      if (iv) iv.hidden = false;
       body.classList.add("left-collapsed");
-      body.classList.add("shield-mode");
+      body.classList.remove("shield-mode");
+      mobile.show("main");
       setActive("safetyspace");
     } else if (where === "vault") {
       window.kavachVault?.open();

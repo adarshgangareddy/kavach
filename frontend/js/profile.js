@@ -268,8 +268,12 @@
       } catch {}
     }
 
-    if (!navigator.geolocation) {
-      fetchFallbackLocation();
+    if (!navigator.geolocation || !window.isSecureContext) {
+      // Insecure LAN context (e.g. mobile accessing over WiFi IP http://192.168.x.x:8000)
+      // Browsers disallow navigator.geolocation on non-localhost HTTP.
+      // Immediately fetch network IP location and sync instantly like WiFi/internet turning on!
+      await fetchFallbackLocation();
+      hideLocationAccuracyModal();
       return;
     }
 
@@ -388,19 +392,54 @@
         updateGoogleProfileSections(u, stored);
       }
 
-      // Sync KPI count for guardians
+      // Sync KPI count & render guardians list in Profile
       try {
         const sRes = await fetch(`${API}/sos/setup`);
         if (sRes.ok) {
           const sData = await sRes.json();
-          const count = sData.contacts?.length || 0;
-          if (profKpiGuardians) profKpiGuardians.textContent = `${count} Guardian${count === 1 ? "" : "s"} Active`;
+          const contacts = sData.contacts || [];
+          if (profKpiGuardians) profKpiGuardians.textContent = `${contacts.length} Guardian${contacts.length === 1 ? "" : "s"} Active`;
+          renderProfileGuardians(contacts);
         }
       } catch {}
     } catch (err) {
       console.warn("Could not load user profile:", err);
     }
   }
+
+  function renderProfileGuardians(contacts = []) {
+    const listEl = document.getElementById("prof-guardians-list");
+    if (!listEl) return;
+    if (!contacts.length) {
+      listEl.innerHTML = `
+        <div style="color:var(--muted); font-size:12.5px; padding:6px 0;">
+          No emergency guardians configured yet. Tap below or switch to Guardians to add your circle.
+        </div>`;
+      return;
+    }
+    listEl.innerHTML = contacts.map(c => `
+      <div class="glass-card" style="display:flex; justify-content:space-between; align-items:center; padding:12px 16px; border-radius:14px; flex-wrap:wrap; gap:8px;">
+        <div style="display:flex; align-items:center; gap:12px;">
+          <div style="width:36px; height:36px; border-radius:50%; background:linear-gradient(135deg, #f2b8c6, #b9a6e8); display:flex; align-items:center; justify-content:center; color:#0c0e12; font-weight:700; font-size:14px;">
+            ${((c.name || 'G')[0] || 'G').toUpperCase()}
+          </div>
+          <div>
+            <strong style="color:#fff; font-size:13.5px;">${c.name}</strong>
+            <span class="glass-badge" style="color:var(--brand); border-color:rgba(242,184,198,0.3); font-size:10px; margin-left:6px;">${c.relationship || 'Guardian'}</span>
+            <div style="color:var(--muted); font-size:11px; margin-top:2px;">${[c.phone ? '📞 ' + c.phone : '', c.whatsapp ? '💬 WA: ' + c.whatsapp : '', c.email || ''].filter(Boolean).join(' · ')}</div>
+          </div>
+        </div>
+        <div style="display:flex; gap:8px; align-items:center;">
+          ${c.phone ? `<a href="tel:${c.phone}" class="btn btn--primary small" style="background:#10b981; border-color:#10b981; color:#fff; font-size:11px; padding:5px 10px; border-radius:6px; text-decoration:none; font-weight:700;">📞 Call</a>` : ''}
+          ${c.telegram_linked ? `<span class="glass-badge" style="color:#10b981; border-color:rgba(16,185,129,0.3); font-size:10.5px;">✓ Telegram</span>` : ''}
+        </div>
+      </div>
+    `).join("");
+  }
+
+  document.getElementById("prof-manage-guardians-btn")?.addEventListener("click", () => {
+    window.kavachNav?.go("guardians");
+  });
 
   function updateGoogleProfileSections(u = {}, stored = {}) {
     const name = u.full_name || u.username || stored.name || "Kavach User";
