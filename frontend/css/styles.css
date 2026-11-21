@@ -453,15 +453,13 @@ body {
 }
 
 .bloom-home__footer {
-  position: absolute;
-  left: clamp(24px, 8vw, 130px);
-  right: clamp(24px, 8vw, 130px);
-  bottom: 22px;
+  position: relative;
   display: flex;
   justify-content: space-between;
   align-items: center;
   border-top: 1px solid rgba(255, 255, 255, .1);
-  padding-top: 13px;
+  padding-top: 14px;
+  margin-top: 28px;
 }
 
 .bloom-home__footer .btn {
@@ -688,9 +686,11 @@ body.high-contrast .bloom-preferences {
   }
 
   .bloom-home__footer {
-    bottom: 18px;
-    left: 22px;
-    right: 22px
+    position: relative !important;
+    bottom: auto !important;
+    left: auto !important;
+    right: auto !important;
+    margin-top: 20px !important;
   }
 
   .bloom-home__footer>span {
@@ -4335,9 +4335,11 @@ body.sosing .app {
   }
 
   .bloom-home__footer {
-    bottom: calc(var(--tabbar) + env(safe-area-inset-bottom) + 10px);
-    left: 22px;
-    right: 22px;
+    position: relative !important;
+    bottom: auto !important;
+    left: auto !important;
+    right: auto !important;
+    margin-top: 20px !important;
   }
 }
 
@@ -4920,11 +4922,22 @@ body.sosing .app {
   }
 
   .topbar {
-    padding: env(safe-area-inset-top) 10px 8px !important;
+    padding: env(safe-area-inset-top) 12px 10px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    flex-wrap: nowrap !important;
+    height: calc(var(--topbar) + env(safe-area-inset-top)) !important;
   }
 
   .brand {
     font-size: 16px !important;
+  }
+
+  .topbar__actions {
+    display: flex !important;
+    align-items: center !important;
+    gap: 8px !important;
   }
 
   #google-account-btn {
@@ -4936,5 +4949,66 @@ body.sosing .app {
   .phone {
     width: 320px !important;
     height: 600px !important;
+  }
+
+  /* Full Screen Mobile AI Drawer when 'Ask AI' is tapped */
+  body.shield-open .app {
+    display: block !important;
+  }
+
+  body.shield-open .shield {
+    display: flex !important;
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    bottom: 0 !important;
+    width: 100vw !important;
+    height: 100dvh !important;
+    max-height: 100dvh !important;
+    z-index: 999999 !important;
+    background: rgba(10, 14, 23, 0.98) !important;
+    backdrop-filter: blur(28px) !important;
+    -webkit-backdrop-filter: blur(28px) !important;
+    flex-direction: column !important;
+    padding-top: env(safe-area-inset-top) !important;
+    box-shadow: 0 0 50px rgba(0, 0, 0, 0.95) !important;
+  }
+
+  body.shield-open .shield__head {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    padding: 16px 20px !important;
+    background: rgba(255, 255, 255, 0.04) !important;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
+  }
+
+  body.shield-open .shield__head #close-ai-panel-btn {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    width: 34px !important;
+    height: 34px !important;
+    border-radius: 50% !important;
+    background: rgba(255, 255, 255, 0.1) !important;
+    border: 1px solid rgba(255, 255, 255, 0.15) !important;
+    color: #fff !important;
+    font-size: 16px !important;
+    cursor: pointer !important;
+  }
+
+  body.shield-open .shield__body {
+    flex: 1 1 auto !important;
+    overflow-y: auto !important;
+    padding: 16px !important;
+  }
+
+  body.shield-open .shield__foot {
+    flex-shrink: 0 !important;
+    padding: 16px !important;
+    padding-bottom: calc(16px + env(safe-area-inset-bottom)) !important;
+    background: rgba(10, 14, 23, 0.95) !important;
+    border-top: 1px solid rgba(255, 255, 255, 0.08) !important;
   }
 }

@@ -52,8 +52,94 @@
   const detectGpsBtn = $("#detect-gps-btn");
   const filterStatus = $("#responders-filter-status");
 
-  // Default user location: Bengaluru Center
-  let currentCoord = { lat: 12.9716, lng: 77.5946, label: "Bengaluru" };
+  // Default user location: try localStorage first, fallback to Bengaluru Center
+  let savedLat = parseFloat(localStorage.getItem("kavach_user_lat"));
+  let savedLng = parseFloat(localStorage.getItem("kavach_user_lng"));
+  let currentCoord = (!isNaN(savedLat) && !isNaN(savedLng))
+    ? { lat: savedLat, lng: savedLng, label: "Live Device GPS" }
+    : { lat: 12.9716, lng: 77.5946, label: "Bengaluru" };
+
+  // Automatic Location Sync & Permission Manager (Interval: 1 minute = 60s)
+  const locBanner = $("#location-permission-banner");
+  const grantLocBtn = $("#grant-location-btn");
+  let locationCheckTimer = null;
+  let isLocationGranted = false;
+
+  function initLocationSync() {
+    requestDeviceLocation(false);
+
+    if (locationCheckTimer) clearInterval(locationCheckTimer);
+    locationCheckTimer = setInterval(() => {
+      if (!isLocationGranted) {
+        requestDeviceLocation(true);
+      }
+    }, 60000);
+
+    grantLocBtn?.addEventListener("click", () => {
+      requestDeviceLocation(true);
+    });
+  }
+
+  function requestDeviceLocation(isPeriodic = false) {
+    if (!navigator.geolocation) {
+      if (locBanner) locBanner.style.display = "none";
+      return;
+    }
+
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        isLocationGranted = true;
+        if (locBanner) locBanner.style.display = "none";
+        const lat = pos.coords.latitude;
+        const lng = pos.coords.longitude;
+        currentCoord = { lat, lng, label: "Live Device GPS" };
+        try {
+          localStorage.setItem("kavach_user_lat", lat.toString());
+          localStorage.setItem("kavach_user_lng", lng.toString());
+        } catch {}
+
+        if (filterStatus) {
+          filterStatus.textContent = `📍 Live GPS: ${lat.toFixed(4)}°, ${lng.toFixed(4)}° · 30 km safety radius`;
+        }
+
+        // Auto reload responders if view is open
+        if (respView && !respView.hidden) {
+          loadResponders();
+        }
+
+        // Watch position for live movements (e.g. traveling between Bengaluru & Chikkaballapur)
+        try {
+          navigator.geolocation.watchPosition(
+            (p) => {
+              isLocationGranted = true;
+              currentCoord.lat = p.coords.latitude;
+              currentCoord.lng = p.coords.longitude;
+              currentCoord.label = "Live Device GPS";
+              try {
+                localStorage.setItem("kavach_user_lat", p.coords.latitude.toString());
+                localStorage.setItem("kavach_user_lng", p.coords.longitude.toString());
+              } catch {}
+              if (respView && !respView.hidden) {
+                loadResponders();
+              }
+            },
+            () => {},
+            { enableHighAccuracy: true, maximumAge: 30000 }
+          );
+        } catch {}
+      },
+      (err) => {
+        isLocationGranted = false;
+        if (locBanner) {
+          locBanner.style.display = "flex";
+        }
+        if (isPeriodic) {
+          window.kavach?.toast("📍 Please allow location access to auto-detect nearby responders and dispatch emergency SOS.");
+        }
+      },
+      { timeout: 8000, enableHighAccuracy: true }
+    );
+  }
 
   // ---------- Profile Controller ----------
   async function openProfile() {
@@ -260,16 +346,12 @@
             if (respLngInput) respLngInput.value = pos.coords.longitude;
             window.kavach?.toast(`✓ GPS Coordinates captured: ${pos.coords.latitude.toFixed(4)}, ${pos.coords.longitude.toFixed(4)}`);
           },
-          () => {
-            const coords = prompt("Enter GPS coordinates (Latitude, Longitude):", "12.9716, 77.5946");
-            if (coords) {
-              const [lat, lng] = coords.split(",").map((s) => parseFloat(s.trim()));
-              if (!isNaN(lat) && !isNaN(lng)) {
-                if (respLatInput) respLatInput.value = lat;
-                if (respLngInput) respLngInput.value = lng;
-              }
-            }
-          }
+          (err) => {
+            window.kavach?.toast("Could not read device GPS. Falling back to default.");
+            if (respLatInput) respLatInput.value = 12.9716;
+            if (respLngInput) respLngInput.value = 77.5946;
+          },
+          { enableHighAccuracy: true, timeout: 8000 }
         );
       }
     } else if (CITY_COORDS[val]) {
@@ -338,8 +420,8 @@
             <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
               ${tgBadge}
               ${r.phone ? `<a href="tel:${r.phone}" class="btn btn--primary small" style="background:#10b981; border-color:#10b981; color:#fff; font-size: 11.5px; padding: 5px 12px; border-radius: 8px; text-decoration: none; font-weight:600;">📞 Call</a>` : ""}
-              <button type="button" class="btn btn--ghost small" data-update-loc="${r.id}" data-name="${r.name}" style="font-size: 11px; padding: 5px 10px; border-radius: 8px;" title="Update this responder's live location">
-                📍 Move Zone
+              <button type="button" class="btn btn--ghost small" data-update-loc="${r.id}" data-name="${r.name}" style="font-size: 11px; padding: 5px 10px; border-radius: 8px;" title="Sync this responder's location to current device GPS">
+                📍 Sync GPS
               </button>
             </div>
           </div>
@@ -383,62 +465,53 @@
     }
   }
 
-  // Handle Responder Update Location
+  // Handle Responder Update Location with Live GPS (No manual prompts)
   respList?.addEventListener("click", async (e) => {
     const btn = e.target.closest("[data-update-loc]");
     if (!btn) return;
     const rid = btn.dataset.updateLoc;
     const rname = btn.dataset.name || "Responder";
 
-    const choice = prompt(
-      `Update Location for ${rname}:\n\n` +
-      `Enter '1' for Bengaluru (12.9716, 77.5946)\n` +
-      `Enter '2' for Chikkaballapur (13.4355, 77.7315)\n` +
-      `Enter '3' for Mysuru (12.2958, 76.6394)\n` +
-      `Or enter custom 'latitude, longitude':`,
-      "2"
-    );
-
-    if (!choice) return;
-
-    let newLat, newLng, rel;
-    if (choice.trim() === "1") {
-      newLat = 12.9716; newLng = 77.5946; rel = "Bengaluru Unit";
-    } else if (choice.trim() === "2") {
-      newLat = 13.4355; newLng = 77.7315; rel = "Chikkaballapur Unit";
-    } else if (choice.trim() === "3") {
-      newLat = 12.2958; newLng = 76.6394; rel = "Mysuru Unit";
-    } else if (choice.includes(",")) {
-      const parts = choice.split(",").map((s) => parseFloat(s.trim()));
-      newLat = parts[0]; newLng = parts[1]; rel = "Field Responder";
-    }
-
-    if (isNaN(newLat) || isNaN(newLng)) {
-      alert("Invalid coordinates.");
+    if (!navigator.geolocation) {
+      window.kavach?.toast("Geolocation is not supported by your browser.");
       return;
     }
 
-    try {
-      btn.disabled = true;
-      btn.textContent = "Updating…";
-      const res = await fetch(`${API}/people/${rid}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ lat: newLat, lng: newLng, relationship: rel }),
-      });
-      if (res.ok) {
-        window.kavach?.toast(`✓ ${rname} relocated to ${rel}! Proximity distances updated.`);
-        await loadResponders();
-      } else {
-        const err = await res.text();
-        alert("Update failed: " + err);
-      }
-    } catch (err) {
-      alert("Network error: " + err.message);
-    } finally {
-      btn.disabled = false;
-      btn.textContent = "📍 Move Zone";
-    }
+    btn.disabled = true;
+    btn.textContent = "Acquiring GPS…";
+
+    navigator.geolocation.getCurrentPosition(
+      async (pos) => {
+        const newLat = pos.coords.latitude;
+        const newLng = pos.coords.longitude;
+        try {
+          btn.textContent = "Updating…";
+          const res = await fetch(`${API}/people/${rid}`, {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ lat: newLat, lng: newLng }),
+          });
+          if (res.ok) {
+            window.kavach?.toast(`✓ ${rname} live location updated to ${newLat.toFixed(4)}, ${newLng.toFixed(4)}!`);
+            await loadResponders();
+          } else {
+            const err = await res.text();
+            window.kavach?.toast("Update failed: " + err);
+          }
+        } catch (err) {
+          window.kavach?.toast("Network error: " + err.message);
+        } finally {
+          btn.disabled = false;
+          btn.textContent = "📍 Sync GPS";
+        }
+      },
+      (err) => {
+        btn.disabled = false;
+        btn.textContent = "📍 Sync GPS";
+        window.kavach?.toast("Could not read device GPS: " + err.message);
+      },
+      { timeout: 8000, enableHighAccuracy: true }
+    );
   });
 
   respForm?.addEventListener("submit", async (e) => {
@@ -508,4 +581,5 @@
 
   // Initial load
   loadProfile();
+  initLocationSync();
 })();

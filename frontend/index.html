@@ -19,7 +19,6 @@
 </head>
 <body class="at-home m-main">
   <header class="topbar">
-    <button id="toggle-left-sidebar-btn" type="button" class="btn btn--ghost small" style="margin-right:8px; padding:6px 10px;" title="Toggle Left Sidebar">☰</button>
     <button class="brand" id="home-link" type="button" aria-label="Kavach home">
       <span class="brand__bloom" aria-hidden="true">✳</span>
       Kavach
@@ -29,38 +28,39 @@
       <button class="nav-link" id="safetyspace-btn" data-nav="safetyspace" type="button">Safety Space</button>
       <button class="nav-link" id="vault-btn" data-nav="vault" type="button">Vault <span id="vault-count" class="nav-count">0</span></button>
       <button class="nav-link" id="responders-btn" data-nav="responders" type="button">Responders</button>
-      <button class="nav-link" id="profile-btn" data-nav="profile" type="button">Profile</button>
     </nav>
-    <button class="quick-exit" id="quick-exit" type="button" aria-label="Quick exit to a neutral screen">Quick exit</button>
 
-    <!-- AI Side Panel Toggle Button -->
-    <button id="toggle-ai-sidebar-btn" type="button" class="btn btn--ghost small" style="margin-left:8px; border-color:rgba(99,102,241,0.4); color:#a5b4fc; font-weight:600; display:flex; align-items:center; gap:6px;" title="Ask AI / Smart Shield Analysis">
-      ✨ <span>Ask AI</span>
-    </button>
-
-    <!-- Google / Chrome Style Top-Right Account Avatar -->
-    <div class="user-account-wrap" style="position:relative; margin-left:12px; display:flex; align-items:center;">
-      <button id="google-account-btn" type="button" aria-label="Google User Profile" title="Google Account" style="width:38px; height:38px; border-radius:50%; background:linear-gradient(135deg, #f2b8c6, #b9a6e8); border:2px solid rgba(255,255,255,0.25); color:#0c0e12; font-weight:800; font-size:15px; cursor:pointer; display:flex; align-items:center; justify-content:center; box-shadow:0 2px 10px rgba(0,0,0,0.4); transition:transform 0.15s, box-shadow 0.15s;">
-        <span id="top-avatar-letter">U</span>
+    <!-- Top-Right Actions: AI Toggle & Chrome/Google Profile Avatar -->
+    <div class="topbar__actions" style="margin-left:auto; display:flex; align-items:center; gap:10px;">
+      <!-- AI Side Panel Toggle Button -->
+      <button id="toggle-ai-sidebar-btn" type="button" class="btn btn--ghost small" style="border-color:rgba(99,102,241,0.4); color:#a5b4fc; font-weight:600; display:flex; align-items:center; gap:6px;" title="Ask AI / Smart Shield Analysis">
+        ✨ <span>Ask AI</span>
       </button>
 
-      <!-- Google Style Account Dropdown Popover Card -->
-      <div id="google-account-popover" class="glass-panel" style="display:none; position:absolute; top:48px; right:0; width:310px; padding:22px; z-index:9999; box-shadow:0 18px 48px rgba(0,0,0,0.75); border:1px solid rgba(255,255,255,0.12); border-radius:16px;">
-        <div style="display:flex; flex-direction:column; align-items:center; text-align:center; margin-bottom:16px;">
-          <div style="width:64px; height:64px; border-radius:50%; background:linear-gradient(135deg, #f2b8c6, #b9a6e8); color:#0c0e12; font-weight:800; font-size:24px; display:flex; align-items:center; justify-content:center; margin-bottom:10px; box-shadow:0 6px 20px rgba(242,184,198,0.35);">
-            <span id="popover-avatar-letter">U</span>
+      <!-- Google / Chrome Style Top-Right Account Avatar -->
+      <div class="user-account-wrap" style="position:relative; display:flex; align-items:center;">
+        <button id="google-account-btn" type="button" aria-label="Google User Profile" title="Google Account Profile" style="width:38px; height:38px; border-radius:50%; background:linear-gradient(135deg, #f2b8c6, #b9a6e8); border:2px solid rgba(255,255,255,0.25); color:#0c0e12; font-weight:800; font-size:15px; cursor:pointer; display:flex; align-items:center; justify-content:center; box-shadow:0 2px 10px rgba(0,0,0,0.4); transition:transform 0.15s, box-shadow 0.15s;">
+          <span id="top-avatar-letter">U</span>
+        </button>
+
+        <!-- Google Style Account Dropdown Popover Card -->
+        <div id="google-account-popover" class="glass-panel" style="display:none; position:absolute; top:48px; right:0; width:310px; padding:22px; z-index:9999; box-shadow:0 18px 48px rgba(0,0,0,0.75); border:1px solid rgba(255,255,255,0.12); border-radius:16px;">
+          <div style="display:flex; flex-direction:column; align-items:center; text-align:center; margin-bottom:16px;">
+            <div style="width:64px; height:64px; border-radius:50%; background:linear-gradient(135deg, #f2b8c6, #b9a6e8); color:#0c0e12; font-weight:800; font-size:24px; display:flex; align-items:center; justify-content:center; margin-bottom:10px; box-shadow:0 6px 20px rgba(242,184,198,0.35);">
+              <span id="popover-avatar-letter">U</span>
+            </div>
+            <strong id="popover-name" style="font-size:15.5px; color:#fff;">Kavach User</strong>
+            <small id="popover-email" style="color:var(--muted); font-size:12px; margin-top:3px;">user@gmail.com</small>
+            <span class="glass-badge" style="color:#10b981; border-color:rgba(16,185,129,0.35); margin-top:10px;">✓ Protected by Kavach</span>
           </div>
-          <strong id="popover-name" style="font-size:15.5px; color:#fff;">Kavach User</strong>
-          <small id="popover-email" style="color:var(--muted); font-size:12px; margin-top:3px;">user@gmail.com</small>
-          <span class="glass-badge" style="color:#10b981; border-color:rgba(16,185,129,0.35); margin-top:10px;">✓ Protected by Kavach</span>
-        </div>
-        <div style="display:flex; flex-direction:column; gap:8px; border-top:1px solid rgba(255,255,255,0.08); padding-top:14px;">
-          <button type="button" id="popover-profile-btn" class="btn btn--block" style="background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.12); color:#fff; font-size:12.5px; padding:9px 12px; border-radius:6px; font-weight:600; text-align:center;">
-            ⚙️ Manage Legal Profile & Details
-          </button>
-          <button type="button" id="popover-logout-btn" class="btn btn--ghost btn--block" style="color:#ef4444; border-color:rgba(239,68,68,0.3); font-size:12px; padding:8px 12px;">
-            Sign Out
-          </button>
+          <div style="display:flex; flex-direction:column; gap:8px; border-top:1px solid rgba(255,255,255,0.08); padding-top:14px;">
+            <button type="button" id="popover-profile-btn" class="btn btn--block" style="background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.12); color:#fff; font-size:12.5px; padding:9px 12px; border-radius:6px; font-weight:600; text-align:center;">
+              ⚙️ Manage Legal Profile & Details
+            </button>
+            <button type="button" id="popover-logout-btn" class="btn btn--ghost btn--block" style="color:#ef4444; border-color:rgba(239,68,68,0.3); font-size:12px; padding:8px 12px;">
+              Sign Out
+            </button>
+          </div>
         </div>
       </div>
     </div>
@@ -82,10 +82,11 @@
       <p class="bloom-home__sub">Your evidence vault, trusted contacts and SOS stay private to your account. Nobody else on this app can see them. Passwords are protected with Argon2id hashing. We never store or see your actual password.</p>
       <div class="bloom-status"><span class="status-sparkle" aria-hidden="true">✦</span><span><strong>All quiet tonight.</strong><small>Your protection is looking good.</small></span><span class="bloom-status__ring" aria-hidden="true"></span></div>
       <div class="home__cta bloom-home__cta">
-        <button class="btn btn--primary btn--lg" data-go="shield" type="button">Open Live Shield <span aria-hidden="true">↗</span></button>
-        <button class="btn btn--lg bloom-secondary" data-go="sos" type="button">Open Safety Space</button>
+        <button class="btn btn--primary btn--lg" data-go="safetyspace" type="button">Open Safety Space <span aria-hidden="true">↗</span></button>
+        <button class="btn btn--lg bloom-secondary" data-go="guardians" type="button">Manage Guardians</button>
       </div>
       <div class="bloom-preferences"><label><input type="checkbox" id="reduced-motion" /> Reduce motion</label><label><input type="checkbox" id="high-contrast" /> High contrast</label></div>
+      <div class="bloom-home__footer"><span>YOUR SPACE, YOUR PACE</span><button type="button" class="btn btn--ghost small" id="reset-all">Reset demo</button></div>
     </div>
     <div class="bloom-scene" role="img" aria-label="Four softly glowing flowers represent account, device, privacy, and password protection. All are in bloom.">
       <svg class="bloom-orbit" viewBox="0 0 720 600" aria-hidden="true"><ellipse cx="360" cy="300" rx="300" ry="156" transform="rotate(-18 360 300)"/><ellipse cx="360" cy="300" rx="262" ry="205" transform="rotate(32 360 300)"/><path d="M67 356C201 70 483 80 647 301"/></svg>
@@ -97,7 +98,6 @@
       <div class="scene-caption scene-caption--accounts"><span>✦</span> ACCOUNTS</div><div class="scene-caption scene-caption--devices"><span>✦</span> DEVICES</div><div class="scene-caption scene-caption--privacy"><span>✦</span> PRIVACY</div><div class="scene-caption scene-caption--passwords"><span>✦</span> PASSWORDS</div>
       <p class="bloom-scene__fallback">Your garden is growing. Each flower is one part of your digital life.</p>
     </div>
-    <div class="bloom-home__footer"><span>YOUR SPACE, YOUR PACE</span><button type="button" class="btn btn--ghost small" id="reset-all">Reset demo</button></div>
   </section>
 
   <div class="app">
@@ -790,6 +790,20 @@
         <p class="muted tiny">Personal details are masked before the AI sees anything.</p>
       </footer>
     </aside>
+  </div>
+
+  <!-- Automatic Location Permission / GPS Status Notification Banner -->
+  <div id="location-permission-banner" class="glass-panel" style="display:none; position:fixed; bottom:74px; left:50%; transform:translateX(-50%); z-index:9000; width:calc(100% - 32px); max-width:480px; padding:12px 18px; border-radius:14px; border:1px solid rgba(245,165,36,0.35); background:rgba(15,20,32,0.94); box-shadow:0 10px 30px rgba(0,0,0,0.7); align-items:center; justify-content:space-between; gap:12px;">
+    <div style="display:flex; align-items:center; gap:10px;">
+      <span style="font-size:18px;">📍</span>
+      <div>
+        <strong style="display:block; font-size:12.5px; color:#fff;">Enable Location Permission</strong>
+        <small style="color:var(--muted); font-size:11px;">Required to auto-detect nearby responders and live GPS dispatch.</small>
+      </div>
+    </div>
+    <button type="button" id="grant-location-btn" class="btn btn--primary small" style="background:#f5a524; border-color:#f5a524; color:#0c0e12; font-weight:700; font-size:11.5px; padding:6px 14px; border-radius:8px; white-space:nowrap;">
+      Turn On
+    </button>
   </div>
 
   <div id="toast" class="toast" role="status"></div>

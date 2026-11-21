@@ -165,7 +165,7 @@
   tabs.forEach((t) => t.addEventListener("click", () => go(t.dataset.tab)));
   document.querySelectorAll("[data-go]").forEach((el) => el.addEventListener("click", () => go(el.dataset.go)));
   document.querySelector("#home-link").addEventListener("click", goHome);
-  document.querySelector("#quick-exit").addEventListener("click", () => {
+  document.querySelector("#quick-exit")?.addEventListener("click", () => {
     window.kavachImport?.close();
     window.kavachVault?.close();
     window.kavachComplaint?.close();
