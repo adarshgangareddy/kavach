@@ -282,34 +282,21 @@
     goHome();
   });
 
-  // Preferences remain local to this device. The CSS 2D scene doubles as the
-  // screen-reader and no-WebGL fallback; reduced motion removes all idle motion.
-  const reducedMotion = document.querySelector("#reduced-motion");
-  const highContrast = document.querySelector("#high-contrast");
+  // Default motion and normal contrast enabled
+  body.classList.remove("reduce-motion");
+  body.classList.remove("high-contrast");
   try {
-    reducedMotion.checked = localStorage.getItem("bloom.reduceMotion") === "1";
-    highContrast.checked = localStorage.getItem("bloom.highContrast") === "1";
-  } catch { /* preferences remain usable for this page session */ }
-  const applyPreferences = () => {
-    body.classList.toggle("reduce-motion", reducedMotion.checked || matchMedia("(prefers-reduced-motion: reduce)").matches);
-    body.classList.toggle("high-contrast", highContrast.checked);
-    try {
-      localStorage.setItem("bloom.reduceMotion", reducedMotion.checked ? "1" : "0");
-      localStorage.setItem("bloom.highContrast", highContrast.checked ? "1" : "0");
-    } catch { /* private browsing may disable localStorage */ }
-  };
-  reducedMotion.addEventListener("change", applyPreferences);
-  highContrast.addEventListener("change", applyPreferences);
-  applyPreferences();
+    localStorage.removeItem("bloom.reduceMotion");
+    localStorage.removeItem("bloom.highContrast");
+  } catch {}
+
   setActive(null);
   window.kavachHome = goHome;
   window.kavachNav = { go, goHome, leaveHome, closeAllViews, setActive };
 
-  // ---------- Reset everything (before a demo) ----------
-  // The server ends any running SOS and clears the Vault and SOS history; reloading
-  // clears the scanned chats and any draft, which only live on this page.
-  document.querySelector("#reset-all").addEventListener("click", async (e) => {
-    const btn = e.currentTarget; // read before the await: currentTarget is null afterwards
+  // Reset handler (if button exists or triggered programmatically)
+  document.querySelector("#reset-all")?.addEventListener("click", async (e) => {
+    const btn = e.currentTarget;
     if (!(await kavachConfirm("Reset everything? This ends any running SOS and deletes sealed evidence. Contacts and responders stay.", { ok: "Reset", danger: true }))) return;
     btn.disabled = true;
     btn.textContent = "Resetting…";
@@ -318,9 +305,7 @@
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       try {
         localStorage.removeItem("kavach.myDetails");
-      } catch {
-        /* nothing stored */
-      }
+      } catch {}
       location.reload();
     } catch (err) {
       btn.disabled = false;
