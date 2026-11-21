@@ -37,4 +37,6 @@ class ProfileUpdateIn(BaseModel):
     phone: str | None = Field(default=None, max_length=30)
     city: str | None = Field(default=None, max_length=100)
     address: str | None = Field(default=None, max_length=300)
+    lat: float | None = None
+    lng: float | None = None
 

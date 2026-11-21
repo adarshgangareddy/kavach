@@ -19,6 +19,7 @@
 </head>
 <body class="at-home m-main">
   <header class="topbar">
+    <button id="mobile-menu-btn" type="button" class="mobile-menu-btn" aria-label="Open Navigation Menu" title="Open Navigation Menu">☰</button>
     <button class="brand" id="home-link" type="button" aria-label="Kavach home">
       <span class="brand__bloom" aria-hidden="true">✳</span>
       Kavach
@@ -30,11 +31,11 @@
       <button class="nav-link" id="responders-btn" data-nav="responders" type="button">Responders</button>
     </nav>
 
-    <!-- Top-Right Actions: AI Toggle & Chrome/Google Profile Avatar -->
+    <!-- Top-Right Actions: Desktop AI Toggle & Profile Avatar -->
     <div class="topbar__actions" style="margin-left:auto; display:flex; align-items:center; gap:10px;">
-      <!-- AI Side Panel Toggle Button -->
-      <button id="toggle-ai-sidebar-btn" type="button" class="btn btn--ghost small" style="border-color:rgba(99,102,241,0.4); color:#a5b4fc; font-weight:600; display:flex; align-items:center; gap:6px;" title="Ask AI / Smart Shield Analysis">
-        ✨ <span>Ask AI</span>
+      <!-- Desktop AI Side Panel Toggle Button (Borderless as requested) -->
+      <button id="toggle-ai-sidebar-btn" type="button" class="btn--ghost small desktop-ai-btn" style="border:none; background:transparent; color:#a5b4fc; font-weight:600; display:flex; align-items:center; gap:6px; padding:6px 10px; cursor:pointer;" title="Kavach AI / Smart Shield Analysis">
+        ✨ <span>Kavach AI</span>
       </button>
 
       <!-- Google / Chrome Style Top-Right Account Avatar -->
@@ -103,6 +104,36 @@
   <div class="app">
     <!-- Mock chat app: stands in for Instagram / WhatsApp in the demo -->
     <aside class="contacts">
+      <!-- Mobile / Left Sidebar Dashboard Navigation -->
+      <nav class="sidebar-dashboards" style="padding:14px 12px 10px; border-bottom:1px solid rgba(255,255,255,0.08); display:flex; flex-direction:column; gap:6px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px; padding:0 4px;">
+          <span class="eyebrow" style="font-size:10.5px; letter-spacing:0.12em; color:var(--muted);">DASHBOARDS</span>
+          <button type="button" id="close-sidebar-menu-btn" class="mobile-only-btn" style="background:transparent; border:none; color:var(--muted); font-size:16px; cursor:pointer;" title="Close Menu">✕</button>
+        </div>
+        <button type="button" class="sidebar-nav-btn" data-nav="home" style="display:flex; align-items:center; gap:10px; width:100%; padding:9px 12px; background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.05); border-radius:10px; color:var(--text); font-size:13.5px; font-weight:500; cursor:pointer; text-align:left;">
+          <span>⌂</span> Home
+        </button>
+        <button type="button" class="sidebar-nav-btn" data-nav="guardians" style="display:flex; align-items:center; gap:10px; width:100%; padding:9px 12px; background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.05); border-radius:10px; color:var(--text); font-size:13.5px; font-weight:500; cursor:pointer; text-align:left;">
+          <span>🛡️</span> Guardians
+        </button>
+        <button type="button" class="sidebar-nav-btn" data-nav="safetyspace" style="display:flex; align-items:center; gap:10px; width:100%; padding:9px 12px; background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.05); border-radius:10px; color:var(--text); font-size:13.5px; font-weight:500; cursor:pointer; text-align:left;">
+          <span>📱</span> Safety Space
+        </button>
+        <button type="button" class="sidebar-nav-btn" data-nav="vault" style="display:flex; align-items:center; gap:10px; width:100%; padding:9px 12px; background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.05); border-radius:10px; color:var(--text); font-size:13.5px; font-weight:500; cursor:pointer; text-align:left;">
+          <span>▣</span> Evidence Vault
+        </button>
+        <button type="button" class="sidebar-nav-btn" data-nav="responders" style="display:flex; align-items:center; gap:10px; width:100%; padding:9px 12px; background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.05); border-radius:10px; color:var(--text); font-size:13.5px; font-weight:500; cursor:pointer; text-align:left;">
+          <span>🚑</span> Responders
+        </button>
+        <button type="button" class="sidebar-nav-btn" data-nav="profile" style="display:flex; align-items:center; gap:10px; width:100%; padding:9px 12px; background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.05); border-radius:10px; color:var(--text); font-size:13.5px; font-weight:500; cursor:pointer; text-align:left;">
+          <span>⚙️</span> Legal Profile
+        </button>
+        <!-- Borderless Kavach AI in sidebar as requested -->
+        <button type="button" id="sidebar-ai-btn" style="display:flex; align-items:center; gap:10px; width:100%; padding:9px 12px; background:transparent; border:none; color:#a5b4fc; font-size:13.5px; font-weight:600; cursor:pointer; text-align:left;">
+          <span>✨</span> Kavach AI
+        </button>
+      </nav>
+
       <header class="contacts__head">
         <span class="eyebrow" id="contacts-eyebrow">Scans & Evidences</span>
         <button type="button" id="clear-chats" class="btn btn--ghost small">Clear</button>

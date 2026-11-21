@@ -65,8 +65,31 @@
   let locationCheckTimer = null;
   let isLocationGranted = false;
 
+  async function syncLocationToBackend(lat, lng) {
+    if (!lat || !lng) return;
+    try {
+      const res = await fetch(`${API}/location/sync`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ lat, lng }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        if (data.responder_updated) {
+          console.log(`[Kavach] Automatically updated responder location for ${data.responder_name} to (${lat}, ${lng})`);
+        }
+      }
+    } catch (e) {
+      console.warn("Could not sync location to backend:", e);
+    }
+  }
+
   function initLocationSync() {
     requestDeviceLocation(false);
+
+    if (currentCoord && currentCoord.lat && currentCoord.lng) {
+      syncLocationToBackend(currentCoord.lat, currentCoord.lng);
+    }
 
     if (locationCheckTimer) clearInterval(locationCheckTimer);
     locationCheckTimer = setInterval(() => {
@@ -76,36 +99,65 @@
     }, 60000);
 
     grantLocBtn?.addEventListener("click", () => {
-      requestDeviceLocation(true);
+      if (grantLocBtn) {
+        grantLocBtn.disabled = true;
+        grantLocBtn.textContent = "Turning On…";
+      }
+      requestDeviceLocation(false, true);
     });
   }
 
-  function requestDeviceLocation(isPeriodic = false) {
-    if (!navigator.geolocation) {
+  function requestDeviceLocation(isPeriodic = false, isUserClick = false) {
+    function handleLocationSuccess(lat, lng, label = "Live Device GPS") {
+      isLocationGranted = true;
       if (locBanner) locBanner.style.display = "none";
+      if (grantLocBtn) {
+        grantLocBtn.disabled = false;
+        grantLocBtn.textContent = "Turn On";
+      }
+      currentCoord = { lat, lng, label };
+      try {
+        localStorage.setItem("kavach_user_lat", lat.toString());
+        localStorage.setItem("kavach_user_lng", lng.toString());
+      } catch {}
+
+      if (filterStatus) {
+        filterStatus.textContent = `📍 Live GPS: ${lat.toFixed(4)}°, ${lng.toFixed(4)}° · 30 km safety radius`;
+      }
+
+      // Automatically sync live location to user's profile and responder profile!
+      syncLocationToBackend(lat, lng);
+
+      // Auto reload responders if view is open
+      if (respView && !respView.hidden) {
+        loadResponders();
+      }
+
+      if (isUserClick) {
+        window.kavach?.toast("✓ Location turned on and synchronized!");
+      }
+    }
+
+    async function fetchFallbackLocation() {
+      try {
+        const res = await fetch(`${API}/api/location/detect`);
+        if (res.ok) {
+          const data = await res.json();
+          if (data.lat && data.lng) {
+            handleLocationSuccess(data.lat, data.lng, data.city || "Bengaluru");
+          }
+        }
+      } catch {}
+    }
+
+    if (!navigator.geolocation) {
+      fetchFallbackLocation();
       return;
     }
 
     navigator.geolocation.getCurrentPosition(
       (pos) => {
-        isLocationGranted = true;
-        if (locBanner) locBanner.style.display = "none";
-        const lat = pos.coords.latitude;
-        const lng = pos.coords.longitude;
-        currentCoord = { lat, lng, label: "Live Device GPS" };
-        try {
-          localStorage.setItem("kavach_user_lat", lat.toString());
-          localStorage.setItem("kavach_user_lng", lng.toString());
-        } catch {}
-
-        if (filterStatus) {
-          filterStatus.textContent = `📍 Live GPS: ${lat.toFixed(4)}°, ${lng.toFixed(4)}° · 30 km safety radius`;
-        }
-
-        // Auto reload responders if view is open
-        if (respView && !respView.hidden) {
-          loadResponders();
-        }
+        handleLocationSuccess(pos.coords.latitude, pos.coords.longitude, "Live Device GPS");
 
         // Watch position for live movements (e.g. traveling between Bengaluru & Chikkaballapur)
         try {
@@ -119,6 +171,7 @@
                 localStorage.setItem("kavach_user_lat", p.coords.latitude.toString());
                 localStorage.setItem("kavach_user_lng", p.coords.longitude.toString());
               } catch {}
+              syncLocationToBackend(p.coords.latitude, p.coords.longitude);
               if (respView && !respView.hidden) {
                 loadResponders();
               }
@@ -128,16 +181,27 @@
           );
         } catch {}
       },
-      (err) => {
+      async (err) => {
+        if (grantLocBtn) {
+          grantLocBtn.disabled = false;
+          grantLocBtn.textContent = "Turn On";
+        }
+
+        // If insecure LAN context (e.g. http://192.168.1.190:8000) or position unavailable, fall back
+        if (!window.isSecureContext && window.location.hostname !== "localhost" && window.location.hostname !== "127.0.0.1") {
+          await fetchFallbackLocation();
+          return;
+        }
+
         isLocationGranted = false;
         if (locBanner) {
           locBanner.style.display = "flex";
         }
-        if (isPeriodic) {
-          window.kavach?.toast("📍 Please allow location access to auto-detect nearby responders and dispatch emergency SOS.");
+        if (isUserClick && err.code === 1) {
+          window.kavach?.toast("📍 Location is blocked in your browser. Tap the 🔒 icon in the address bar to allow location.");
         }
       },
-      { timeout: 8000, enableHighAccuracy: true }
+      { timeout: 10000, enableHighAccuracy: true, maximumAge: 0 }
     );
   }
 

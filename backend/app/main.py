@@ -1,6 +1,7 @@
 import asyncio
 import logging
 from contextlib import asynccontextmanager
+from pydantic import BaseModel
 
 from fastapi import BackgroundTasks, Depends, FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
@@ -336,8 +337,66 @@ def get_user_profile():
 @app.put("/auth/profile", dependencies=signed_in)
 def update_user_profile(body: ProfileUpdateIn):
     uid = require_user()
-    updated = accounts.update_profile(uid, **body.model_dump(exclude_unset=True))
+    data = body.model_dump(exclude_unset=True)
+    updated = accounts.update_profile(uid, **data)
+    lat = data.get("lat")
+    lng = data.get("lng")
+    if lat is not None and lng is not None:
+        user_email = (updated.get("email") or "").lower().strip()
+        user_phone = (updated.get("phone") or "").strip()
+        user_name = (updated.get("full_name") or updated.get("username") or "").lower().strip()
+        for r in people.list_kind("responder"):
+            r_email = (r.get("email") or "").lower().strip()
+            r_phone = (r.get("phone") or "").strip()
+            r_name = (r.get("name") or "").lower().strip()
+            if (user_email and r_email == user_email) or (user_phone and r_phone == user_phone) or (user_name and r_name == user_name):
+                people.update(r["id"], lat=lat, lng=lng)
+                break
     return {"user": updated}
+
+
+class LocationSyncIn(BaseModel):
+    lat: float
+    lng: float
+
+
+@app.post("/location/sync")
+def sync_location(body: LocationSyncIn, request: Request):
+    """Sync live device location for user profile and auto-update responder location if user is a responder."""
+    lat = body.lat
+    lng = body.lng
+    res = {"status": "synced", "lat": lat, "lng": lng, "responder_updated": False}
+    user = accounts.user_for_session(request.cookies.get(SESSION_COOKIE))
+    if user:
+        accounts.update_profile(user["id"], lat=lat, lng=lng)
+        res["user_id"] = user["id"]
+        user_email = (user.get("email") or "").lower().strip()
+        user_phone = (user.get("phone") or "").strip()
+        user_name = (user.get("full_name") or user.get("username") or "").lower().strip()
+        for r in people.list_kind("responder"):
+            r_email = (r.get("email") or "").lower().strip()
+            r_phone = (r.get("phone") or "").strip()
+            r_name = (r.get("name") or "").lower().strip()
+            if (user_email and r_email == user_email) or (user_phone and r_phone == user_phone) or (user_name and r_name == user_name):
+                people.update(r["id"], lat=lat, lng=lng)
+                res["responder_updated"] = True
+                res["responder_id"] = r["id"]
+                res["responder_name"] = r.get("name")
+                break
+    return res
+
+
+@app.get("/api/location/detect")
+def detect_location(request: Request):
+    """Fallback location detector when device geolocation is unavailable on insecure LAN contexts."""
+    return {
+        "lat": 12.9716,
+        "lng": 77.5946,
+        "label": "Bengaluru",
+        "city": "Bengaluru",
+        "region": "Karnataka",
+        "is_fallback": True
+    }
 
 
 @app.post("/auth/forgot-password")

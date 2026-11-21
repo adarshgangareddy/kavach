@@ -110,6 +110,44 @@
     }
   }
 
+  // Mobile Menu Drawer Toggle (3 lines button)
+  const mobileMenuBtn = document.querySelector("#mobile-menu-btn");
+  const closeSidebarMenuBtn = document.querySelector("#close-sidebar-menu-btn");
+  mobileMenuBtn?.addEventListener("click", () => {
+    body.classList.toggle("menu-open");
+  });
+  closeSidebarMenuBtn?.addEventListener("click", () => {
+    body.classList.remove("menu-open");
+  });
+
+  // Mobile Sidebar Dashboard links
+  document.querySelectorAll(".sidebar-nav-btn").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      body.classList.remove("menu-open");
+      const navTarget = btn.dataset.nav;
+      if (navTarget) go(navTarget);
+    });
+  });
+
+  // Sidebar Kavach AI button (symbol + name, borderless)
+  document.querySelector("#sidebar-ai-btn")?.addEventListener("click", () => {
+    body.classList.remove("menu-open");
+    body.classList.add("shield-open");
+  });
+
+  // Navbar Auto-Hide on Scroll Down, Show on Scroll Up
+  let lastScrollY = window.scrollY;
+  const topbar = document.querySelector(".topbar");
+  window.addEventListener("scroll", () => {
+    const currentScrollY = window.scrollY;
+    if (currentScrollY > 50 && currentScrollY > lastScrollY + 8) {
+      topbar?.classList.add("topbar--hidden");
+    } else if (currentScrollY < lastScrollY - 6 || currentScrollY <= 20) {
+      topbar?.classList.remove("topbar--hidden");
+    }
+    lastScrollY = currentScrollY;
+  }, { passive: true });
+
   // Sidebar Toggles (Left Collapsible Sidebar & Right AI Drawer)
   document.querySelector("#toggle-left-sidebar-btn")?.addEventListener("click", () => {
     body.classList.toggle("left-collapsed");

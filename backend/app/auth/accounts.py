@@ -66,6 +66,8 @@ _ADD_COLUMNS = [
     ("users", "passcode_hash", "TEXT"),
     ("users", "reset_token", "TEXT"),
     ("users", "reset_expires", "REAL"),
+    ("users", "lat", "REAL"),
+    ("users", "lng", "REAL"),
 ]
 
 
@@ -202,6 +204,8 @@ def _format_user(row: dict) -> dict:
         "phone": row.get("phone") or "",
         "city": row.get("city") or "",
         "address": row.get("address") or "",
+        "lat": row.get("lat"),
+        "lng": row.get("lng"),
         "email_verified": bool(row.get("email_verified")),
         "has_passcode": bool(row.get("passcode_hash")),
     }
@@ -213,7 +217,7 @@ def user_for_id(uid: str) -> dict | None:
     return _format_user(u) if u else None
 
 
-def update_profile(user_id: str, full_name: str | None = None, phone: str | None = None, city: str | None = None, address: str | None = None) -> dict:
+def update_profile(user_id: str, full_name: str | None = None, phone: str | None = None, city: str | None = None, address: str | None = None, lat: float | None = None, lng: float | None = None) -> dict:
     _init()
     fields, vals = [], []
     if full_name is not None:
@@ -228,6 +232,12 @@ def update_profile(user_id: str, full_name: str | None = None, phone: str | None
     if address is not None:
         fields.append("address = ?")
         vals.append(address.strip())
+    if lat is not None:
+        fields.append("lat = ?")
+        vals.append(float(lat))
+    if lng is not None:
+        fields.append("lng = ?")
+        vals.append(float(lng))
     if fields:
         vals.append(user_id)
         with db.lock:
