@@ -100,6 +100,8 @@
       const btn = document.getElementById("load-sample-btn");
       btn?.addEventListener("click", () => {
         loadSampleConversations();
+        document.body.classList.remove("menu-open");
+        window.kavachMobile?.show("main");
       });
       return;
     }
@@ -172,7 +174,11 @@
 
   els.contacts.addEventListener("click", (e) => {
     const li = e.target.closest(".contact");
-    if (li) openChat(li.dataset.id);
+    if (li) {
+      openChat(li.dataset.id);
+      document.body.classList.remove("menu-open");
+      window.kavachMobile?.show("main");
+    }
   });
 
   els.composer.addEventListener("submit", (e) => {

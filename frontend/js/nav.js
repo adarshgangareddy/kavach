@@ -32,8 +32,9 @@
     window.kavachSos?.close();
     window.kavachResponders?.close();
     window.kavachProfile?.close();
+    window.kavachSettings?.close();
 
-    const views = ["#import-view", "#vault-view", "#complaint-view", "#guardians-view", "#safetyspace-view", "#responders-view", "#profile-view"];
+    const views = ["#import-view", "#vault-view", "#complaint-view", "#guardians-view", "#safetyspace-view", "#responders-view", "#profile-view", "#settings-view"];
     views.forEach((sel) => {
       const el = document.querySelector(sel);
       if (el) el.hidden = true;
@@ -50,9 +51,11 @@
 
   function go(where) {
     if (where === "home") {
+      body.classList.remove("menu-open");
       closeAllViews();
       return goHome();
     }
+    body.classList.remove("menu-open");
     leaveHome();
     closeAllViews();
 
@@ -107,16 +110,26 @@
       body.classList.remove("shield-mode");
       if (stTrigger) stTrigger.style.display = "none";
       setActive("profile");
+    } else if (where === "settings") {
+      window.kavachSettings?.open();
+      const el = document.querySelector("#settings-view");
+      if (el) el.hidden = false;
+      body.classList.add("left-collapsed");
+      body.classList.remove("shield-mode");
+      if (stTrigger) stTrigger.style.display = "none";
+      setActive("settings");
     }
   }
 
   // Mobile Menu Drawer Toggle (3 lines button)
   const mobileMenuBtn = document.querySelector("#mobile-menu-btn");
   const closeSidebarMenuBtn = document.querySelector("#close-sidebar-menu-btn");
-  mobileMenuBtn?.addEventListener("click", () => {
+  mobileMenuBtn?.addEventListener("click", (e) => {
+    e.stopPropagation();
     body.classList.toggle("menu-open");
   });
-  closeSidebarMenuBtn?.addEventListener("click", () => {
+  closeSidebarMenuBtn?.addEventListener("click", (e) => {
+    e.stopPropagation();
     body.classList.remove("menu-open");
   });
 
@@ -186,12 +199,27 @@
     mobile.show("list");
     mobile.pill(null);
   });
-  // Opening a chat or the screenshot import moves her to the main pane.
+  // Opening a chat or the screenshot import moves to the main pane and closes menu drawer
   document.querySelector("#contact-list").addEventListener("click", (e) => {
+    body.classList.remove("menu-open");
     if (e.target.closest(".contact")) mobile.show("main");
     setActive("shield");
   });
-  document.querySelector("#import-btn").addEventListener("click", () => mobile.show("main"));
+  document.querySelector("#import-btn").addEventListener("click", () => {
+    body.classList.remove("menu-open");
+    mobile.show("main");
+  });
+
+  // Close menu drawer when clicking outside contacts sidebar
+  document.addEventListener("click", (e) => {
+    if (body.classList.contains("menu-open")) {
+      const contactsEl = document.querySelector(".contacts");
+      const menuBtn = document.querySelector("#mobile-menu-btn");
+      if (contactsEl && !contactsEl.contains(e.target) && !menuBtn?.contains(e.target)) {
+        body.classList.remove("menu-open");
+      }
+    }
+  });
 
   // ---------- top nav + tab bar ----------
   // Top nav bar: clicking any section switches directly to it
@@ -203,6 +231,7 @@
   tabs.forEach((t) => t.addEventListener("click", () => go(t.dataset.tab)));
   document.querySelectorAll("[data-go]").forEach((el) => el.addEventListener("click", () => go(el.dataset.go)));
   document.querySelector("#home-link").addEventListener("click", goHome);
+  document.querySelector("#settings-back-btn")?.addEventListener("click", goHome);
   document.querySelector("#quick-exit")?.addEventListener("click", () => {
     window.kavachImport?.close();
     window.kavachVault?.close();

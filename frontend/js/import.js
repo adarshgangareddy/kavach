@@ -55,6 +55,7 @@
     window.kavachFlow?.set(1);
     window.kavachMobile?.show("main");
     window.kavachMobile?.pill(null);
+    document.body.classList.remove("menu-open");
     isOpen = true;
     rows = [];
     images = [];

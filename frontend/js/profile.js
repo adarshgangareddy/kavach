@@ -62,8 +62,41 @@
   // Automatic Location Sync & Permission Manager (Interval: 1 minute = 60s)
   const locBanner = $("#location-permission-banner");
   const grantLocBtn = $("#grant-location-btn");
+  const locModal = $("#location-accuracy-modal");
+  const locTurnOnBtn = $("#loc-turn-on-btn");
+  const locDismissBtn = $("#loc-dismiss-btn");
   let locationCheckTimer = null;
   let isLocationGranted = false;
+
+  let lastActiveTime = Date.now();
+  const FIVE_MINUTES_MS = 5 * 60 * 1000;
+
+  function showLocationAccuracyModal() {
+    if (locModal) {
+      locModal.style.display = "flex";
+      locModal.setAttribute("aria-hidden", "false");
+    }
+  }
+
+  function hideLocationAccuracyModal() {
+    if (locModal) {
+      locModal.style.display = "none";
+      locModal.setAttribute("aria-hidden", "true");
+    }
+  }
+
+  locTurnOnBtn?.addEventListener("click", () => {
+    if (locTurnOnBtn) {
+      locTurnOnBtn.disabled = true;
+      locTurnOnBtn.textContent = "Turning on…";
+    }
+    requestDeviceLocation(false, true);
+  });
+
+  locDismissBtn?.addEventListener("click", () => {
+    hideLocationAccuracyModal();
+    sessionStorage.setItem("kavach_loc_modal_dismissed", "true");
+  });
 
   async function syncLocationToBackend(lat, lng) {
     if (!lat || !lng) return;
@@ -84,8 +117,74 @@
     }
   }
 
+  async function checkPermissionAndPrompt(forcePrompt = false) {
+    if (navigator.permissions && navigator.permissions.query) {
+      try {
+        const status = await navigator.permissions.query({ name: "geolocation" });
+        if (status.state === "granted") {
+          isLocationGranted = true;
+          hideLocationAccuracyModal();
+          requestDeviceLocation(true);
+        } else if (status.state === "prompt" || forcePrompt) {
+          isLocationGranted = false;
+          showLocationAccuracyModal();
+        }
+        status.onchange = () => {
+          if (status.state === "granted") {
+            isLocationGranted = true;
+            hideLocationAccuracyModal();
+            requestDeviceLocation(true);
+          } else {
+            isLocationGranted = false;
+          }
+        };
+      } catch {
+        if (forcePrompt || !isLocationGranted) showLocationAccuracyModal();
+      }
+    } else {
+      if (forcePrompt || !isLocationGranted) showLocationAccuracyModal();
+    }
+  }
+
+  function checkLocationOnResume() {
+    const now = Date.now();
+    const elapsed = now - lastActiveTime;
+    lastActiveTime = now;
+
+    if (elapsed >= FIVE_MINUTES_MS) {
+      if (navigator.permissions && navigator.permissions.query) {
+        navigator.permissions.query({ name: "geolocation" }).then((status) => {
+          if (status.state === "granted") {
+            requestDeviceLocation(true);
+          } else {
+            showLocationAccuracyModal();
+          }
+        }).catch(() => {
+          showLocationAccuracyModal();
+        });
+      } else {
+        if (isLocationGranted) {
+          requestDeviceLocation(true);
+        } else {
+          showLocationAccuracyModal();
+        }
+      }
+    }
+  }
+
+  document.addEventListener("visibilitychange", () => {
+    if (document.visibilityState === "visible") {
+      checkLocationOnResume();
+    } else {
+      lastActiveTime = Date.now();
+    }
+  });
+
+  window.addEventListener("focus", checkLocationOnResume);
+  window.addEventListener("online", checkLocationOnResume);
+
   function initLocationSync() {
-    requestDeviceLocation(false);
+    checkPermissionAndPrompt();
 
     if (currentCoord && currentCoord.lat && currentCoord.lng) {
       syncLocationToBackend(currentCoord.lat, currentCoord.lng);
@@ -94,7 +193,7 @@
     if (locationCheckTimer) clearInterval(locationCheckTimer);
     locationCheckTimer = setInterval(() => {
       if (!isLocationGranted) {
-        requestDeviceLocation(true);
+        checkPermissionAndPrompt();
       }
     }, 60000);
 
@@ -110,10 +209,15 @@
   function requestDeviceLocation(isPeriodic = false, isUserClick = false) {
     function handleLocationSuccess(lat, lng, label = "Live Device GPS") {
       isLocationGranted = true;
+      hideLocationAccuracyModal();
       if (locBanner) locBanner.style.display = "none";
       if (grantLocBtn) {
         grantLocBtn.disabled = false;
         grantLocBtn.textContent = "Turn On";
+      }
+      if (locTurnOnBtn) {
+        locTurnOnBtn.disabled = false;
+        locTurnOnBtn.textContent = "Turn on";
       }
       currentCoord = { lat, lng, label };
       try {
@@ -186,14 +290,20 @@
           grantLocBtn.disabled = false;
           grantLocBtn.textContent = "Turn On";
         }
+        if (locTurnOnBtn) {
+          locTurnOnBtn.disabled = false;
+          locTurnOnBtn.textContent = "Turn on";
+        }
 
         // If insecure LAN context (e.g. http://192.168.1.190:8000) or position unavailable, fall back
         if (!window.isSecureContext && window.location.hostname !== "localhost" && window.location.hostname !== "127.0.0.1") {
           await fetchFallbackLocation();
+          hideLocationAccuracyModal();
           return;
         }
 
         isLocationGranted = false;
+        showLocationAccuracyModal();
         if (locBanner) {
           locBanner.style.display = "flex";
         }
@@ -213,6 +323,7 @@
     window.kavachGuardians?.close();
     window.kavachSos?.close();
     window.kavachResponders?.close();
+    window.kavachSettings?.close();
     const mc = document.querySelector("#mock-chat-container");
     if (mc) mc.hidden = true;
     document.body.classList.add("left-collapsed");
@@ -345,6 +456,7 @@
     window.kavachGuardians?.close();
     window.kavachSos?.close();
     window.kavachProfile?.close();
+    window.kavachSettings?.close();
     const mc = document.querySelector("#mock-chat-container");
     if (mc) mc.hidden = true;
     document.body.classList.add("left-collapsed");
@@ -640,8 +752,83 @@
     }
   });
 
+  // ---------- Settings Controller ----------
+  const settingsView = $("#settings-view");
+  const settingsUserAvatar = $("#settings-user-avatar");
+  const settingsUserName = $("#settings-user-name");
+  const settingsUserEmail = $("#settings-user-email");
+  const settingsRecheckLocBtn = $("#settings-recheck-loc-btn");
+  const settingsDeleteAccountBtn = $("#settings-delete-account-btn");
+
+  async function openSettings() {
+    window.kavachImport?.close();
+    window.kavachVault?.close();
+    window.kavachComplaint?.close();
+    window.kavachGuardians?.close();
+    window.kavachSos?.close();
+    window.kavachResponders?.close();
+    window.kavachProfile?.close();
+    const mc = document.querySelector("#mock-chat-container");
+    if (mc) mc.hidden = true;
+    document.body.classList.add("left-collapsed");
+    document.body.classList.remove("shield-open");
+    window.kavachMobile?.show("main");
+    if (settingsView) settingsView.hidden = false;
+    document.body.classList.remove("at-home");
+    await loadSettings();
+  }
+
+  function closeSettings() {
+    if (settingsView) settingsView.hidden = true;
+  }
+
+  async function loadSettings() {
+    try {
+      const res = await fetch(`${API}/auth/profile`);
+      if (res.ok) {
+        const data = await res.json();
+        const u = data.user || {};
+        const name = u.full_name || u.username || "Kavach User";
+        const email = u.email || "user@kavach.safety";
+        if (settingsUserAvatar) settingsUserAvatar.textContent = (name[0] || "U").toUpperCase();
+        if (settingsUserName) settingsUserName.textContent = name;
+        if (settingsUserEmail) settingsUserEmail.textContent = email;
+      }
+    } catch {}
+  }
+
+  settingsRecheckLocBtn?.addEventListener("click", () => {
+    showLocationAccuracyModal();
+  });
+
+  settingsDeleteAccountBtn?.addEventListener("click", async () => {
+    const confirmed = await window.kavachConfirm?.(
+      "⚠️ DANGER: Are you absolutely sure you want to permanently delete your Kavach account?\n\nThis will permanently wipe your account, evidence vault, SHA-256 sealed chains, emergency guardians, and responder registrations. This action CANNOT be undone.",
+      { ok: "Permanently Delete", cancel: "Cancel" }
+    );
+    if (!confirmed) return;
+
+    try {
+      const res = await fetch(`${API}/auth/me`, { method: "DELETE" });
+      if (res.ok) {
+        window.kavach?.toast("Account and all associated safety data permanently deleted.");
+        localStorage.clear();
+        sessionStorage.clear();
+        setTimeout(() => {
+          location.replace("/login.html");
+        }, 800);
+      } else {
+        const err = await res.text();
+        window.kavach?.toast("Failed to delete account: " + err);
+      }
+    } catch (err) {
+      window.kavach?.toast("Network error deleting account: " + err.message);
+    }
+  });
+
   window.kavachProfile = { open: openProfile, close: closeProfile, loadProfile };
   window.kavachResponders = { open: openResponders, close: closeResponders, loadResponders };
+  window.kavachSettings = { open: openSettings, close: closeSettings, loadSettings };
 
   // Initial load
   loadProfile();
