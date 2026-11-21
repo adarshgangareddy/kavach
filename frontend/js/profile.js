@@ -1,6 +1,6 @@
 /**
  * Kavach Profile & Responders Controller
- * Manages modern e-commerce style user profile & verified community responders network.
+ * Manages modern e-commerce style user profile & dynamic proximity-based responders network.
  */
 
 (() => {
@@ -22,6 +22,10 @@
   const profAvatar = $("#prof-avatar-letter");
   const profDisplayName = $("#prof-display-name");
   const profDisplayEmail = $("#prof-display-email");
+  const profKpiGuardians = $("#prof-kpi-guardians");
+
+  const profBackBtn = $("#prof-back-btn");
+  const profNextBtn = $("#prof-next-btn");
 
   // Google Top-Right Account Popover Elements
   const googleAccountBtn = $("#google-account-btn");
@@ -40,6 +44,16 @@
   const respEmail = $("#resp-email");
   const respPhone = $("#resp-phone");
   const respOrg = $("#resp-org");
+  const respCitySelect = $("#resp-city-select");
+  const respLatInput = $("#resp-lat");
+  const respLngInput = $("#resp-lng");
+
+  const userZoneSelect = $("#user-zone-select");
+  const detectGpsBtn = $("#detect-gps-btn");
+  const filterStatus = $("#responders-filter-status");
+
+  // Default user location: Bengaluru Center
+  let currentCoord = { lat: 12.9716, lng: 77.5946, label: "Bengaluru" };
 
   // ---------- Profile Controller ----------
   async function openProfile() {
@@ -62,6 +76,14 @@
   function closeProfile() {
     if (profView) profView.hidden = true;
   }
+
+  profBackBtn?.addEventListener("click", () => {
+    window.kavachNav?.go("guardians");
+  });
+
+  profNextBtn?.addEventListener("click", () => {
+    window.kavachNav?.go("safetyspace");
+  });
 
   async function loadProfile() {
     try {
@@ -97,6 +119,16 @@
 
         syncLocalStorage();
       }
+
+      // Sync KPI count for guardians
+      try {
+        const sRes = await fetch(`${API}/sos/setup`);
+        if (sRes.ok) {
+          const sData = await sRes.json();
+          const count = sData.contacts?.length || 0;
+          if (profKpiGuardians) profKpiGuardians.textContent = `${count} Guardian${count === 1 ? "" : "s"} Active`;
+        }
+      } catch {}
     } catch (err) {
       console.warn("Could not load user profile:", err);
     }
@@ -137,7 +169,7 @@
         syncLocalStorage();
         if (profDisplayName) profDisplayName.textContent = payload.full_name || "Kavach User";
         if (profAvatar) profAvatar.textContent = (payload.full_name[0] || "U").toUpperCase();
-        window.kavach?.toast("✓ Profile saved! Legal complainant details will autofill into all police reports.");
+        window.kavach?.toast("✓ Profile saved! Complainant details will auto-fill into police petitions.");
       } else {
         const err = await res.text();
         window.kavach?.toast("Failed to update profile: " + err);
@@ -155,7 +187,7 @@
     }
   });
 
-  // ---------- Responders Controller ----------
+  // ---------- Responders Proximity & Location Controller ----------
   async function openResponders() {
     window.kavachImport?.close();
     window.kavachVault?.close();
@@ -177,71 +209,251 @@
     if (respView) respView.hidden = true;
   }
 
+  // City presets with coordinates
+  const CITY_COORDS = {
+    "12.9716,77.5946": { name: "Bengaluru", lat: 12.9716, lng: 77.5946 },
+    "13.4355,77.7315": { name: "Chikkaballapur", lat: 13.4355, lng: 77.7315 },
+    "12.2958,76.6394": { name: "Mysuru", lat: 12.2958, lng: 76.6394 },
+    "12.9141,74.8560": { name: "Mangaluru", lat: 12.9141, lng: 74.8560 },
+    "15.3647,75.1240": { name: "Hubballi", lat: 15.3647, lng: 75.1240 },
+  };
+
+  userZoneSelect?.addEventListener("change", () => {
+    const val = userZoneSelect.value;
+    if (CITY_COORDS[val]) {
+      currentCoord = CITY_COORDS[val];
+      loadResponders();
+    }
+  });
+
+  detectGpsBtn?.addEventListener("click", () => {
+    if (!navigator.geolocation) {
+      window.kavach?.toast("Geolocation is not supported by your browser.");
+      return;
+    }
+    detectGpsBtn.disabled = true;
+    detectGpsBtn.textContent = "Acquiring GPS…";
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        currentCoord = { lat: pos.coords.latitude, lng: pos.coords.longitude, label: "Live Device GPS" };
+        detectGpsBtn.disabled = false;
+        detectGpsBtn.textContent = "✓ GPS Set";
+        window.kavach?.toast(`📍 Proximity set to Device GPS: ${currentCoord.lat.toFixed(4)}, ${currentCoord.lng.toFixed(4)}`);
+        loadResponders();
+      },
+      (err) => {
+        detectGpsBtn.disabled = false;
+        detectGpsBtn.textContent = "🎯 GPS";
+        window.kavach?.toast("Could not acquire device GPS: " + err.message);
+      },
+      { timeout: 8000, enableHighAccuracy: true }
+    );
+  });
+
+  respCitySelect?.addEventListener("change", () => {
+    const val = respCitySelect.value;
+    if (val === "custom") {
+      if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+          (pos) => {
+            if (respLatInput) respLatInput.value = pos.coords.latitude;
+            if (respLngInput) respLngInput.value = pos.coords.longitude;
+            window.kavach?.toast(`✓ GPS Coordinates captured: ${pos.coords.latitude.toFixed(4)}, ${pos.coords.longitude.toFixed(4)}`);
+          },
+          () => {
+            const coords = prompt("Enter GPS coordinates (Latitude, Longitude):", "12.9716, 77.5946");
+            if (coords) {
+              const [lat, lng] = coords.split(",").map((s) => parseFloat(s.trim()));
+              if (!isNaN(lat) && !isNaN(lng)) {
+                if (respLatInput) respLatInput.value = lat;
+                if (respLngInput) respLngInput.value = lng;
+              }
+            }
+          }
+        );
+      }
+    } else if (CITY_COORDS[val]) {
+      if (respLatInput) respLatInput.value = CITY_COORDS[val].lat;
+      if (respLngInput) respLngInput.value = CITY_COORDS[val].lng;
+    }
+  });
+
   async function loadResponders() {
     if (!respList) return;
     try {
-      const res = await fetch(`${API}/responders`);
+      const { lat, lng, label } = currentCoord;
+      if (filterStatus) {
+        filterStatus.textContent = `Proximity center: ${label || `${lat.toFixed(2)}°, ${lng.toFixed(2)}°`} · Safety radius: 30 km`;
+      }
+
+      const res = await fetch(`${API}/responders?lat=${lat}&lng=${lng}`);
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = await res.json();
       const responders = data.responders || [];
 
       if (!responders.length) {
         respList.innerHTML = `
-          <div style="padding: 24px; text-align: center; background: rgba(255,255,255,0.02); border: 1px dashed var(--border); border-radius: 8px;">
-            <div style="font-size: 24px; margin-bottom: 6px;">🛡️</div>
-            <strong style="display:block; margin-bottom: 4px;">No Community Responders Registered Yet</strong>
-            <small style="color:var(--muted);">Be the first trusted safety volunteer to join the rapid incident triage network using the form on the right.</small>
+          <div style="padding: 28px; text-align: center; background: rgba(255,255,255,0.02); border: 1px dashed var(--border); border-radius: 16px;">
+            <div style="font-size: 28px; margin-bottom: 8px;">🛡️</div>
+            <strong style="display:block; margin-bottom: 4px; font-size: 15px;">No Community Responders Registered Yet</strong>
+            <small style="color:var(--muted); font-size: 12.5px;">Be the first trusted safety volunteer to join the rapid incident triage network using the form on the right.</small>
           </div>
         `;
         return;
       }
 
-      respList.innerHTML = responders
-        .map((r) => {
-          const initials = (r.name || "R")[0].toUpperCase();
-          const org = r.relationship !== "Guardian" ? r.relationship : "Community Volunteer";
-          const tgBadge = r.telegram_linked
-            ? '<span class="glass-badge" style="color:#3ecf8e; border-color:rgba(62,207,142,0.3);">Telegram Active</span>'
-            : '<span class="glass-badge" style="color:var(--muted);">Awaiting Bot Link</span>';
+      const nearby = responders.filter((r) => r.is_nearby);
+      const outside = responders.filter((r) => !r.is_nearby);
 
-          return `
-            <div class="glass-card" style="padding: 14px 18px; display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap;">
-              <div style="display: flex; align-items: center; gap: 14px;">
-                <div style="width: 42px; height: 42px; border-radius: 50%; background: linear-gradient(135deg, #6366f1, #3ecf8e); display: flex; align-items: center; justify-content: center; font-weight: 700; color: #fff; font-size: 16px;">
-                  ${initials}
-                </div>
-                <div>
-                  <div style="display: flex; align-items: center; gap: 8px;">
-                    <strong style="font-size: 14.5px; color: var(--text);">${r.name}</strong>
-                    <span class="glass-badge" style="color: #6366f1; border-color: rgba(99,102,241,0.3); font-size: 10px;">${org}</span>
-                  </div>
-                  <div style="font-size: 12px; color: var(--muted); margin-top: 2px;">
-                    📧 ${r.email || "No email"} · 📞 ${r.phone || "No phone"}
-                  </div>
-                </div>
+      function renderCard(r) {
+        const initials = (r.name || "R")[0].toUpperCase();
+        const org = r.relationship !== "Guardian" ? r.relationship : "Safety Volunteer";
+        const tgBadge = r.telegram_linked
+          ? '<span class="glass-badge" style="color:#3ecf8e; border-color:rgba(62,207,142,0.3); font-size:10px;">✓ Telegram Linked</span>'
+          : '<span class="glass-badge" style="color:var(--muted); font-size:10px;">Awaiting Bot Link</span>';
+
+        const distanceTag = r.distance_km !== null
+          ? r.is_nearby
+            ? `<span class="glass-badge" style="color:#10b981; border-color:rgba(16,185,129,0.35); font-weight:700;">📍 ${r.distance_km} km away · Within Radius</span>`
+            : `<span class="glass-badge" style="color:#f5a524; border-color:rgba(245,165,36,0.35);">📍 ${r.distance_km} km away · Outside Zone</span>`
+          : '<span class="glass-badge" style="color:var(--muted);">No Location</span>';
+
+        return `
+          <div class="glass-card" style="padding: 16px 20px; display: flex; justify-content: space-between; align-items: center; gap: 14px; flex-wrap: wrap; border-radius: 16px; border-color: ${r.is_nearby ? "rgba(16,185,129,0.3)" : "rgba(255,255,255,0.08)"};">
+            <div style="display: flex; align-items: center; gap: 14px;">
+              <div style="width: 44px; height: 44px; border-radius: 50%; background: ${r.is_nearby ? "linear-gradient(135deg, #10b981, #6366f1)" : "linear-gradient(135deg, #64748b, #475569)"}; display: flex; align-items: center; justify-content: center; font-weight: 700; color: #fff; font-size: 16px; box-shadow: 0 4px 14px rgba(0,0,0,0.3);">
+                ${initials}
               </div>
-              <div style="display: flex; align-items: center; gap: 10px;">
-                ${tgBadge}
-                <a href="tel:${r.phone}" class="btn btn--ghost small" style="font-size: 11px; padding: 4px 10px;">Call Volunteer</a>
+              <div>
+                <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                  <strong style="font-size: 14.5px; color: var(--text);">${r.name}</strong>
+                  <span class="glass-badge" style="color: #a5b4fc; border-color: rgba(99,102,241,0.3); font-size: 10px;">${org}</span>
+                  ${distanceTag}
+                </div>
+                <div style="font-size: 12px; color: var(--muted); margin-top: 4px;">
+                  📧 ${r.email || "No email"} · 📞 ${r.phone || "No phone"}
+                </div>
               </div>
             </div>
-          `;
-        })
-        .join("");
+            <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+              ${tgBadge}
+              ${r.phone ? `<a href="tel:${r.phone}" class="btn btn--primary small" style="background:#10b981; border-color:#10b981; color:#fff; font-size: 11.5px; padding: 5px 12px; border-radius: 8px; text-decoration: none; font-weight:600;">📞 Call</a>` : ""}
+              <button type="button" class="btn btn--ghost small" data-update-loc="${r.id}" data-name="${r.name}" style="font-size: 11px; padding: 5px 10px; border-radius: 8px;" title="Update this responder's live location">
+                📍 Move Zone
+              </button>
+            </div>
+          </div>
+        `;
+      }
+
+      let html = "";
+      if (nearby.length) {
+        html += `
+          <div style="margin-bottom: 8px;">
+            <strong style="color: #10b981; font-size: 13px; text-transform: uppercase; letter-spacing: 0.05em; display: flex; align-items: center; gap: 6px;">
+              <span>🟢</span> Nearby Responders Ready for Dispatch (${nearby.length})
+            </strong>
+          </div>
+          ${nearby.map(renderCard).join("")}
+        `;
+      } else {
+        html += `
+          <div style="padding: 16px 20px; background: rgba(245,165,36,0.08); border: 1px dashed rgba(245,165,36,0.3); border-radius: 14px; margin-bottom: 12px;">
+            <strong style="color: #f5a524; font-size: 13px; display: block; margin-bottom: 2px;">⚠️ No Active Responders Inside This 30 km Zone</strong>
+            <small style="color: var(--muted); font-size: 12px;">Responders registered in other regions will not be alerted for emergencies in ${currentCoord.label || "this location"}.</small>
+          </div>
+        `;
+      }
+
+      if (outside.length) {
+        html += `
+          <div style="margin-top: 18px; margin-bottom: 8px;">
+            <strong style="color: var(--muted); font-size: 12px; text-transform: uppercase; letter-spacing: 0.05em;">
+              🌐 Active in Other Regions / Beyond 30 km (${outside.length})
+            </strong>
+          </div>
+          ${outside.map(renderCard).join("")}
+        `;
+      }
+
+      respList.innerHTML = html;
     } catch (err) {
       console.warn("Could not load responders:", err);
       respList.innerHTML = `<p class="muted" style="font-size: 12px;">Offline or could not reach responders network.</p>`;
     }
   }
 
+  // Handle Responder Update Location
+  respList?.addEventListener("click", async (e) => {
+    const btn = e.target.closest("[data-update-loc]");
+    if (!btn) return;
+    const rid = btn.dataset.updateLoc;
+    const rname = btn.dataset.name || "Responder";
+
+    const choice = prompt(
+      `Update Location for ${rname}:\n\n` +
+      `Enter '1' for Bengaluru (12.9716, 77.5946)\n` +
+      `Enter '2' for Chikkaballapur (13.4355, 77.7315)\n` +
+      `Enter '3' for Mysuru (12.2958, 76.6394)\n` +
+      `Or enter custom 'latitude, longitude':`,
+      "2"
+    );
+
+    if (!choice) return;
+
+    let newLat, newLng, rel;
+    if (choice.trim() === "1") {
+      newLat = 12.9716; newLng = 77.5946; rel = "Bengaluru Unit";
+    } else if (choice.trim() === "2") {
+      newLat = 13.4355; newLng = 77.7315; rel = "Chikkaballapur Unit";
+    } else if (choice.trim() === "3") {
+      newLat = 12.2958; newLng = 76.6394; rel = "Mysuru Unit";
+    } else if (choice.includes(",")) {
+      const parts = choice.split(",").map((s) => parseFloat(s.trim()));
+      newLat = parts[0]; newLng = parts[1]; rel = "Field Responder";
+    }
+
+    if (isNaN(newLat) || isNaN(newLng)) {
+      alert("Invalid coordinates.");
+      return;
+    }
+
+    try {
+      btn.disabled = true;
+      btn.textContent = "Updating…";
+      const res = await fetch(`${API}/people/${rid}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ lat: newLat, lng: newLng, relationship: rel }),
+      });
+      if (res.ok) {
+        window.kavach?.toast(`✓ ${rname} relocated to ${rel}! Proximity distances updated.`);
+        await loadResponders();
+      } else {
+        const err = await res.text();
+        alert("Update failed: " + err);
+      }
+    } catch (err) {
+      alert("Network error: " + err.message);
+    } finally {
+      btn.disabled = false;
+      btn.textContent = "📍 Move Zone";
+    }
+  });
+
   respForm?.addEventListener("submit", async (e) => {
     e.preventDefault();
+    const latVal = parseFloat(respLatInput?.value) || 12.9716;
+    const lngVal = parseFloat(respLngInput?.value) || 77.5946;
+
     const payload = {
       kind: "responder",
       name: respName?.value?.trim() || "",
       email: respEmail?.value?.trim() || "",
       phone: respPhone?.value?.trim() || "",
       relationship: respOrg?.value?.trim() || "Safety Volunteer",
+      lat: latVal,
+      lng: lngVal,
     };
 
     try {
@@ -253,7 +465,7 @@
 
       if (res.ok) {
         respForm.reset();
-        window.kavach?.toast("✓ Registered as First Responder! You are now part of the emergency triage network.");
+        window.kavach?.toast("✓ Registered as First Responder with base location! You will receive proximity alerts.");
         await loadResponders();
       } else {
         const err = await res.text();

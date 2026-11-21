@@ -913,7 +913,7 @@ async def sos_auto_alert(req: AutoAlertRequest, request: Request):
 @app.patch("/people/{pid}")
 def people_update(pid: str, body: PersonPatch):
     _person(pid)
-    return _sos_call(people.update, pid, **body.model_dump())
+    return _sos_call(people.update, pid, **body.model_dump(exclude_unset=True))
 
 
 @app.delete("/people/{pid}")
@@ -938,8 +938,21 @@ def people_verify(pid: str, verified: bool = True):
 
 
 @app.get("/responders")
-def responders():
-    return {"responders": people.list_kind("responder"), "radius_m": sos.RADIUS_M}
+def responders(lat: float | None = None, lng: float | None = None):
+    all_resp = people.list_kind("responder")
+    for r in all_resp:
+        if lat is not None and lng is not None and r.get("lat") is not None and r.get("lng") is not None:
+            dist = round(sos.haversine_m(lat, lng, r["lat"], r["lng"]))
+            r["distance_m"] = dist
+            r["distance_km"] = round(dist / 1000, 1)
+            r["is_nearby"] = dist <= sos.RADIUS_M
+        else:
+            r["distance_m"] = None
+            r["distance_km"] = None
+            r["is_nearby"] = True
+    if lat is not None and lng is not None:
+        all_resp.sort(key=lambda x: (not x.get("is_nearby", True), x.get("distance_m") or 999999999))
+    return {"responders": all_resp, "radius_m": sos.RADIUS_M}
 
 
 @app.get("/responders/{responder_id}/alerts")

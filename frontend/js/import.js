@@ -120,8 +120,11 @@
   els.btn.addEventListener("click", open);
   els.cancel.addEventListener("click", () => {
     close();
-    const first = window.kavach.conversations[0];
-    if (first) document.querySelector(`.contact[data-id="${first.id}"]`)?.click();
+    window.kavachNav?.go("safetyspace");
+  });
+  document.getElementById("import-back-to-safetyspace")?.addEventListener("click", () => {
+    close();
+    window.kavachNav?.go("safetyspace");
   });
 
   // Screenshots are processed one at a time, in the order they were added.

@@ -4258,11 +4258,43 @@ body.sosing .app {
 
 @media (max-width:640px) {
   .topbar {
-    padding: env(safe-area-inset-top) 14px 0;
+    padding: env(safe-area-inset-top) 12px 10px;
+    flex-wrap: wrap;
+    height: auto;
+    gap: 8px;
   }
 
   .nav {
+    display: flex !important;
+    order: 3;
+    width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    gap: 6px;
+    padding: 6px 0 2px 0;
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+    scrollbar-width: none;
+  }
+
+  .nav::-webkit-scrollbar {
     display: none;
+  }
+
+  .nav-link {
+    white-space: nowrap;
+    font-size: 12px;
+    padding: 6px 14px;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 999px;
+    flex-shrink: 0;
+    color: var(--muted);
+  }
+
+  .nav-link.active {
+    background: rgba(242, 184, 198, 0.2);
+    color: #fff;
+    border: 1px solid rgba(242, 184, 198, 0.4);
+    font-weight: 600;
   }
 
   .nav-status {
@@ -4787,4 +4819,122 @@ body.sosing .app {
   background: #10b981;
   border: 2px solid #050507;
   border-radius: 50%;
+}
+
+/* SmartSpend Inspired Glassmorphism & Layout */
+.glass-panel {
+  background: rgba(15, 20, 32, 0.78);
+  backdrop-filter: blur(28px);
+  -webkit-backdrop-filter: blur(28px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 22px;
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.5);
+}
+
+.glass-card {
+  background: rgba(18, 24, 38, 0.65);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 20px;
+  box-shadow: 0 10px 32px 0 rgba(0, 0, 0, 0.38);
+  transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.glass-card:hover {
+  border-color: rgba(255, 255, 255, 0.18);
+  box-shadow: 0 14px 44px 0 rgba(0, 0, 0, 0.48);
+}
+
+.glass-input {
+  background: rgba(255, 255, 255, 0.04) !important;
+  border: 1px solid rgba(255, 255, 255, 0.12) !important;
+  border-radius: 12px !important;
+  color: #f4ede4 !important;
+  padding: 11px 16px !important;
+  font-size: 13.5px !important;
+  transition: border-color 0.15s ease, background 0.15s ease, box-shadow 0.15s ease;
+}
+
+.glass-input:focus {
+  background: rgba(255, 255, 255, 0.07) !important;
+  border-color: var(--brand) !important;
+  box-shadow: 0 0 0 3px rgba(242, 184, 198, 0.2) !important;
+  outline: none !important;
+}
+
+.glass-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 12px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+/* Comprehensive Mobile Layout Improvements (<820px) */
+@media (max-width: 820px) {
+  /* Hide the left sidebar when any dashboard is open */
+  body:not(.at-home) .contacts {
+    display: none !important;
+  }
+
+  .app {
+    grid-template-columns: 1fr !important;
+    padding: 10px !important;
+    height: auto !important;
+    min-height: calc(100vh - 110px);
+  }
+
+  .chat {
+    height: auto !important;
+    min-height: auto;
+  }
+
+  .vault__body {
+    padding: 14px 8px !important;
+    max-width: 100% !important;
+  }
+
+  /* Single column grids for mobile */
+  .profile-cards-grid,
+  #responders-view div[style*="grid-template-columns: 1fr 340px"],
+  #safetyspace-view div[style*="grid-template-columns: repeat(auto-fit, minmax(300px, 1fr))"],
+  #profile-view div[style*="grid-template-columns: 1fr 1fr"],
+  .add-contact div[style*="grid-template-columns: 1fr 1fr"],
+  .details-grid {
+    grid-template-columns: 1fr !important;
+    gap: 14px !important;
+  }
+
+  /* Full width cards and inputs */
+  .glass-card,
+  .glass-panel {
+    border-radius: 16px !important;
+    padding: 16px !important;
+  }
+
+  .topbar {
+    padding: env(safe-area-inset-top) 10px 8px !important;
+  }
+
+  .brand {
+    font-size: 16px !important;
+  }
+
+  #google-account-btn {
+    width: 34px !important;
+    height: 34px !important;
+    font-size: 13px !important;
+  }
+
+  .phone {
+    width: 320px !important;
+    height: 600px !important;
+  }
 }

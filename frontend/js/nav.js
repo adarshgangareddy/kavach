@@ -63,10 +63,8 @@
       window.kavachSos?.open();
       const el = document.querySelector("#safetyspace-view");
       if (el) el.hidden = false;
-      body.classList.remove("left-collapsed");
+      body.classList.add("left-collapsed");
       body.classList.remove("shield-mode");
-      if (stTrigger) stTrigger.style.display = "block";
-      if (contactsEyebrow) contactsEyebrow.textContent = "Live Detections";
       setActive("safetyspace");
     } else if (where === "guardians" || where === "sos") {
       window.kavachSos?.open();
@@ -75,10 +73,13 @@
       if (el) el.hidden = false;
       body.classList.add("left-collapsed");
       body.classList.remove("shield-mode");
-      if (stTrigger) stTrigger.style.display = "none";
       setActive("guardians");
     } else if (where === "scan") {
+      window.kavachSos?.close();
+      const ssView = document.querySelector("#safetyspace-view");
+      if (ssView) ssView.hidden = true;
       document.querySelector("#import-btn")?.click();
+      body.classList.add("left-collapsed");
       body.classList.add("shield-mode");
       setActive("safetyspace");
     } else if (where === "vault") {

@@ -114,13 +114,7 @@
         </button>
       </div>
 
-      <!-- Safety Space Mobile Trigger Widget -->
-      <div id="safetyspace-mobile-trigger" style="display:none; padding:10px 14px; border-bottom:1px solid var(--border); background:rgba(255,255,255,0.02);">
-        <button type="button" id="open-stealth-phone-btn" class="btn btn--block" style="background:linear-gradient(135deg, #f2b8c6, #b9a6e8); color:#0c0e12; font-weight:700; border:none; padding:8px 12px; font-size:12px; display:flex; align-items:center; justify-content:center; gap:6px;">
-          <span>📱</span> <span>Stealth Fake Call</span>
-        </button>
-        <small style="display:block; text-align:center; color:var(--muted); margin-top:4px; font-size:10.5px;">Caller: <strong id="stealth-primary-name" style="color:var(--text);">Mom</strong></small>
-      </div>
+
 
       <ul id="contact-list" class="contact-list"></ul>
     </aside>
@@ -152,11 +146,14 @@
 
       <!-- Screenshot import: the victim pastes a real chat screenshot; OCR runs in this browser -->
       <section id="import-view" class="import" hidden>
-        <header class="import__head">
+        <header class="import__head" style="display:flex; justify-content:space-between; align-items:center;">
           <div>
             <div class="chat__name">Scan a chat screenshot</div>
             <div class="muted small">Read on your device. Never uploaded.</div>
           </div>
+          <button type="button" id="import-back-to-safetyspace" class="btn btn--ghost small" style="display:inline-flex; align-items:center; gap:6px;">
+            ← Back to Safety Space
+          </button>
         </header>
 
         <div class="import__body">
@@ -274,107 +271,170 @@
         </div>
       </section>
 
-      <!-- Safety Space: Dedicated Stealth Phone Call Simulator & Calming De-Escalation Screen -->
+      <!-- Safety Space: Dedicated Stealth De-Escalation & Screenshot Threat Scanner Hub -->
       <section id="safetyspace-view" class="vault" hidden>
         <header class="vault__head">
           <div>
-            <div class="chat__name">Safety Space — Discreet De-Escalation Call</div>
-            <div class="muted small">Stealth de-escalation phone call simulator. Tap to ring · Hold Decline 2s for Silent SOS.</div>
+            <div class="chat__name">Safety Space — Private Security Hub</div>
+            <div class="muted small">Discreet de-escalation tools, on-device OCR chat verification, and emergency safety instruments.</div>
+          </div>
+          <div style="display:flex; align-items:center; gap:8px;">
+            <span class="glass-badge" style="color:#10b981; border-color:rgba(16,185,129,0.3);">✓ Zero-Knowledge Security</span>
           </div>
         </header>
 
-        <div class="vault__body" style="max-width: 680px; margin: 0 auto; padding: 24px;">
-          <div class="glass-panel" style="padding: 24px; display: flex; flex-direction: column; align-items: center;">
-            <div style="width: 100%; display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px;">
-              <div>
-                <strong style="font-size: 15px; color: var(--text);">Discreet De-Escalation Call Simulator</strong>
-                <small style="display: block; color: var(--muted); font-size: 12px;">Pretend an incoming family call · Hold Decline 2s for Silent SOS</small>
+        <div class="vault__body" style="max-width: 920px; margin: 0 auto; padding: 24px;">
+          <!-- Hub Mode Selector (SmartSpend Card Hub) -->
+          <div id="safetyspace-hub" style="display: flex; flex-direction: column; gap: 24px;">
+            <!-- Hero Welcome Card -->
+            <div class="glass-panel" style="padding: 24px 28px; background: linear-gradient(135deg, rgba(99,102,241,0.12), rgba(242,184,198,0.08)); border-color: rgba(255,255,255,0.12); border-radius: 20px;">
+              <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
+                <div>
+                  <h2 style="margin:0 0 6px 0; font-size:20px; font-weight:700; color:#fff;">Welcome to Your Safety Space</h2>
+                  <p style="margin:0; font-size:13px; color:var(--muted); line-height:1.5;">Choose a dedicated instrument below. Everything runs privately on your device.</p>
+                </div>
+                <div style="display:flex; gap:8px;">
+                  <span class="glass-badge" style="color:#3ecf8e; border-color:rgba(62,207,142,0.3);">● Protection Ready</span>
+                </div>
               </div>
-              <span class="glass-badge" style="color: #3ecf8e; border-color: rgba(62,207,142,0.3);">Prototype Active</span>
             </div>
 
-            <!-- Phone Shell -->
-            <div class="phone" id="phone" aria-label="Phone screen" style="margin: 0 auto; box-shadow: 0 16px 40px rgba(0,0,0,0.6);">
-              <div class="phone__notch"></div>
-              <div class="phone__status"><span id="phone-clock">9:41</span><span>●●● 4G ▮</span></div>
-
-              <!-- Incoming Screen -->
-              <div class="screen screen--incoming" data-screen="incoming">
-                <div class="caller">
-                  <div class="caller__avatar" id="caller-initial">M</div>
-                  <div class="caller__name" id="caller-name">Mom</div>
-                  <div class="caller__sub">mobile · incoming call…</div>
+            <!-- Two SmartSpend Action Cards -->
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px;">
+              <!-- Action Card 1: Screenshot Threat Scanner -->
+              <div class="glass-card" style="padding: 24px; display: flex; flex-direction: column; justify-content: space-between; gap: 18px; border-radius: 20px; border-color: rgba(99,102,241,0.25);">
+                <div>
+                  <div style="width: 50px; height: 50px; border-radius: 16px; background: rgba(99, 102, 241, 0.15); border: 1px solid rgba(99, 102, 241, 0.3); display: flex; align-items: center; justify-content: center; font-size: 24px; margin-bottom: 16px;">
+                    📸
+                  </div>
+                  <strong style="display: block; font-size: 16.5px; margin-bottom: 6px; color: #fff;">Scan Chat Screenshot</strong>
+                  <p style="font-size: 13px; color: var(--muted); line-height: 1.5; margin: 0;">
+                    Extract and verify messages from WhatsApp, Instagram, or Telegram screenshots using on-device OCR. No cloud uploads.
+                  </p>
                 </div>
-                <div class="call-extras"><span>⏰<br>Remind me</span><span>💬<br>Message</span></div>
-                <div class="call-actions">
-                  <div>
-                    <button id="decline-btn" class="call-btn call-btn--decline" type="button" aria-label="Decline" title="Hold 2s for Silent SOS">
+                <button type="button" id="hub-open-scanner-btn" class="btn btn--primary" style="padding: 11px 18px; font-weight: 600; font-size: 13px; border-radius: 12px; display: flex; align-items: center; justify-content: center; gap: 8px;">
+                  <span>Launch Threat Scanner</span> <span aria-hidden="true">↗</span>
+                </button>
+              </div>
+
+              <!-- Action Card 2: Stealth Fake Call Simulator -->
+              <div class="glass-card" style="padding: 24px; display: flex; flex-direction: column; justify-content: space-between; gap: 18px; border-radius: 20px; border-color: rgba(242,184,198,0.25);">
+                <div>
+                  <div style="width: 50px; height: 50px; border-radius: 16px; background: rgba(242, 184, 198, 0.15); border: 1px solid rgba(242, 184, 198, 0.3); display: flex; align-items: center; justify-content: center; font-size: 24px; margin-bottom: 16px;">
+                    📱
+                  </div>
+                  <strong style="display: block; font-size: 16.5px; margin-bottom: 6px; color: #fff;">Stealth Fake Call Simulator</strong>
+                  <p style="font-size: 13px; color: var(--muted); line-height: 1.5; margin: 0;">
+                    Simulate a realistic incoming phone call from family (with real ringtone audio) to exit uncomfortable situations. Hold Decline 2s for Silent SOS.
+                  </p>
+                </div>
+                <button type="button" id="hub-open-phone-btn" class="btn btn--primary" style="background: linear-gradient(135deg, #f2b8c6, #b9a6e8); color: #0c0e12; border: none; padding: 11px 18px; font-weight: 700; font-size: 13px; border-radius: 12px; display: flex; align-items: center; justify-content: center; gap: 8px;">
+                  <span>Open Call Simulator</span> <span aria-hidden="true">↗</span>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Dedicated Container: Stealth Phone Simulator (Shown ONLY when Open Call Simulator is clicked) -->
+          <div id="safetyspace-phone-container" style="display: none;">
+            <div style="margin-bottom: 18px;">
+              <button type="button" id="phone-back-to-hub-btn" class="btn btn--ghost small" style="display: inline-flex; align-items: center; gap: 6px; font-size: 12.5px;">
+                ← Back to Safety Space Tools
+              </button>
+            </div>
+
+            <div class="glass-panel" style="padding: 24px; display: flex; flex-direction: column; align-items: center; border-radius: 24px;">
+              <div style="width: 100%; display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px;">
+                <div>
+                  <strong style="font-size: 15px; color: var(--text);">Discreet De-Escalation Call Simulator</strong>
+                  <small style="display: block; color: var(--muted); font-size: 12px;">Pretend an incoming family call · Hold Decline 2s for Silent SOS</small>
+                </div>
+                <span class="glass-badge" style="color: #3ecf8e; border-color: rgba(62,207,142,0.3);">Prototype Active</span>
+              </div>
+
+              <!-- Phone Shell -->
+              <div class="phone" id="phone" aria-label="Phone screen" style="margin: 0 auto; box-shadow: 0 16px 40px rgba(0,0,0,0.6);">
+                <div class="phone__notch"></div>
+                <div class="phone__status"><span id="phone-clock">9:41</span><span>●●● 4G ▮</span></div>
+
+                <!-- Incoming Screen -->
+                <div class="screen screen--incoming" data-screen="incoming">
+                  <div class="caller">
+                    <div class="caller__avatar" id="caller-initial">M</div>
+                    <div class="caller__name" id="caller-name">Mom</div>
+                    <div class="caller__sub">mobile · incoming call…</div>
+                  </div>
+                  <div class="call-extras"><span>⏰<br>Remind me</span><span>💬<br>Message</span></div>
+                  <div class="call-actions">
+                    <div>
+                      <button id="decline-btn" class="call-btn call-btn--decline" type="button" aria-label="Decline" title="Hold 2s for Silent SOS">
+                        <svg viewBox="0 0 24 24" width="28" height="28"><path fill="#fff" d="M12 9c-1.6 0-3.2.3-4.6.7v3.1c0 .4-.2.7-.6.9-1 .5-1.9 1.1-2.7 1.8-.2.2-.4.3-.7.3s-.5-.1-.7-.3L.3 13.1A1 1 0 0 1 0 12.4c0-.3.1-.5.3-.7C3.3 8.8 7.4 7 12 7s8.7 1.8 11.7 4.7c.2.2.3.4.3.7s-.1.5-.3.7l-2.4 2.4c-.2.2-.4.3-.7.3s-.5-.1-.7-.3l-2.7-1.8c-.4-.2-.6-.5-.6-.9V9.7C15.2 9.3 13.6 9 12 9z"/></svg>
+                      </button>
+                      <span class="call-act-label">Decline (Hold 2s SOS)</span>
+                    </div>
+                    <div>
+                      <button id="accept-btn" class="call-btn call-btn--accept ringing-pulse" type="button" aria-label="Accept">
+                        <svg viewBox="0 0 24 24" width="28" height="28"><path fill="#fff" d="M20 15.5c-1.2 0-2.4-.2-3.6-.6-.3-.1-.7 0-1 .2l-2.2 2.2c-2.8-1.4-5.1-3.8-6.6-6.6l2.2-2.2c.3-.3.4-.7.2-1-.3-1.1-.5-2.3-.5-3.5 0-.6-.4-1-1-1H4c-.6 0-1 .4-1 1 0 9.4 7.6 17 17 17 .6 0 1-.4 1-1v-3.5c0-.6-.4-1-1-1z"/></svg>
+                      </button>
+                      <span class="call-act-label">Accept Call</span>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- In-call Screen -->
+                <div class="screen screen--incall" data-screen="incall" hidden>
+                  <div class="caller">
+                    <div class="caller__avatar" id="caller-initial-2">M</div>
+                    <div class="caller__name" id="caller-name-2">Mom</div>
+                    <div class="caller__sub" id="call-timer">00:00</div>
+                  </div>
+                  <div class="incall-grid">
+                    <div class="incall-item"><span>🔇</span><span>mute</span></div>
+                    <div class="incall-item"><span>⌨️</span><span>keypad</span></div>
+                    <div class="incall-item"><span>🔊</span><span>speaker</span></div>
+                    <div class="incall-item"><span>➕</span><span>add call</span></div>
+                    <div class="incall-item"><span>📹</span><span>FaceTime</span></div>
+                    <div class="incall-item"><span>👤</span><span>contacts</span></div>
+                  </div>
+                  <div class="call-actions" style="justify-content:center; margin-top:20px;">
+                    <button id="end-btn" class="call-btn call-btn--decline" type="button" aria-label="End call">
                       <svg viewBox="0 0 24 24" width="28" height="28"><path fill="#fff" d="M12 9c-1.6 0-3.2.3-4.6.7v3.1c0 .4-.2.7-.6.9-1 .5-1.9 1.1-2.7 1.8-.2.2-.4.3-.7.3s-.5-.1-.7-.3L.3 13.1A1 1 0 0 1 0 12.4c0-.3.1-.5.3-.7C3.3 8.8 7.4 7 12 7s8.7 1.8 11.7 4.7c.2.2.3.4.3.7s-.1.5-.3.7l-2.4 2.4c-.2.2-.4.3-.7.3s-.5-.1-.7-.3l-2.7-1.8c-.4-.2-.6-.5-.6-.9V9.7C15.2 9.3 13.6 9 12 9z"/></svg>
                     </button>
-                    <span class="call-act-label">Decline (Hold 2s SOS)</span>
                   </div>
-                  <div>
-                    <button id="accept-btn" class="call-btn call-btn--accept ringing-pulse" type="button" aria-label="Accept">
-                      <svg viewBox="0 0 24 24" width="28" height="28"><path fill="#fff" d="M20 15.5c-1.2 0-2.4-.2-3.6-.6-.3-.1-.7 0-1 .2l-2.2 2.2c-2.8-1.4-5.1-3.8-6.6-6.6l2.2-2.2c.3-.3.4-.7.2-1-.3-1.1-.5-2.3-.5-3.5 0-.6-.4-1-1-1H4c-.6 0-1 .4-1 1 0 9.4 7.6 17 17 17 .6 0 1-.4 1-1v-3.5c0-.6-.4-1-1-1z"/></svg>
-                    </button>
-                    <span class="call-act-label">Accept Call</span>
+                </div>
+
+                <!-- Lock / Home Screen -->
+                <div class="screen screen--home" data-screen="home" hidden>
+                  <div class="lock-head">
+                    <div class="lock-head__time" id="lock-time">9:41</div>
+                    <div class="lock-head__date" id="lock-date">Friday, 20 November</div>
                   </div>
+                  <div class="lock-notif">
+                    <div class="lock-notif__app"><span>📞</span><span>PHONE</span><span>now</span></div>
+                    <div class="lock-notif__title" id="missed-text">Missed call: Mom</div>
+                    <div class="lock-notif__body">Tap to call back or swipe up to dismiss.</div>
+                  </div>
+                  <div class="lock-foot"><span class="lock-btn">🔦</span><span class="lock-btn">📷</span></div>
                 </div>
               </div>
 
-              <!-- In-call Screen -->
-              <div class="screen screen--incall" data-screen="incall" hidden>
-                <div class="caller">
-                  <div class="caller__avatar" id="caller-initial-2">M</div>
-                  <div class="caller__name" id="caller-name-2">Mom</div>
-                  <div class="caller__sub" id="call-timer">00:00</div>
-                </div>
-                <div class="incall-grid">
-                  <div class="incall-item"><span>🔇</span><span>mute</span></div>
-                  <div class="incall-item"><span>⌨️</span><span>keypad</span></div>
-                  <div class="incall-item"><span>🔊</span><span>speaker</span></div>
-                  <div class="incall-item"><span>➕</span><span>add call</span></div>
-                  <div class="incall-item"><span>📹</span><span>FaceTime</span></div>
-                  <div class="incall-item"><span>👤</span><span>contacts</span></div>
-                </div>
-                <div class="call-actions" style="justify-content:center; margin-top:20px;">
-                  <button id="end-btn" class="call-btn call-btn--decline" type="button" aria-label="End call">
-                    <svg viewBox="0 0 24 24" width="28" height="28"><path fill="#fff" d="M12 9c-1.6 0-3.2.3-4.6.7v3.1c0 .4-.2.7-.6.9-1 .5-1.9 1.1-2.7 1.8-.2.2-.4.3-.7.3s-.5-.1-.7-.3L.3 13.1A1 1 0 0 1 0 12.4c0-.3.1-.5.3-.7C3.3 8.8 7.4 7 12 7s8.7 1.8 11.7 4.7c.2.2.3.4.3.7s-.1.5-.3.7l-2.4 2.4c-.2.2-.4.3-.7.3s-.5-.1-.7-.3l-2.7-1.8c-.4-.2-.6-.5-.6-.9V9.7C15.2 9.3 13.6 9 12 9z"/></svg>
+              <!-- Phone Simulator Controls -->
+              <div style="width: 100%; max-width: 440px; margin-top: 20px; display: flex; flex-direction: column; gap: 12px;">
+                <label style="display:flex; justify-content:space-between; align-items:center; font-size:12.5px; color:var(--muted);">
+                  Caller Identity:
+                  <input id="caller-input" value="Mom" class="glass-input" style="width:140px; padding:6px 12px; font-size:12px;" />
+                </label>
+                <button type="button" id="ring-btn" class="btn btn--block" style="background:linear-gradient(135deg, #f2b8c6, #b9a6e8); color:#0c0e12; font-weight:700; border:none; padding:11px; font-size:13px;">
+                  📞 Ring Fake Call (With Ringtone Audio)
+                </button>
+                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
+                  <button type="button" id="siren-toggle-btn" class="btn btn--ghost" style="border-color:#ef4444; color:#ef4444; font-size:12px; font-weight:600; padding:9px;">
+                    🔊 Sound Alarm Siren
+                  </button>
+                  <button type="button" id="trigger-sos-btn" class="btn btn--primary" style="background:#ef4444; border-color:#ef4444; font-size:12px; font-weight:700; padding:9px;">
+                    🚨 Trigger Silent SOS
                   </button>
                 </div>
-              </div>
-
-              <!-- Lock / Home Screen -->
-              <div class="screen screen--home" data-screen="home" hidden>
-                <div class="lock-head">
-                  <div class="lock-head__time" id="lock-time">9:41</div>
-                  <div class="lock-head__date" id="lock-date">Friday, 20 November</div>
-                </div>
-                <div class="lock-notif">
-                  <div class="lock-notif__app"><span>📞</span><span>PHONE</span><span>now</span></div>
-                  <div class="lock-notif__title" id="missed-text">Missed call: Mom</div>
-                  <div class="lock-notif__body">Tap to call back or swipe up to dismiss.</div>
-                </div>
-                <div class="lock-foot"><span class="lock-btn">🔦</span><span class="lock-btn">📷</span></div>
-              </div>
-            </div>
-
-            <!-- Phone Simulator Controls -->
-            <div style="width: 100%; max-width: 440px; margin-top: 20px; display: flex; flex-direction: column; gap: 12px;">
-              <label style="display:flex; justify-content:space-between; align-items:center; font-size:12.5px; color:var(--muted);">
-                Caller Identity:
-                <input id="caller-input" value="Mom" class="glass-input" style="width:140px; padding:6px 12px; font-size:12px;" />
-              </label>
-              <button type="button" id="ring-btn" class="btn btn--block" style="background:linear-gradient(135deg, #f2b8c6, #b9a6e8); color:#0c0e12; font-weight:700; border:none; padding:11px; font-size:13px;">
-                📞 Ring Fake Call (With Ringtone Audio)
-              </button>
-              <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
-                <button type="button" id="siren-toggle-btn" class="btn btn--ghost" style="border-color:#ef4444; color:#ef4444; font-size:12px; font-weight:600; padding:9px;">
-                  🔊 Sound Alarm Siren
-                </button>
-                <button type="button" id="trigger-sos-btn" class="btn btn--primary" style="background:#ef4444; border-color:#ef4444; font-size:12px; font-weight:700; padding:9px;">
-                  🚨 Trigger Silent SOS
-                </button>
               </div>
             </div>
           </div>
@@ -393,7 +453,7 @@
 
         <div class="vault__body" style="max-width: 860px; margin: 0 auto; padding: 24px;">
           <!-- Live Status & SOS Broadcast Banner -->
-          <div class="glass-card" style="padding: 16px 20px; margin-bottom: 24px; background: linear-gradient(135deg, rgba(239, 68, 68, 0.12), rgba(239, 68, 68, 0.04)); border-color: rgba(239, 68, 68, 0.3);">
+          <div class="glass-card" style="padding: 16px 20px; margin-bottom: 24px; background: linear-gradient(135deg, rgba(239, 68, 68, 0.12), rgba(239, 68, 68, 0.04)); border-color: rgba(239, 68, 68, 0.3); border-radius: 18px;">
             <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
               <div>
                 <strong style="color:#ef4444; font-size:15px; display:block; margin-bottom:2px;">🚨 Real-Time Emergency SOS Network</strong>
@@ -405,22 +465,29 @@
           </div>
 
           <!-- Guardians List Card -->
-          <div class="glass-panel" style="padding: 24px;">
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:18px;">
+          <div class="glass-panel" style="padding: 24px; border-radius: 22px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; margin-bottom:18px;">
               <div>
-                <strong style="font-size:16px; color:var(--text);">Trusted Emergency Guardians</strong>
+                <strong style="font-size:16.5px; color:var(--text);">Trusted Emergency Guardians</strong>
                 <span id="contact-count" style="font-size:12px; color:var(--muted); margin-left:8px;">0 configured</span>
               </div>
-              <span class="glass-badge" style="color:var(--brand); border-color:rgba(242,184,198,0.3);">Instant Dispatch</span>
+              <div style="display:flex; align-items:center; gap:10px;">
+                <span class="glass-badge" style="color:var(--brand); border-color:rgba(242,184,198,0.3);">Instant Dispatch</span>
+                <button type="button" id="toggle-add-guardian-btn" class="btn btn--primary small" style="font-weight:600; font-size:12px; padding:7px 14px; border-radius:10px;">
+                  + Add Guardian
+                </button>
+              </div>
             </div>
 
-            <!-- List rendered dynamically by sos.js -->
-            <ul class="contact-setup" id="contact-setup" style="display:flex; flex-direction:column; gap:12px; list-style:none; padding:0; margin:0 0 24px 0;"></ul>
-
-            <!-- Add Guardian Form -->
-            <div style="border-top:1px solid rgba(255,255,255,0.08); padding-top:20px;">
-              <strong style="display:block; margin-bottom:4px; font-size:14.5px; color:var(--text);">+ Add New Emergency Guardian</strong>
-              <p style="font-size:12px; color:var(--muted); margin-bottom:16px;">Added guardians receive automated email alerts, audio sirens, and instant GPS tracking coordinates during an emergency.</p>
+            <!-- Collapsible Add Guardian Form Modal / Drawer -->
+            <div id="add-guardian-card" style="display:none; margin-bottom:24px; padding:20px; border:1px solid rgba(255,255,255,0.12); border-radius:18px; background:rgba(255,255,255,0.03);">
+              <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+                <div>
+                  <strong style="display:block; font-size:14.5px; color:var(--text);">+ Add New Emergency Guardian</strong>
+                  <small style="color:var(--muted); font-size:11.5px;">Guardians receive instant GPS tracking coordinates & siren alert during emergency.</small>
+                </div>
+                <button type="button" id="cancel-add-guardian-btn" class="btn btn--ghost small" style="font-size:11px; padding:4px 8px;">✕ Cancel</button>
+              </div>
               <form class="add-contact" id="add-contact" style="display:flex; flex-direction:column; gap:14px;">
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
                   <input name="name" placeholder="Guardian Full Name" required maxlength="60" autocomplete="off" class="glass-input" />
@@ -439,11 +506,19 @@
                   <input name="whatsapp" type="tel" placeholder="WhatsApp Number" maxlength="30" autocomplete="off" class="glass-input" />
                 </div>
                 <input name="email" type="email" placeholder="Emergency Notification Email (e.g. guardian@gmail.com)" maxlength="120" autocomplete="off" class="glass-input" />
-                <button class="btn btn--primary" type="submit" style="padding:10px 24px; font-weight:600; font-size:13px; align-self:flex-start; margin-top:4px;">
-                  + Save & Add Guardian
-                </button>
+                <div style="display:flex; gap:10px; margin-top:4px;">
+                  <button class="btn btn--primary" type="submit" style="padding:10px 22px; font-weight:600; font-size:13px; border-radius:10px;">
+                    + Save & Add Guardian
+                  </button>
+                  <button type="button" id="cancel-guardian-btn2" class="btn btn--ghost" style="padding:10px 16px; font-size:13px; border-radius:10px;">
+                    Cancel
+                  </button>
+                </div>
               </form>
             </div>
+
+            <!-- List rendered dynamically by sos.js -->
+            <ul class="contact-setup" id="contact-setup" style="display:flex; flex-direction:column; gap:12px; list-style:none; padding:0; margin:0;"></ul>
           </div>
         </div>
       </section>
@@ -458,35 +533,60 @@
         </header>
         <div class="vault__body" style="max-width: 960px; margin: 0 auto; padding: 24px;">
           <!-- 24/7 Helplines -->
-          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; margin-bottom: 28px;">
-            <div class="glass-card" style="padding:22px; text-align:center; border-color:rgba(239, 68, 68, 0.4);">
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; margin-bottom: 24px;">
+            <div class="glass-card" style="padding:22px; text-align:center; border-color:rgba(239, 68, 68, 0.4); border-radius:18px;">
               <div style="font-size:32px; font-weight:800; color:#ef4444; letter-spacing:-0.02em;">112</div>
               <strong style="display:block; margin:6px 0 2px; font-size:15px;">National Emergency</strong>
               <small style="color:var(--muted); display:block; margin-bottom:14px;">Police · Fire · Medical Dispatch</small>
-              <a href="tel:112" class="btn btn--primary" style="display:inline-block; padding:8px 20px; font-size:13px; background:#ef4444; border-color:#ef4444;">📞 Call 112</a>
+              <a href="tel:112" class="btn btn--primary" style="display:inline-block; padding:8px 20px; font-size:13px; background:#ef4444; border-color:#ef4444; border-radius:10px;">📞 Call 112</a>
             </div>
-            <div class="glass-card" style="padding:22px; text-align:center; border-color:rgba(99, 102, 241, 0.4);">
+            <div class="glass-card" style="padding:22px; text-align:center; border-color:rgba(99, 102, 241, 0.4); border-radius:18px;">
               <div style="font-size:32px; font-weight:800; color:#6366f1; letter-spacing:-0.02em;">1091</div>
               <strong style="display:block; margin:6px 0 2px; font-size:15px;">Women in Distress</strong>
               <small style="color:var(--muted); display:block; margin-bottom:14px;">24x7 Safety & Legal Protection</small>
-              <a href="tel:1091" class="btn btn--primary" style="display:inline-block; padding:8px 20px; font-size:13px; background:#6366f1; border-color:#6366f1;">📞 Call 1091</a>
+              <a href="tel:1091" class="btn btn--primary" style="display:inline-block; padding:8px 20px; font-size:13px; background:#6366f1; border-color:#6366f1; border-radius:10px;">📞 Call 1091</a>
             </div>
-            <div class="glass-card" style="padding:22px; text-align:center; border-color:rgba(16, 185, 129, 0.4);">
+            <div class="glass-card" style="padding:22px; text-align:center; border-color:rgba(16, 185, 129, 0.4); border-radius:18px;">
               <div style="font-size:32px; font-weight:800; color:#10b981; letter-spacing:-0.02em;">1930</div>
               <strong style="display:block; margin:6px 0 2px; font-size:15px;">Cyber Crime Helpline</strong>
               <small style="color:var(--muted); display:block; margin-bottom:14px;">Extortion, Stalking & Fraud</small>
-              <a href="tel:1930" class="btn btn--primary" style="display:inline-block; padding:8px 20px; font-size:13px; background:#10b981; border-color:#10b981;">📞 Call 1930</a>
+              <a href="tel:1930" class="btn btn--primary" style="display:inline-block; padding:8px 20px; font-size:13px; background:#10b981; border-color:#10b981; border-radius:10px;">📞 Call 1930</a>
+            </div>
+          </div>
+
+          <!-- Dynamic Proximity Selector Bar -->
+          <div class="glass-card" style="padding: 16px 20px; margin-bottom: 24px; border-radius: 18px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 14px; background: linear-gradient(135deg, rgba(99,102,241,0.1), rgba(16,185,129,0.06));">
+            <div style="display: flex; align-items: center; gap: 12px;">
+              <div style="width: 40px; height: 40px; border-radius: 12px; background: rgba(99,102,241,0.2); display: flex; align-items: center; justify-content: center; font-size: 20px;">
+                📍
+              </div>
+              <div>
+                <strong style="font-size: 14.5px; color: var(--text);">Your Current Proximity Zone:</strong>
+                <small style="display: block; color: var(--muted); font-size: 12px;">Only nearby responders within 30 km are dispatched for your SOS</small>
+              </div>
+            </div>
+            <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+              <select id="user-zone-select" class="glass-input" style="padding: 8px 12px; font-size: 12.5px; background: #0c0e12 !important; min-width: 200px;">
+                <option value="12.9716,77.5946">Bengaluru (12.97°N, 77.59°E)</option>
+                <option value="13.4355,77.7315">Chikkaballapur (13.43°N, 77.73°E)</option>
+                <option value="12.2958,76.6394">Mysuru (12.29°N, 76.63°E)</option>
+                <option value="12.9141,74.8560">Mangaluru (12.91°N, 74.85°E)</option>
+                <option value="15.3647,75.1240">Hubballi (15.36°N, 75.12°E)</option>
+              </select>
+              <button type="button" id="detect-gps-btn" class="btn btn--ghost small" style="font-size: 12px; padding: 7px 12px; border-radius: 8px;">
+                🎯 Detect GPS
+              </button>
             </div>
           </div>
 
           <!-- Active First Responders Grid & Registration -->
           <div style="display: grid; grid-template-columns: 1fr 340px; gap: 24px; align-items: start;">
             <!-- Active Responders List -->
-            <div class="glass-panel" style="padding: 22px;">
+            <div class="glass-panel" style="padding: 22px; border-radius: 20px;">
               <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
                 <div>
-                  <strong style="font-size:16px;">Registered Community Responders</strong>
-                  <small style="display:block; color:var(--muted); font-size:12px;">Verified volunteers within radius who receive dispatch alerts</small>
+                  <strong style="font-size:16px;">Community Responders</strong>
+                  <small style="display:block; color:var(--muted); font-size:12px;" id="responders-filter-status">Sorted by distance from your current location</small>
                 </div>
                 <a href="/responder.html" target="_blank" rel="noopener" class="btn btn--ghost small" style="font-size:11.5px;">Live Triage Console ↗</a>
               </div>
@@ -496,15 +596,29 @@
             </div>
 
             <!-- Register New Responder Form -->
-            <div class="glass-panel" style="padding: 22px;">
+            <div class="glass-panel" style="padding: 22px; border-radius: 20px;">
               <strong style="font-size:15px; display:block; margin-bottom:4px;">+ Register as First Responder</strong>
-              <p style="font-size:12px; color:var(--muted); margin-bottom:16px;">Join the local safety volunteer network. Your contact details remain encrypted until an emergency dispatch is accepted.</p>
+              <p style="font-size:12px; color:var(--muted); margin-bottom:16px;">Join the local safety volunteer network. Your coordinates determine which emergencies you can respond to.</p>
               <form id="add-responder-form" style="display:flex; flex-direction:column; gap:12px;">
                 <input id="resp-name" placeholder="Full Volunteer Name" required maxlength="60" class="glass-input" />
                 <input id="resp-email" type="email" placeholder="Official / Contact Email" required maxlength="120" class="glass-input" />
                 <input id="resp-phone" type="tel" placeholder="Mobile Phone (+91...)" required maxlength="30" class="glass-input" />
                 <input id="resp-org" placeholder="Campus / Organization / Unit" maxlength="60" class="glass-input" />
-                <button type="submit" class="btn btn--primary" style="padding:10px 18px; font-weight:600; font-size:13px; margin-top:4px;">
+                
+                <label style="display:flex; flex-direction:column; gap:4px; font-size:12px; color:var(--muted);">
+                  Volunteer Base Location:
+                  <select id="resp-city-select" class="glass-input" style="background:#0c0e12 !important;">
+                    <option value="12.9716,77.5946">Bengaluru (12.97°N, 77.59°E)</option>
+                    <option value="13.4355,77.7315">Chikkaballapur (13.43°N, 77.73°E)</option>
+                    <option value="12.2958,76.6394">Mysuru (12.29°N, 76.63°E)</option>
+                    <option value="12.9141,74.8560">Mangaluru (12.91°N, 74.85°E)</option>
+                    <option value="custom">📍 Use Device GPS</option>
+                  </select>
+                </label>
+                <input id="resp-lat" type="hidden" value="12.9716" />
+                <input id="resp-lng" type="hidden" value="77.5946" />
+
+                <button type="submit" class="btn btn--primary" style="padding:10px 18px; font-weight:600; font-size:13px; margin-top:4px; border-radius:10px;">
                   + Submit Registration
                 </button>
               </form>
@@ -522,18 +636,30 @@
           </div>
         </header>
         <div class="vault__body" style="max-width: 860px; margin: 0 auto; padding: 24px;">
-          <!-- E-Commerce Style Hero Banner -->
-          <div class="profile-hero">
+          <!-- E-Commerce Navigation Breadcrumb -->
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; flex-wrap:wrap; gap:10px;">
+            <button type="button" class="btn btn--ghost small" id="prof-back-btn" style="display:inline-flex; align-items:center; gap:6px;">
+              ← Back to Guardians
+            </button>
+            <div style="display:flex; align-items:center; gap:8px;">
+              <button type="button" class="btn btn--ghost small" id="prof-next-btn" style="display:inline-flex; align-items:center; gap:6px;">
+                Go to Safety Space →
+              </button>
+            </div>
+          </div>
+
+          <!-- SmartSpend Style Hero Banner -->
+          <div class="profile-hero" style="border-radius:24px; padding:24px; margin-bottom:24px;">
             <div class="profile-avatar">
               <span id="prof-avatar-letter">U</span>
               <span class="avatar-online-dot"></span>
             </div>
             <div style="flex:1;">
-              <div style="display:flex; align-items:center; gap:10px; margin-bottom:4px;">
-                <h2 id="prof-display-name" style="margin:0; font-size:20px; font-weight:700;">Kavach User</h2>
-                <span class="glass-badge" style="color:#10b981; border-color:rgba(16,185,129,0.3);">Shield Active</span>
+              <div style="display:flex; align-items:center; gap:10px; margin-bottom:4px; flex-wrap:wrap;">
+                <h2 id="prof-display-name" style="margin:0; font-size:22px; font-weight:700;">Kavach User</h2>
+                <span class="glass-badge" style="color:#10b981; border-color:rgba(16,185,129,0.3);">Protected by Kavach</span>
               </div>
-              <div id="prof-display-email" style="font-size:13px; color:var(--muted); margin-bottom:8px;">user@kavach.safety</div>
+              <div id="prof-display-email" style="font-size:13.5px; color:var(--muted); margin-bottom:12px;">user@kavach.safety</div>
               <div style="display:flex; gap:16px; font-size:12px; color:var(--muted); flex-wrap:wrap;">
                 <span>🛡️ SHA-256 Vault Sealing</span>
                 <span>⚖️ BNS / IT Act Integration</span>
@@ -542,11 +668,30 @@
             </div>
           </div>
 
+          <!-- 3 SmartSpend KPI Metric Cards -->
+          <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(220px, 1fr)); gap:16px; margin-bottom:24px;">
+            <div class="glass-card" style="padding:18px; border-radius:18px;">
+              <div style="font-size:12px; color:var(--muted); margin-bottom:4px;">EVIDENCE STATUS</div>
+              <strong style="font-size:16px; color:#3ecf8e; display:block;">Tamper-Proof</strong>
+              <small style="color:var(--muted); font-size:11.5px;">SHA-256 Chained Vault</small>
+            </div>
+            <div class="glass-card" style="padding:18px; border-radius:18px;">
+              <div style="font-size:12px; color:var(--muted); margin-bottom:4px;">SAFETY NETWORK</div>
+              <strong style="font-size:16px; color:#f2b8c6; display:block;" id="prof-kpi-guardians">Guardians Linked</strong>
+              <small style="color:var(--muted); font-size:11.5px;">Auto Telegram & Email Alert</small>
+            </div>
+            <div class="glass-card" style="padding:18px; border-radius:18px;">
+              <div style="font-size:12px; color:var(--muted); margin-bottom:4px;">LEGAL INTEGRATION</div>
+              <strong style="font-size:16px; color:#6366f1; display:block;">Auto-Fill Ready</strong>
+              <small style="color:var(--muted); font-size:11.5px;">Cyber Cell & Police Form</small>
+            </div>
+          </div>
+
           <!-- Profile Form with Two Cards -->
           <form id="profile-form" style="display:flex; flex-direction:column; gap:20px;">
-            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:20px;">
+            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:20px;" class="profile-cards-grid">
               <!-- Card 1: Legal Identity -->
-              <div class="glass-panel" style="padding:22px;">
+              <div class="glass-panel" style="padding:22px; border-radius:20px;">
                 <strong style="font-size:15px; display:block; margin-bottom:4px; color:var(--text);">Legal Identity Details</strong>
                 <p style="font-size:12px; color:var(--muted); margin-bottom:16px;">Used to identify the complainant in formal police petitions.</p>
                 <div style="display:flex; flex-direction:column; gap:12px;">
@@ -570,7 +715,7 @@
               </div>
 
               <!-- Card 2: Police Jurisdiction -->
-              <div class="glass-panel" style="padding:22px;">
+              <div class="glass-panel" style="padding:22px; border-radius:20px;">
                 <strong style="font-size:15px; display:block; margin-bottom:4px; color:var(--text);">Residential & Police Jurisdiction</strong>
                 <p style="font-size:12px; color:var(--muted); margin-bottom:16px;">Determines the official police station jurisdiction for filing.</p>
                 <div style="display:flex; flex-direction:column; gap:12px;">
@@ -591,13 +736,13 @@
             </div>
 
             <!-- Complaint Sync Notice & Save Buttons -->
-            <div class="glass-card" style="padding:16px 20px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:14px;">
+            <div class="glass-card" style="padding:16px 20px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:14px; border-radius:18px;">
               <div style="font-size:12.5px; color:var(--muted);">
                 <strong style="color:#10b981;">✓ Auto-Fill Enabled:</strong> These details will be automatically inserted into the complainant header of every generated cyber crime report.
               </div>
               <div style="display:flex; gap:10px;">
-                <button type="submit" class="btn btn--primary" style="padding:10px 24px; font-weight:600; font-size:13.5px;">Save Profile</button>
-                <button type="button" class="btn btn--ghost" id="prof-reset-btn" style="padding:10px 16px; font-size:13px;">Clear</button>
+                <button type="submit" class="btn btn--primary" style="padding:10px 24px; font-weight:600; font-size:13.5px; border-radius:10px;">Save Profile</button>
+                <button type="button" class="btn btn--ghost" id="prof-reset-btn" style="padding:10px 16px; font-size:13px; border-radius:10px;">Clear</button>
               </div>
             </div>
           </form>

@@ -170,24 +170,32 @@
       .map((c) => {
         const link = setup.telegram.bot ? `https://t.me/${setup.telegram.bot}?start=${c.link_code}` : null;
         const tg = c.telegram_linked
-          ? `<span class="ok-tag" style="background:#10b98122; color:#10b981; padding:3px 8px; border-radius:4px; font-size:11px; font-weight:600;">✓ Telegram</span>`
+          ? `<span class="ok-tag" style="background:#10b98122; color:#10b981; padding:3px 8px; border-radius:6px; font-size:11px; font-weight:600;">✓ Telegram</span>`
           : link
-            ? `<button type="button" class="link-btn" data-qr="${esc(link)}" data-who="${esc(c.name)}" style="font-size:11px;">Connect Telegram</button>`
+            ? `<button type="button" class="link-btn" data-qr="${esc(link)}" data-who="${esc(c.name)}" style="font-size:11px; border-radius:6px; padding:3px 8px;">Connect Telegram</button>`
             : `<span class="muted small">Telegram off</span>`;
         const details = [c.phone ? `📞 ${c.phone}` : '', c.whatsapp ? `💬 WA: ${c.whatsapp}` : '', c.email || ''].filter(Boolean).join(' · ');
-        return `<li class="contact-row" style="display:flex; justify-content:space-between; align-items:center; padding:12px 14px; background:var(--surface-2); border:1px solid var(--border); border-radius:8px; list-style:none;">
-          <div style="display:flex; align-items:center; gap:12px;">
-            <span class="avatar" style="width:36px; height:36px; border-radius:50%; background:var(--surface-3); display:flex; align-items:center; justify-content:center; font-weight:700;">${esc((c.name.match(/[\p{L}\p{N}]/u)?.[0] || "?").toUpperCase())}</span>
+        return `<li class="contact-row glass-card" style="display:flex; justify-content:space-between; align-items:center; padding:16px 20px; border-radius:18px; margin-bottom:10px; list-style:none; flex-wrap:wrap; gap:12px;">
+          <div style="display:flex; align-items:center; gap:14px;">
+            <div class="avatar" style="width:44px; height:44px; border-radius:50%; background:linear-gradient(135deg, #f2b8c6, #b9a6e8); color:#0c0e12; display:flex; align-items:center; justify-content:center; font-weight:800; font-size:16px; box-shadow:0 4px 12px rgba(242,184,198,0.25);">
+              ${esc((c.name.match(/[\p{L}\p{N}]/u)?.[0] || "?").toUpperCase())}
+            </div>
             <div>
-              <div style="font-weight:600; font-size:13.5px;">${esc(c.name)} <span style="font-size:11px; opacity:.75; background:var(--surface-3); padding:2px 6px; border-radius:4px; margin-left:4px;">${esc(c.relationship || 'Guardian')}</span></div>
-              <small style="color:var(--muted);">${esc(details || "no contact details")}</small>
+              <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+                <strong style="font-weight:700; font-size:14.5px; color:#fff;">${esc(c.name)}</strong>
+                <span class="glass-badge" style="color:var(--brand); border-color:rgba(242,184,198,0.3); font-size:11px;">${esc(c.relationship || 'Guardian')}</span>
+              </div>
+              <div style="font-size:12px; color:var(--muted); margin-top:3px;">
+                ${esc(details || "No contact details")}
+              </div>
             </div>
           </div>
-          <div style="display:flex; align-items:center; gap:8px;">
-            ${c.phone ? `<a href="tel:${esc(c.phone)}" class="btn btn--primary small" style="background:#10b981; border-color:#10b981; color:#fff; font-size:11px; padding:4px 9px; text-decoration:none; display:inline-flex; align-items:center; gap:3px; font-weight:600;">📞 Call</a>` : ""}
+          <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+            ${c.phone ? `<a href="tel:${esc(c.phone)}" class="btn btn--primary small" style="background:#10b981; border-color:#10b981; color:#fff; font-size:11.5px; padding:6px 12px; border-radius:8px; text-decoration:none; display:inline-flex; align-items:center; gap:4px; font-weight:700;">📞 Call</a>` : ""}
+            ${c.whatsapp ? `<a href="https://wa.me/${esc(c.whatsapp.replace(/[^0-9]/g, ''))}" target="_blank" rel="noopener" class="btn btn--ghost small" style="color:#25d366; border-color:rgba(37,211,102,0.4); font-size:11px; padding:6px 10px; border-radius:8px; text-decoration:none;">💬 WhatsApp</a>` : ""}
             ${tg}
-            <button type="button" class="btn btn--ghost small" data-siren="${esc(c.id)}" style="color:#ef4444; border-color:#ef4444; font-size:11px; padding:4px 8px;">🚨 Alert</button>
-            <button type="button" class="row-del" data-del="${esc(c.id)}" title="Remove" style="background:transparent; border:none; color:var(--muted); font-size:18px; cursor:pointer; padding:4px 8px;">×</button>
+            <button type="button" class="btn btn--ghost small" data-siren="${esc(c.id)}" style="color:#ef4444; border-color:#ef4444; font-size:11.5px; padding:6px 12px; border-radius:8px; font-weight:600;">🚨 Siren Alert</button>
+            <button type="button" class="row-del" data-del="${esc(c.id)}" title="Remove Guardian" style="background:transparent; border:none; color:var(--muted); font-size:20px; cursor:pointer; padding:4px 8px; line-height:1;">×</button>
           </div>
         </li>`;
       })
@@ -201,6 +209,50 @@
       const name = els.herName?.value?.trim();
       if (name) api("/sos/profile", { method: "PUT", body: JSON.stringify({ name }) }).catch(() => {});
     }, 500);
+  });
+
+  // ---------- Add Guardian Collapsible Drawer ----------
+  const addGuardianCard = document.getElementById("add-guardian-card");
+  const toggleAddGuardianBtn = document.getElementById("toggle-add-guardian-btn");
+  const cancelAddGuardianBtn = document.getElementById("cancel-add-guardian-btn");
+  const cancelAddGuardianBtn2 = document.getElementById("cancel-guardian-btn2");
+
+  toggleAddGuardianBtn?.addEventListener("click", () => {
+    if (!addGuardianCard) return;
+    const isHidden = addGuardianCard.style.display === "none" || !addGuardianCard.style.display;
+    addGuardianCard.style.display = isHidden ? "block" : "none";
+    if (isHidden) {
+      addGuardianCard.scrollIntoView({ behavior: "smooth", block: "nearest" });
+      addGuardianCard.querySelector("input")?.focus();
+    }
+  });
+
+  const closeGuardianDrawer = () => {
+    if (addGuardianCard) addGuardianCard.style.display = "none";
+  };
+  cancelAddGuardianBtn?.addEventListener("click", closeGuardianDrawer);
+  cancelAddGuardianBtn2?.addEventListener("click", closeGuardianDrawer);
+
+  // ---------- Safety Space Hub Controller ----------
+  const safetyspaceHub = document.getElementById("safetyspace-hub");
+  const safetyspacePhone = document.getElementById("safetyspace-phone-container");
+  const hubOpenPhoneBtn = document.getElementById("hub-open-phone-btn");
+  const phoneBackToHubBtn = document.getElementById("phone-back-to-hub-btn");
+  const hubOpenScannerBtn = document.getElementById("hub-open-scanner-btn");
+
+  hubOpenPhoneBtn?.addEventListener("click", () => {
+    if (safetyspaceHub) safetyspaceHub.style.display = "none";
+    if (safetyspacePhone) safetyspacePhone.style.display = "block";
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  });
+
+  phoneBackToHubBtn?.addEventListener("click", () => {
+    if (safetyspacePhone) safetyspacePhone.style.display = "none";
+    if (safetyspaceHub) safetyspaceHub.style.display = "flex";
+  });
+
+  hubOpenScannerBtn?.addEventListener("click", () => {
+    window.kavachNav?.go("scan");
   });
 
   els.addContact.addEventListener("submit", async (e) => {
@@ -219,6 +271,7 @@
         }),
       });
       els.addContact.reset();
+      closeGuardianDrawer();
       await loadSetup();
       window.kavach.toast("Guardian added to your safety circle");
     } catch (err) {
@@ -939,6 +992,15 @@
     els.btn.classList.add("active");
     window.kavach.deselect("");
     window.kavachMobile?.show("main");
+
+    // Reset Safety Space sub-views to default hub mode
+    const safetyspaceHub = document.getElementById("safetyspace-hub");
+    const safetyspacePhone = document.getElementById("safetyspace-phone-container");
+    const addGuardianCard = document.getElementById("add-guardian-card");
+    if (safetyspaceHub) safetyspaceHub.style.display = "flex";
+    if (safetyspacePhone) safetyspacePhone.style.display = "none";
+    if (addGuardianCard) addGuardianCard.style.display = "none";
+
     loadSetup();
     restoreActive();
   }
