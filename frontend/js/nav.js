@@ -201,17 +201,59 @@
   });
   // Opening a chat or the screenshot import moves to the main pane and closes menu drawer
   document.querySelector("#contact-list").addEventListener("click", (e) => {
+    leaveHome();
     body.classList.remove("menu-open");
     if (e.target.closest(".contact")) mobile.show("main");
     setActive("shield");
   });
   document.querySelector("#import-btn").addEventListener("click", () => {
+    leaveHome();
+    closeAllViews();
     body.classList.remove("menu-open");
     mobile.show("main");
   });
 
-  // Close menu drawer when clicking outside contacts sidebar
+  // Desktop 3-Line Menu Drawer / Dropdown Toggle
+  const desktopMenuBtn = document.querySelector("#desktop-menu-btn");
+  const desktopDashboardsMenu = document.querySelector("#desktop-dashboards-menu");
+
+  desktopMenuBtn?.addEventListener("click", (e) => {
+    e.stopPropagation();
+    if (desktopDashboardsMenu) {
+      const isShown = desktopDashboardsMenu.style.display === "flex";
+      desktopDashboardsMenu.style.display = isShown ? "none" : "flex";
+    }
+  });
+
+  document.querySelectorAll(".desktop-nav-item[data-nav]").forEach((btn) => {
+    btn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      if (desktopDashboardsMenu) desktopDashboardsMenu.style.display = "none";
+      const navTarget = btn.dataset.nav;
+      if (navTarget) go(navTarget);
+    });
+  });
+
+  document.querySelector("#desktop-ai-menu-item")?.addEventListener("click", (e) => {
+    e.stopPropagation();
+    if (desktopDashboardsMenu) desktopDashboardsMenu.style.display = "none";
+    body.classList.add("shield-open");
+  });
+
+  document.querySelector("#desktop-menu-logout-btn")?.addEventListener("click", async (e) => {
+    e.stopPropagation();
+    if (desktopDashboardsMenu) desktopDashboardsMenu.style.display = "none";
+    if (await window.kavachConfirm?.("Log out of Kavach on this device?", { ok: "Log out" })) {
+      await fetch(`${API}/auth/logout`, { method: "POST" }).catch(() => {});
+      location.replace("/login.html");
+    }
+  });
+
+  // Close menus when clicking outside
   document.addEventListener("click", (e) => {
+    if (desktopDashboardsMenu && !desktopDashboardsMenu.contains(e.target) && !desktopMenuBtn?.contains(e.target)) {
+      desktopDashboardsMenu.style.display = "none";
+    }
     if (body.classList.contains("menu-open")) {
       const contactsEl = document.querySelector(".contacts");
       const menuBtn = document.querySelector("#mobile-menu-btn");
@@ -261,7 +303,7 @@
   applyPreferences();
   setActive(null);
   window.kavachHome = goHome;
-  window.kavachNav = { go, goHome, closeAllViews, setActive };
+  window.kavachNav = { go, goHome, leaveHome, closeAllViews, setActive };
 
   // ---------- Reset everything (before a demo) ----------
   // The server ends any running SOS and clears the Vault and SOS history; reloading

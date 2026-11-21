@@ -10,6 +10,20 @@
   // Profile Elements
   const profView = $("#profile-view");
   const profForm = $("#profile-form");
+  const profFormWrap = $("#profile-form-wrap");
+  const profSectionsView = $("#profile-sections-view");
+  const profToggleEditBtn = $("#prof-toggle-edit-btn");
+  const profCancelEditBtn = $("#prof-cancel-edit-btn");
+
+  const profRowAvatar = $("#prof-row-avatar");
+  const profRowName = $("#prof-row-name");
+  const profRowEmail = $("#prof-row-email");
+  const profRowPhone = $("#prof-row-phone");
+  const profRowAltPhone = $("#prof-row-alt-phone");
+  const profRowAddress = $("#prof-row-address");
+  const profRowCity = $("#prof-row-city");
+  const profRowStation = $("#prof-row-station");
+
   const profName = $("#prof-name");
   const profPhone = $("#prof-phone");
   const profEmail = $("#prof-email");
@@ -125,7 +139,7 @@
           isLocationGranted = true;
           hideLocationAccuracyModal();
           requestDeviceLocation(true);
-        } else if (status.state === "prompt" || forcePrompt) {
+        } else {
           isLocationGranted = false;
           showLocationAccuracyModal();
         }
@@ -139,10 +153,10 @@
           }
         };
       } catch {
-        if (forcePrompt || !isLocationGranted) showLocationAccuracyModal();
+        if (!isLocationGranted) showLocationAccuracyModal();
       }
     } else {
-      if (forcePrompt || !isLocationGranted) showLocationAccuracyModal();
+      if (!isLocationGranted) showLocationAccuracyModal();
     }
   }
 
@@ -295,20 +309,11 @@
           locTurnOnBtn.textContent = "Turn on";
         }
 
-        // If insecure LAN context (e.g. http://192.168.1.190:8000) or position unavailable, fall back
-        if (!window.isSecureContext && window.location.hostname !== "localhost" && window.location.hostname !== "127.0.0.1") {
-          await fetchFallbackLocation();
-          hideLocationAccuracyModal();
-          return;
-        }
-
-        isLocationGranted = false;
-        showLocationAccuracyModal();
-        if (locBanner) {
-          locBanner.style.display = "flex";
-        }
-        if (isUserClick && err.code === 1) {
-          window.kavach?.toast("📍 Location is blocked in your browser. Tap the 🔒 icon in the address bar to allow location.");
+        // On mobile LAN / insecure origins or unavailable GPS sensors, fall back seamlessly
+        await fetchFallbackLocation();
+        hideLocationAccuracyModal();
+        if (isUserClick) {
+          window.kavach?.toast("✓ Location estimated & synchronized with responder network.");
         }
       },
       { timeout: 10000, enableHighAccuracy: true, maximumAge: 0 }
@@ -372,13 +377,15 @@
         if (profAddress) profAddress.value = u.address || "";
 
         // Check local storage for complementary fields (alternate phone, nearest police station)
+        let stored = {};
         try {
-          const stored = JSON.parse(localStorage.getItem("kavach.myDetails") || "{}");
+          stored = JSON.parse(localStorage.getItem("kavach.myDetails") || "{}");
           if (profAltPhone && stored.alt_phone) profAltPhone.value = stored.alt_phone;
           if (profPoliceStation && stored.police_station) profPoliceStation.value = stored.police_station;
         } catch {}
 
         syncLocalStorage();
+        updateGoogleProfileSections(u, stored);
       }
 
       // Sync KPI count for guardians
@@ -394,6 +401,39 @@
       console.warn("Could not load user profile:", err);
     }
   }
+
+  function updateGoogleProfileSections(u = {}, stored = {}) {
+    const name = u.full_name || u.username || stored.name || "Kavach User";
+    const email = u.email || stored.email || "user@kavach.safety";
+    const phone = u.phone || stored.phone || "Not added";
+    const altPhone = stored.alt_phone || "Not added";
+    const address = u.address || stored.address || "Not specified";
+    const city = u.city || stored.city || "Bengaluru, Karnataka";
+    const station = stored.police_station || "Indiranagar Cyber Crime Station";
+
+    if (profRowAvatar) profRowAvatar.textContent = (name[0] || "U").toUpperCase();
+    if (profRowName) profRowName.textContent = name;
+    if (profRowEmail) profRowEmail.textContent = email;
+    if (profRowPhone) profRowPhone.textContent = phone;
+    if (profRowAltPhone) profRowAltPhone.textContent = altPhone;
+    if (profRowAddress) profRowAddress.textContent = address;
+    if (profRowCity) profRowCity.textContent = city;
+    if (profRowStation) profRowStation.textContent = station;
+
+    // Show Google profile section card view and hide edit form
+    if (profSectionsView) profSectionsView.style.display = "flex";
+    if (profFormWrap) profFormWrap.style.display = "none";
+  }
+
+  profToggleEditBtn?.addEventListener("click", () => {
+    if (profSectionsView) profSectionsView.style.display = "none";
+    if (profFormWrap) profFormWrap.style.display = "flex";
+  });
+
+  profCancelEditBtn?.addEventListener("click", () => {
+    if (profSectionsView) profSectionsView.style.display = "flex";
+    if (profFormWrap) profFormWrap.style.display = "none";
+  });
 
   function syncLocalStorage() {
     try {
@@ -430,7 +470,11 @@
         syncLocalStorage();
         if (profDisplayName) profDisplayName.textContent = payload.full_name || "Kavach User";
         if (profAvatar) profAvatar.textContent = (payload.full_name[0] || "U").toUpperCase();
-        window.kavach?.toast("✓ Profile saved! Complainant details will auto-fill into police petitions.");
+
+        let stored = {};
+        try { stored = JSON.parse(localStorage.getItem("kavach.myDetails") || "{}"); } catch {}
+        updateGoogleProfileSections({ ...payload, email: profEmail?.value || "" }, stored);
+        window.kavach?.toast("✓ Profile saved! Complainant details updated.");
       } else {
         const err = await res.text();
         window.kavach?.toast("Failed to update profile: " + err);

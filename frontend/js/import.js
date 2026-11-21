@@ -46,16 +46,22 @@
 
   // ---------- open / close ----------
   function open() {
+    window.kavachNav?.leaveHome();
+    document.body.classList.remove("at-home");
+    document.body.classList.remove("menu-open");
     if (isOpen) return;
     window.kavachVault?.close();
     window.kavachComplaint?.close();
     window.kavachSos?.close();
+    window.kavachGuardians?.close();
+    window.kavachResponders?.close();
+    window.kavachProfile?.close();
+    window.kavachSettings?.close();
     const mc = document.querySelector("#mock-chat-container");
     if (mc) mc.hidden = true;
     window.kavachFlow?.set(1);
     window.kavachMobile?.show("main");
     window.kavachMobile?.pill(null);
-    document.body.classList.remove("menu-open");
     isOpen = true;
     rows = [];
     images = [];
