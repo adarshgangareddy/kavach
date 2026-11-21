@@ -50,12 +50,12 @@
   }
 
   function go(where) {
+    body.classList.remove("menu-open", "shield-open", "shield-mode");
+    mobile.show("main");
     if (where === "home") {
-      body.classList.remove("menu-open");
       closeAllViews();
       return goHome();
     }
-    body.classList.remove("menu-open");
     leaveHome();
     closeAllViews();
 
@@ -67,7 +67,6 @@
       const el = document.querySelector("#safetyspace-view");
       if (el) el.hidden = false;
       body.classList.add("left-collapsed");
-      body.classList.remove("shield-mode");
       setActive("safetyspace");
     } else if (where === "guardians" || where === "sos") {
       window.kavachSos?.open();
@@ -75,24 +74,19 @@
       const el = document.querySelector("#guardians-view");
       if (el) el.hidden = false;
       body.classList.add("left-collapsed");
-      body.classList.remove("shield-mode");
       setActive("guardians");
     } else if (where === "scan") {
-      closeAllViews();
       window.kavachSos?.close();
       window.kavachImport?.open();
       const iv = document.querySelector("#import-view");
       if (iv) iv.hidden = false;
       body.classList.add("left-collapsed");
-      body.classList.remove("shield-mode");
-      mobile.show("main");
       setActive("safetyspace");
     } else if (where === "vault") {
       window.kavachVault?.open();
       const el = document.querySelector("#vault-view");
       if (el) el.hidden = false;
       body.classList.remove("left-collapsed");
-      body.classList.remove("shield-mode");
       if (stTrigger) stTrigger.style.display = "none";
       if (contactsEyebrow) contactsEyebrow.textContent = "Previous Evidence";
       setActive("vault");
@@ -101,7 +95,6 @@
       const el = document.querySelector("#responders-view");
       if (el) el.hidden = false;
       body.classList.add("left-collapsed");
-      body.classList.remove("shield-mode");
       if (stTrigger) stTrigger.style.display = "none";
       setActive("responders");
     } else if (where === "profile") {
@@ -109,7 +102,6 @@
       const el = document.querySelector("#profile-view");
       if (el) el.hidden = false;
       body.classList.add("left-collapsed");
-      body.classList.remove("shield-mode");
       if (stTrigger) stTrigger.style.display = "none";
       setActive("profile");
     } else if (where === "settings") {
@@ -117,7 +109,6 @@
       const el = document.querySelector("#settings-view");
       if (el) el.hidden = false;
       body.classList.add("left-collapsed");
-      body.classList.remove("shield-mode");
       if (stTrigger) stTrigger.style.display = "none";
       setActive("settings");
     }
@@ -213,6 +204,14 @@
     closeAllViews();
     body.classList.remove("menu-open");
     mobile.show("main");
+  });
+
+  // Profile avatar button in topbar: opens User Profile dashboard directly
+  document.querySelector("#google-account-btn")?.addEventListener("click", (e) => {
+    e.stopPropagation();
+    const popover = document.querySelector("#google-account-popover");
+    if (popover) popover.style.display = "none";
+    go("profile");
   });
 
   // Desktop 3-Line Menu Drawer / Dropdown Toggle

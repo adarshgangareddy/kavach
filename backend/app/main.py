@@ -143,8 +143,9 @@ def auth_signup(body: SignupIn, request: Request):
         )
     except accounts.AuthError as exc:
         raise HTTPException(exc.status, str(exc)) from exc
-    response = JSONResponse({"user": user})
-    _set_session(response, request, accounts.new_session(user["id"]))
+    token = accounts.new_session(user["id"])
+    response = JSONResponse({"user": user, "token": token})
+    _set_session(response, request, token)
     return response
 
 
@@ -154,7 +155,7 @@ def auth_login(body: LoginIn, request: Request):
         user, token = accounts.login(body.username, body.password)
     except accounts.AuthError as exc:
         raise HTTPException(exc.status, str(exc)) from exc
-    response = JSONResponse({"user": user})
+    response = JSONResponse({"user": user, "token": token})
     _set_session(response, request, token)
     return response
 
@@ -319,7 +320,14 @@ async def auth_google_verify(request: Request):
 
 @app.get("/auth/me")
 def auth_me(request: Request):
-    user = accounts.user_for_session(request.cookies.get(SESSION_COOKIE))
+    raw_token = request.cookies.get(SESSION_COOKIE)
+    if not raw_token:
+        auth_h = request.headers.get("Authorization", "")
+        if auth_h.startswith("Bearer "):
+            raw_token = auth_h[7:].strip()
+        elif "X-Kavach-Token" in request.headers:
+            raw_token = request.headers["X-Kavach-Token"].strip()
+    user = accounts.user_for_session(raw_token) if raw_token else None
     if not user:
         raise HTTPException(401, "Please log in")
     return {"user": user}

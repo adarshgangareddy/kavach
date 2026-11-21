@@ -4817,9 +4817,15 @@ body.sosing .app {
 }
 
 .profile-avatar {
-  width: 72px;
-  height: 72px;
+  width: 76px;
+  height: 76px;
+  min-width: 76px;
+  max-width: 76px;
+  min-height: 76px;
+  max-height: 76px;
   border-radius: 50%;
+  aspect-ratio: 1 / 1;
+  flex-shrink: 0;
   background: linear-gradient(135deg, #f2b8c6, #b9a6e8);
   color: #0c0e12;
   font-size: 26px;
@@ -5107,7 +5113,7 @@ body.sosing .app {
     padding: 20px 16px !important;
   }
 
-  .profile-hero > div {
+  .profile-hero > div:not(.profile-avatar) {
     display: flex !important;
     flex-direction: column !important;
     align-items: center !important;
@@ -5115,20 +5121,20 @@ body.sosing .app {
   }
 
   .profile-avatar {
-    width: 68px !important;
-    height: 68px !important;
-    font-size: 24px !important;
-    margin: 0 auto !important;
-  }
-
-  #profile-view #prof-back-btn,
-  #profile-view #prof-next-btn {
-    flex: 1 1 0 !important;
+    width: 76px !important;
+    min-width: 76px !important;
+    max-width: 76px !important;
+    height: 76px !important;
+    min-height: 76px !important;
+    max-height: 76px !important;
+    border-radius: 50% !important;
+    aspect-ratio: 1 / 1 !important;
+    flex-shrink: 0 !important;
+    display: flex !important;
+    align-items: center !important;
     justify-content: center !important;
-    text-align: center !important;
-    font-size: 12px !important;
-    padding: 9px 8px !important;
-    white-space: nowrap !important;
+    font-size: 26px !important;
+    margin: 0 auto 8px auto !important;
   }
 
   #profile-sections-view .glass-panel > div[style*="justify-content:space-between"] {

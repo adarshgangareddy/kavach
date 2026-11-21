@@ -56,9 +56,17 @@
   const hhmmss = () => new Date().toLocaleTimeString("en-GB");
 
   async function api(path, opts = {}) {
+    let token = "";
+    try { token = localStorage.getItem("kavach_token") || ""; } catch {}
+    const headers = {
+      ...(opts.headers || {}),
+      ...(opts.body ? { "Content-Type": "application/json" } : {}),
+      ...(token ? { "Authorization": `Bearer ${token}`, "X-Kavach-Token": token } : {}),
+    };
     const res = await fetch(`${API}${path}`, {
       ...opts,
-      headers: opts.body ? { "Content-Type": "application/json" } : undefined,
+      credentials: "include",
+      headers,
     });
     const body = await res.json().catch(() => ({}));
     if (!res.ok) throw new Error(body.detail || `HTTP ${res.status}`);

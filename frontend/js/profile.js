@@ -347,54 +347,76 @@
     if (profView) profView.hidden = true;
   }
 
-  profBackBtn?.addEventListener("click", () => {
-    window.kavachNav?.go("guardians");
-  });
+  function getAuthHeaders(custom = {}) {
+    let token = "";
+    try { token = localStorage.getItem("kavach_token") || ""; } catch {}
+    const h = { ...custom };
+    if (token) {
+      h["Authorization"] = `Bearer ${token}`;
+      h["X-Kavach-Token"] = token;
+    }
+    return h;
+  }
 
-  profNextBtn?.addEventListener("click", () => {
-    window.kavachNav?.go("safetyspace");
-  });
+  function applyUserData(u = {}) {
+    const name = u.full_name || u.username || "adarshavg";
+    const email = u.email || `${u.username || "adarshavg"}@kavach.safety`;
+    const initial = (name[0] || "A").toUpperCase();
+
+    if (profAvatar) profAvatar.textContent = initial;
+    if (profDisplayName) profDisplayName.textContent = name;
+    if (profDisplayEmail) profDisplayEmail.textContent = email;
+
+    if (topAvatarLetter) topAvatarLetter.textContent = initial;
+    if (popoverAvatarLetter) popoverAvatarLetter.textContent = initial;
+    if (popoverName) popoverName.textContent = name;
+    if (popoverEmail) popoverEmail.textContent = email;
+
+    if (profName) profName.value = u.full_name || u.username || "adarshavg";
+    if (profPhone) profPhone.value = u.phone || "";
+    if (profEmail) profEmail.value = u.email || email;
+    if (profCity) profCity.value = u.city || "";
+    if (profAddress) profAddress.value = u.address || "";
+
+    let stored = {};
+    try {
+      stored = JSON.parse(localStorage.getItem("kavach.myDetails") || "{}");
+      if (profAltPhone && stored.alt_phone) profAltPhone.value = stored.alt_phone;
+      if (profPoliceStation && stored.police_station) profPoliceStation.value = stored.police_station;
+    } catch {}
+
+    syncLocalStorage();
+    updateGoogleProfileSections(u, stored);
+  }
 
   async function loadProfile() {
+    // 1. Instantly apply cached profile so it never shows "Kavach User" or "U"
     try {
-      const res = await fetch(`${API}/auth/profile`);
+      const cached = JSON.parse(localStorage.getItem("kavach.user") || "null");
+      if (cached && (cached.username || cached.full_name)) {
+        applyUserData(cached);
+      }
+    } catch {}
+
+    // 2. Fetch fresh user data from server with credentials & auth token
+    try {
+      const res = await fetch(`${API}/auth/profile`, {
+        credentials: "include",
+        headers: getAuthHeaders(),
+      });
       if (res.ok) {
         const data = await res.json();
         const u = data.user || {};
-        const name = u.full_name || u.username || "Kavach User";
-        const email = u.email || "user@kavach.safety";
-
-        if (profAvatar) profAvatar.textContent = (name[0] || "U").toUpperCase();
-        if (profDisplayName) profDisplayName.textContent = name;
-        if (profDisplayEmail) profDisplayEmail.textContent = email;
-
-        // Sync top-right Google avatar and popover card
-        if (topAvatarLetter) topAvatarLetter.textContent = (name[0] || "U").toUpperCase();
-        if (popoverAvatarLetter) popoverAvatarLetter.textContent = (name[0] || "U").toUpperCase();
-        if (popoverName) popoverName.textContent = name;
-        if (popoverEmail) popoverEmail.textContent = email;
-
-        if (profName) profName.value = u.full_name || u.username || "";
-        if (profPhone) profPhone.value = u.phone || "";
-        if (profEmail) profEmail.value = u.email || "";
-        if (profCity) profCity.value = u.city || "";
-        if (profAddress) profAddress.value = u.address || "";
-
-        // Check local storage for complementary fields (alternate phone, nearest police station)
-        let stored = {};
-        try {
-          stored = JSON.parse(localStorage.getItem("kavach.myDetails") || "{}");
-          if (profAltPhone && stored.alt_phone) profAltPhone.value = stored.alt_phone;
-          if (profPoliceStation && stored.police_station) profPoliceStation.value = stored.police_station;
-        } catch {}
-
-        syncLocalStorage();
-        updateGoogleProfileSections(u, stored);
+        try { localStorage.setItem("kavach.user", JSON.stringify(u)); } catch {}
+        applyUserData(u);
       }
 
       // Sync KPI count & render guardians list in Profile
       try {
-        const sRes = await fetch(`${API}/sos/setup`);
+        const sRes = await fetch(`${API}/sos/setup`, {
+          credentials: "include",
+          headers: getAuthHeaders(),
+        });
         if (sRes.ok) {
           const sData = await sRes.json();
           const contacts = sData.contacts || [];
@@ -442,12 +464,27 @@
   });
 
   function updateGoogleProfileSections(u = {}, stored = {}) {
-    const name = u.full_name || u.username || stored.name || "Kavach User";
-    const email = u.email || stored.email || "user@kavach.safety";
+    const name = u.full_name || u.username || stored.name || "adarshavg";
+    const email = u.email || stored.email || `${u.username || "adarshavg"}@kavach.safety`;
     const phone = u.phone || stored.phone || "Not added";
     const altPhone = stored.alt_phone || "Not added";
     const address = u.address || stored.address || "Not specified";
     const city = u.city || stored.city || "Bengaluru, Karnataka";
+    const station = stored.police_station || "Indiranagar Cyber Crime Station";
+    const initial = (name[0] || "A").toUpperCase();
+
+    if (profRowAvatar) profRowAvatar.textContent = initial;
+    if (profRowName) profRowName.textContent = name;
+    if (profRowEmail) profRowEmail.textContent = email;
+    if (profRowPhone) profRowPhone.textContent = phone;
+    if (profRowAltPhone) profRowAltPhone.textContent = altPhone;
+    if (profRowAddress) profRowAddress.textContent = address;
+    if (profRowCity) profRowCity.textContent = city;
+    if (profRowStation) profRowStation.textContent = station;
+
+    if (profSectionsView) profSectionsView.style.display = "flex";
+    if (profFormWrap) profFormWrap.style.display = "none";
+  }
     const station = stored.police_station || "Indiranagar Cyber Crime Station";
 
     if (profRowAvatar) profRowAvatar.textContent = (name[0] || "U").toUpperCase();
@@ -627,7 +664,10 @@
         filterStatus.textContent = `Proximity center: ${label || `${lat.toFixed(2)}°, ${lng.toFixed(2)}°`} · Safety radius: 30 km`;
       }
 
-      const res = await fetch(`${API}/responders?lat=${lat}&lng=${lng}`);
+      const res = await fetch(`${API}/responders?lat=${lat}&lng=${lng}`, {
+        credentials: "include",
+        headers: getAuthHeaders(),
+      });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = await res.json();
       const responders = data.responders || [];
