@@ -366,6 +366,8 @@ def delete_account(user_id: str) -> None:
     _init()
     with db.lock:
         db.run("DELETE FROM sessions WHERE user_id=?", user_id)
+        db.run("DELETE FROM guardians WHERE user_id=?", user_id)
+        db.run("DELETE FROM responders WHERE user_id=?", user_id)
         db.run("DELETE FROM people WHERE owner=?", user_id)
         db.run("DELETE FROM sos WHERE user=?", user_id)
         db.run("DELETE FROM profile WHERE key LIKE ?", f"{user_id}:%")

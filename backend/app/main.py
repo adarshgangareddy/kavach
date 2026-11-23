@@ -890,10 +890,40 @@ def people_list(kind: str = "contact"):
     return {"people": people.list_kind(kind)}
 
 
+def _resolve_request_uid(request: Request) -> str | None:
+    uid = context.current()
+    if not uid and request:
+        raw_token = request.cookies.get(SESSION_COOKIE)
+        if not raw_token:
+            auth_h = request.headers.get("Authorization", "")
+            if auth_h.startswith("Bearer "):
+                raw_token = auth_h[7:].strip()
+            elif "X-Kavach-Token" in request.headers:
+                raw_token = request.headers["X-Kavach-Token"].strip()
+        if raw_token:
+            u = accounts.user_for_session(raw_token)
+            if u:
+                uid = u["id"]
+        if not uid:
+            user_header = request.headers.get("X-Kavach-User")
+            if user_header:
+                u = accounts.user_for_id(user_header)
+                if u:
+                    uid = u["id"]
+        if uid:
+            context.set_current(uid)
+    return uid
+
+
 @app.post("/people")
 async def people_create(body: PersonIn, request: Request):
+    curr_uid = _resolve_request_uid(request)
     if body.kind == "contact":
-        require_user()
+        require_user(request)
+        if not curr_uid:
+            curr_uid = require_user(request)
+
+    owner = curr_uid if (body.kind == "contact" or curr_uid) else None
     p = _sos_call(
         people.create,
         body.kind,
@@ -902,7 +932,7 @@ async def people_create(body: PersonIn, request: Request):
         body.email,
         body.lat,
         body.lng,
-        None,
+        owner,
         body.relationship,
         body.whatsapp,
     )
@@ -1046,14 +1076,28 @@ async def sos_auto_alert(req: AutoAlertRequest, request: Request):
 
 
 @app.patch("/people/{pid}")
-def people_update(pid: str, body: PersonPatch):
-    _person(pid)
+def people_update(pid: str, body: PersonPatch, request: Request):
+    p = _person(pid)
+    curr_uid = _resolve_request_uid(request)
+
+    owner = p.get("user_id") or p.get("owner")
+    if p["kind"] == "responder" and owner:
+        if not curr_uid or curr_uid != owner:
+            raise HTTPException(403, "You can only edit your own responder details")
+    elif p["kind"] == "contact" and owner:
+        if not curr_uid or curr_uid != owner:
+            raise HTTPException(403, "You can only edit your own guardians")
+
     return _sos_call(people.update, pid, **body.model_dump(exclude_unset=True))
 
 
 @app.delete("/people/{pid}")
-def people_delete(pid: str):
-    _person(pid)
+def people_delete(pid: str, request: Request):
+    p = _person(pid)
+    curr_uid = _resolve_request_uid(request)
+    owner = p.get("user_id") or p.get("owner")
+    if owner and curr_uid and curr_uid != owner:
+        raise HTTPException(403, "You can only delete your own contacts or responder registrations")
     _sos_call(people.delete, pid)
     return {"ok": True}
 
@@ -1073,9 +1117,22 @@ def people_verify(pid: str, verified: bool = True):
 
 
 @app.get("/responders")
-def responders(lat: float | None = None, lng: float | None = None):
+def responders(lat: float | None = None, lng: float | None = None, request: Request = None):
+    curr_uid = _resolve_request_uid(request) if request else context.current()
+    user_email = ""
+    if curr_uid:
+        u = accounts.user_for_id(curr_uid)
+        if u:
+            user_email = (u.get("email") or "").lower().strip()
+
     all_resp = people.list_kind("responder")
     for r in all_resp:
+        r_owner = r.get("user_id") or r.get("owner")
+        r_email = (r.get("email") or "").lower().strip()
+        r["is_self"] = bool(
+            (curr_uid and r_owner == curr_uid) or
+            (user_email and r_email == user_email)
+        )
         if lat is not None and lng is not None and r.get("lat") is not None and r.get("lng") is not None:
             dist = round(sos.haversine_m(lat, lng, r["lat"], r["lng"]))
             r["distance_m"] = dist
@@ -1086,8 +1143,10 @@ def responders(lat: float | None = None, lng: float | None = None):
             r["distance_km"] = None
             r["is_nearby"] = True
     if lat is not None and lng is not None:
-        all_resp.sort(key=lambda x: (not x.get("is_nearby", True), x.get("distance_m") or 999999999))
-    return {"responders": all_resp, "radius_m": sos.RADIUS_M}
+        all_resp.sort(key=lambda x: (not x.get("is_self", False), not x.get("is_nearby", True), x.get("distance_m") or 999999999))
+    else:
+        all_resp.sort(key=lambda x: not x.get("is_self", False))
+    return {"responders": all_resp, "radius_m": sos.RADIUS_M, "current_user_id": curr_uid}
 
 
 @app.get("/responders/{responder_id}/alerts")

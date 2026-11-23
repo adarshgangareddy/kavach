@@ -699,6 +699,8 @@
     }
   });
 
+  let currentResponders = [];
+
   async function loadResponders() {
     if (!respList) return;
     try {
@@ -714,6 +716,7 @@
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = await res.json();
       const responders = data.responders || [];
+      currentResponders = responders;
 
       if (!responders.length) {
         respList.innerHTML = `
@@ -732,9 +735,15 @@
       function renderCard(r) {
         const initials = (r.name || "R")[0].toUpperCase();
         const org = r.relationship !== "Guardian" ? r.relationship : "Safety Volunteer";
+        const isSelf = Boolean(r.is_self);
+
         const tgBadge = r.telegram_linked
           ? '<span class="glass-badge" style="color:#3ecf8e; border-color:rgba(62,207,142,0.3); font-size:10.5px; font-weight:600; white-space:nowrap;">✓ Telegram Linked</span>'
           : '<span class="glass-badge" style="color:var(--muted); font-size:10.5px; white-space:nowrap;">Awaiting Telegram</span>';
+
+        const selfBadge = isSelf
+          ? '<span class="glass-badge" style="color:#10b981; border-color:rgba(16,185,129,0.45); font-weight:700; font-size:10.5px; background:rgba(16,185,129,0.12); padding:2px 8px;">👤 YOU (Your Profile)</span>'
+          : '';
 
         const distanceTag = r.distance_km !== null
           ? r.is_nearby
@@ -742,16 +751,23 @@
             : `<span class="glass-badge" style="color:#f5a524; border-color:rgba(245,165,36,0.35); font-size:11px; white-space:nowrap; display:inline-flex; align-items:center; gap:4px;">📍 ${r.distance_km} km away · Outside Zone</span>`
           : '<span class="glass-badge" style="color:var(--muted); font-size:11px; white-space:nowrap;">No Location</span>';
 
+        const editBtn = isSelf
+          ? `<button type="button" class="btn btn--primary small" data-edit-resp="${r.id}" style="background:#6366f1; border-color:#6366f1; color:#fff; font-size:11.5px; padding:6px 12px; border-radius:8px; font-weight:700;">✏️ Edit</button>`
+          : '';
+
         return `
-          <div class="glass-card resp-card" style="padding: 16px; display: flex; flex-direction: column; gap: 12px; border-radius: 18px; border-color: ${r.is_nearby ? "rgba(16,185,129,0.3)" : "rgba(255,255,255,0.08)"}; margin-bottom: 12px; background: rgba(18, 24, 38, 0.75); width: 100%; box-sizing: border-box;">
+          <div class="glass-card resp-card" style="padding: 16px; display: flex; flex-direction: column; gap: 12px; border-radius: 18px; border-color: ${isSelf ? "rgba(99,102,241,0.5)" : (r.is_nearby ? "rgba(16,185,129,0.3)" : "rgba(255,255,255,0.08)")}; margin-bottom: 12px; background: ${isSelf ? "rgba(25, 28, 48, 0.85)" : "rgba(18, 24, 38, 0.75)"}; width: 100%; box-sizing: border-box;">
             <!-- Header: Avatar + Identity Column -->
             <div style="display: flex; align-items: flex-start; gap: 12px; width: 100%;">
-              <div class="avatar" style="width: 44px; height: 44px; min-width: 44px; max-width: 44px; min-height: 44px; max-height: 44px; aspect-ratio: 1 / 1; flex-shrink: 0; border-radius: 50% !important; background: ${r.is_nearby ? "linear-gradient(135deg, #10b981, #6366f1)" : "linear-gradient(135deg, #64748b, #475569)"}; display: flex; align-items: center; justify-content: center; font-weight: 800; color: #fff; font-size: 16px; box-shadow: 0 4px 12px rgba(0,0,0,0.35);">
+              <div class="avatar" style="width: 44px; height: 44px; min-width: 44px; max-width: 44px; min-height: 44px; max-height: 44px; aspect-ratio: 1 / 1; flex-shrink: 0; border-radius: 50% !important; background: ${isSelf ? "linear-gradient(135deg, #6366f1, #10b981)" : (r.is_nearby ? "linear-gradient(135deg, #10b981, #6366f1)" : "linear-gradient(135deg, #64748b, #475569)")}; display: flex; align-items: center; justify-content: center; font-weight: 800; color: #fff; font-size: 16px; box-shadow: 0 4px 12px rgba(0,0,0,0.35);">
                 ${initials}
               </div>
               <div style="flex: 1; min-width: 0;">
                 <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap;">
-                  <strong style="font-size: 15.5px; color: #fff; font-weight: 700;">${r.name}</strong>
+                  <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
+                    <strong style="font-size: 15.5px; color: #fff; font-weight: 700;">${r.name}</strong>
+                    ${selfBadge}
+                  </div>
                   <div>${distanceTag}</div>
                 </div>
                 <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap; margin-top: 4px;">
@@ -768,7 +784,8 @@
               <div style="display: flex; align-items: center; gap: 6px;">
                 ${tgBadge}
               </div>
-              <div style="display: flex; align-items: center; gap: 8px; margin-left: auto;">
+              <div style="display: flex; align-items: center; gap: 8px; margin-left: auto; flex-wrap: wrap;">
+                ${editBtn}
                 ${r.phone ? `<a href="tel:${r.phone}" class="btn btn--primary small" style="background:#10b981; border-color:#10b981; color:#fff; font-size: 11.5px; padding: 6px 14px; border-radius: 8px; text-decoration: none; font-weight: 700; display: inline-flex; align-items: center; gap: 4px;">📞 Call</a>` : ""}
                 <button type="button" class="btn btn--ghost small" data-update-loc="${r.id}" data-name="${r.name}" style="font-size: 11.5px; padding: 6px 12px; border-radius: 8px; font-weight: 600;" title="Sync this responder's location to current device GPS">
                   📍 Sync GPS
@@ -839,7 +856,8 @@
           btn.textContent = "Updating…";
           const res = await fetch(`${API}/people/${rid}`, {
             method: "PATCH",
-            headers: { "Content-Type": "application/json" },
+            credentials: "include",
+            headers: getAuthHeaders({ "Content-Type": "application/json" }),
             body: JSON.stringify({ lat: newLat, lng: newLng }),
           });
           if (res.ok) {
@@ -865,6 +883,124 @@
     );
   });
 
+  // ---------- Register Myself as Responder Handler ----------
+  const registerSelfBtn = document.getElementById("register-self-responder-btn");
+  registerSelfBtn?.addEventListener("click", () => {
+    let user = {};
+    try {
+      user = JSON.parse(localStorage.getItem("kavach.user") || "{}");
+      const myDetails = JSON.parse(localStorage.getItem("kavach.myDetails") || "{}");
+      user = { ...myDetails, ...user };
+    } catch {}
+
+    if (respName) respName.value = user.full_name || user.username || "adarshavg";
+    if (respEmail) respEmail.value = user.email || (user.username === "adarshavg" ? "adarshavg26@gmail.com" : `${user.username || "user"}@kavach.safety`);
+    if (respPhone) respPhone.value = user.phone || "7795806293";
+    if (respOrg) respOrg.value = user.city ? `${user.city.split(',')[0]} Unit` : "Campus Safety Unit";
+
+    const formCard = document.getElementById("add-responder-form");
+    if (formCard) {
+      formCard.scrollIntoView({ behavior: "smooth", block: "center" });
+      respName?.focus();
+    }
+    window.kavach?.toast("✓ Pre-filled with your profile. Tap '+ Submit Registration' to join as responder.");
+  });
+
+  // ---------- Edit My Responder Details Dialog Controller ----------
+  const editRespModal = document.getElementById("edit-responder-modal");
+  const editRespForm = document.getElementById("edit-responder-form");
+  const closeEditRespBtn = document.getElementById("close-edit-responder-modal");
+  const cancelEditRespBtn = document.getElementById("cancel-edit-resp-btn");
+  const editRespId = document.getElementById("edit-resp-id");
+  const editRespName = document.getElementById("edit-resp-name");
+  const editRespOrg = document.getElementById("edit-resp-org");
+  const editRespPhone = document.getElementById("edit-resp-phone");
+  const editRespEmail = document.getElementById("edit-resp-email");
+  const editRespGpsBtn = document.getElementById("edit-resp-gps-btn");
+
+  let editRespLat = null;
+  let editRespLng = null;
+
+  const closeEditModal = () => {
+    if (editRespModal) editRespModal.style.display = "none";
+  };
+  closeEditRespBtn?.addEventListener("click", closeEditModal);
+  cancelEditRespBtn?.addEventListener("click", closeEditModal);
+
+  respList?.addEventListener("click", (e) => {
+    const editBtn = e.target.closest("[data-edit-resp]");
+    if (!editBtn) return;
+    const id = editBtn.dataset.editResp;
+    const r = currentResponders.find((x) => x.id === id);
+    if (!r) return;
+
+    if (editRespId) editRespId.value = r.id;
+    if (editRespName) editRespName.value = r.name || "";
+    if (editRespOrg) editRespOrg.value = r.relationship || "";
+    if (editRespPhone) editRespPhone.value = r.phone || "";
+    if (editRespEmail) editRespEmail.value = r.email || "";
+    editRespLat = r.lat;
+    editRespLng = r.lng;
+
+    if (editRespModal) editRespModal.style.display = "flex";
+  });
+
+  editRespGpsBtn?.addEventListener("click", () => {
+    if (!navigator.geolocation) {
+      window.kavach?.toast("Geolocation is not supported");
+      return;
+    }
+    editRespGpsBtn.textContent = "Acquiring GPS…";
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        editRespLat = pos.coords.latitude;
+        editRespLng = pos.coords.longitude;
+        editRespGpsBtn.textContent = `✓ GPS: ${pos.coords.latitude.toFixed(4)}, ${pos.coords.longitude.toFixed(4)}`;
+        window.kavach?.toast("✓ Live GPS coordinates updated");
+      },
+      (err) => {
+        editRespGpsBtn.textContent = "📍 GPS Failed";
+        window.kavach?.toast("Could not read device GPS: " + err.message);
+      },
+      { enableHighAccuracy: true, timeout: 8000 }
+    );
+  });
+
+  editRespForm?.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const pid = editRespId?.value;
+    if (!pid) return;
+
+    const body = {
+      name: editRespName?.value?.trim(),
+      relationship: editRespOrg?.value?.trim() || "Safety Volunteer",
+      phone: editRespPhone?.value?.trim() || "",
+      email: editRespEmail?.value?.trim() || "",
+    };
+    if (editRespLat !== null && editRespLng !== null) {
+      body.lat = editRespLat;
+      body.lng = editRespLng;
+    }
+
+    try {
+      const res = await fetch(`${API}/people/${pid}`, {
+        method: "PATCH",
+        credentials: "include",
+        headers: getAuthHeaders({ "Content-Type": "application/json" }),
+        body: JSON.stringify(body),
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.detail || `HTTP ${res.status}`);
+      }
+      closeEditModal();
+      window.kavach?.toast("✓ Your responder profile updated successfully");
+      loadResponders();
+    } catch (err) {
+      window.kavach?.toast("Failed to update responder: " + err.message);
+    }
+  });
+
   respForm?.addEventListener("submit", async (e) => {
     e.preventDefault();
     const latVal = parseFloat(respLatInput?.value) || 12.9716;
@@ -883,7 +1019,8 @@
     try {
       const res = await fetch(`${API}/people`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        headers: getAuthHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify(payload),
       });
 

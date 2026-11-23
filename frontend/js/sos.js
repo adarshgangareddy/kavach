@@ -287,8 +287,13 @@
   els.addContact.addEventListener("submit", async (e) => {
     e.preventDefault();
     const f = new FormData(els.addContact);
+    const saveBtn = els.addContact.querySelector("button[type=submit]");
+    if (saveBtn) {
+      saveBtn.disabled = true;
+      saveBtn.textContent = "Saving…";
+    }
     try {
-      await api("/people", {
+      const created = await api("/people", {
         method: "POST",
         body: JSON.stringify({
           kind: "contact",
@@ -301,10 +306,24 @@
       });
       els.addContact.reset();
       closeGuardianDrawer();
+      if (created && created.id) {
+        setup = setup || {};
+        setup.contacts = setup.contacts || [];
+        if (!setup.contacts.some(c => c.id === created.id)) {
+          setup.contacts.push(created);
+        }
+        try { localStorage.setItem("kavach.sosSetup", JSON.stringify(setup)); } catch {}
+        renderContacts();
+      }
       await loadSetup();
-      window.kavach.toast("Guardian added to your safety circle");
+      window.kavach.toast("✓ Guardian added to your safety circle");
     } catch (err) {
       window.kavach.toast(`Couldn't add guardian: ${err.message}`);
+    } finally {
+      if (saveBtn) {
+        saveBtn.disabled = false;
+        saveBtn.textContent = "+ Save & Add Guardian";
+      }
     }
   });
 

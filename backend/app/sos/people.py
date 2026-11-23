@@ -24,13 +24,16 @@ def _now() -> str:
 
 def public(p: dict) -> dict:
     """What the browser may see: never the Telegram chat id."""
+    kind = p.get("kind") or ("contact" if "user_id" in p and "relationship" in p and p.get("relationship") != "Safety Volunteer" and "lat" not in p else "responder")
     return {
-        "id": p["id"], "kind": p["kind"], "name": p["name"], "phone": p["phone"] or "",
-        "whatsapp": p.get("whatsapp") or "", "email": p["email"] or "",
-        "relationship": p.get("relationship") or "Guardian",
-        "telegram_linked": p["telegram_chat_id"] is not None, "link_code": p["link_code"],
-        "verified": bool(p["verified"]), "opted_in": bool(p["opted_in"]),
-        "has_location": p["lat"] is not None, "lat": p["lat"], "lng": p["lng"], "location_at": p["location_at"],
+        "id": p["id"], "kind": kind, "name": p["name"], "phone": p.get("phone") or "",
+        "whatsapp": p.get("whatsapp") or "", "email": p.get("email") or "",
+        "relationship": p.get("relationship") or ("Guardian" if kind == "contact" else "Safety Volunteer"),
+        "telegram_linked": p.get("telegram_chat_id") is not None, "link_code": p.get("link_code", ""),
+        "verified": bool(p.get("verified", 1 if kind == "contact" else 0)),
+        "opted_in": bool(p.get("opted_in", 1)),
+        "has_location": p.get("lat") is not None, "lat": p.get("lat"), "lng": p.get("lng"), "location_at": p.get("location_at"),
+        "user_id": p.get("user_id") or p.get("owner"),
     }
 
 
@@ -41,24 +44,63 @@ def create(kind: str, name: str, phone: str = "", email: str = "", lat=None, lng
         raise PeopleError("name is required")
     _check_location(lat, lng)
     pid = secrets.token_hex(5)
-    # Contacts belong to the signed-in account; responders are a shared network.
-    owner = (owner or context.current()) if kind == "contact" else None
+    owner = owner or context.current()
+    now_ts = _now()
+    link_code = secrets.token_urlsafe(6)
+    clean_name = name.strip()
+    clean_phone = phone.strip()
+    clean_email = email.strip()
+    clean_rel = relationship.strip() or ("Guardian" if kind == "contact" else "Safety Volunteer")
+    clean_wa = whatsapp.strip()
+
     with db.lock:
+        if kind == "contact":
+            db.run(
+                "INSERT INTO guardians (id, user_id, name, relationship, phone, whatsapp, email, link_code, created_at)"
+                " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                pid, owner or "default", clean_name, clean_rel, clean_phone, clean_wa, clean_email, link_code, now_ts
+            )
+        else:
+            db.run(
+                "INSERT INTO responders (id, user_id, name, phone, email, relationship, lat, lng, location_at, verified, opted_in, link_code, created_at)"
+                " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 0, 1, ?, ?)",
+                pid, owner, clean_name, clean_phone, clean_email, clean_rel, lat, lng, now_ts if lat is not None else None, link_code, now_ts
+            )
+
+        # Mirror into people for complete backward compatibility with alerts, service, and tests
         db.run(
             "INSERT INTO people (id, kind, name, phone, email, link_code, verified, opted_in, lat, lng, location_at,"
             " created_at, owner, relationship, whatsapp) VALUES (?, ?, ?, ?, ?, ?, ?, 1, ?, ?, ?, ?, ?, ?, ?)",
-            pid, kind, name.strip(), phone.strip(), email.strip(), secrets.token_urlsafe(6),
-            1 if kind == "contact" else 0, lat, lng, _now() if lat is not None else None, _now(), owner,
-            relationship.strip() or "Guardian", whatsapp.strip(),
+            pid, kind, clean_name, clean_phone, clean_email, link_code,
+            1 if kind == "contact" else 0, lat, lng, now_ts if lat is not None else None, now_ts, owner,
+            clean_rel, clean_wa,
         )
     return public(get(pid))
 
 
 def get(pid: str) -> dict:
+    g = db.one("SELECT * FROM guardians WHERE id=?", pid)
+    if g:
+        d = dict(g)
+        d["kind"] = "contact"
+        d["owner"] = d.get("user_id")
+        d.setdefault("verified", 1)
+        d.setdefault("opted_in", 1)
+        d.setdefault("lat", None)
+        d.setdefault("lng", None)
+        d.setdefault("location_at", None)
+        return d
+    r = db.one("SELECT * FROM responders WHERE id=?", pid)
+    if r:
+        d = dict(r)
+        d["kind"] = "responder"
+        d["owner"] = d.get("user_id")
+        d.setdefault("whatsapp", "")
+        return d
     p = db.one("SELECT * FROM people WHERE id=?", pid)
-    if not p:
-        raise PeopleError("person not found", 404)
-    return p
+    if p:
+        return dict(p)
+    raise PeopleError("person not found", 404)
 
 
 def list_kind(kind: str, owner=None) -> list[dict]:
@@ -66,30 +108,64 @@ def list_kind(kind: str, owner=None) -> list[dict]:
     if kind == "contact":
         if uid:
             rows = db.rows(
-                "SELECT * FROM people WHERE kind='contact' AND (owner = ? OR owner IS NULL) ORDER BY created_at",
+                "SELECT * FROM guardians WHERE user_id = ? ORDER BY created_at",
                 uid,
             )
+            if not rows:
+                rows = db.rows(
+                    "SELECT * FROM people WHERE kind='contact' AND (owner = ? OR owner IS NULL) ORDER BY created_at",
+                    uid,
+                )
         else:
-            rows = db.rows("SELECT * FROM people WHERE kind='contact' ORDER BY created_at")
+            rows = db.rows("SELECT * FROM guardians ORDER BY created_at")
+            if not rows:
+                rows = db.rows("SELECT * FROM people WHERE kind='contact' ORDER BY created_at")
+        out = []
+        for r in rows:
+            d = dict(r)
+            d["kind"] = "contact"
+            d["owner"] = d.get("user_id") or d.get("owner")
+            d.setdefault("verified", 1)
+            d.setdefault("opted_in", 1)
+            d.setdefault("lat", None)
+            d.setdefault("lng", None)
+            d.setdefault("location_at", None)
+            out.append(public(d))
+        return out
     else:
-        rows = db.rows("SELECT * FROM people WHERE kind=? ORDER BY created_at", kind)
-    return [public(p) for p in rows]
+        rows = db.rows("SELECT * FROM responders ORDER BY created_at")
+        if not rows:
+            rows = db.rows("SELECT * FROM people WHERE kind='responder' ORDER BY created_at")
+        out = []
+        for r in rows:
+            d = dict(r)
+            d["kind"] = "responder"
+            d["owner"] = d.get("user_id") or d.get("owner")
+            d.setdefault("whatsapp", "")
+            out.append(public(d))
+        return out
 
 
 def owns(p: dict) -> bool:
     """A contact can only be seen or changed by the account it belongs to."""
-    return p["kind"] != "contact" or p["owner"] == context.current() or p["owner"] is None or not context.current()
+    owner = p.get("user_id") or p.get("owner")
+    return p.get("kind") != "contact" or owner == context.current() or owner is None or not context.current()
 
 
 def linked_contacts(owner=None) -> list[dict]:
     """Trusted contacts who have connected Telegram (raw rows: includes the chat id)."""
+    uid = owner or context.current()
+    if uid:
+        rows = db.rows("SELECT * FROM guardians WHERE telegram_chat_id IS NOT NULL AND user_id = ? ORDER BY created_at", uid)
+        if rows:
+            return rows
     return db.rows("SELECT * FROM people WHERE kind='contact' AND telegram_chat_id IS NOT NULL AND owner IS ?"
-                   " ORDER BY created_at", owner or context.current())
+                   " ORDER BY created_at", uid)
 
 
 def update(pid: str, **fields) -> dict:
-    get(pid)
-    allowed = {"name", "phone", "email", "opted_in", "lat", "lng", "relationship", "whatsapp"}
+    p = get(pid)
+    allowed = {"name", "phone", "email", "opted_in", "lat", "lng", "relationship", "whatsapp", "user_id"}
     sets = {k: v for k, v in fields.items() if k in allowed and v is not None}
     if "lat" in sets or "lng" in sets:
         _check_location(sets.get("lat"), sets.get("lng"))
@@ -97,9 +173,22 @@ def update(pid: str, **fields) -> dict:
     if "opted_in" in sets:
         sets["opted_in"] = int(bool(sets["opted_in"]))
     if sets:
-        cols = ", ".join(f"{k}=?" for k in sets)
         with db.lock:
-            db.run(f"UPDATE people SET {cols} WHERE id=?", *sets.values(), pid)
+            if p["kind"] == "contact":
+                g_sets = {k: v for k, v in sets.items() if k in {"name", "phone", "email", "relationship", "whatsapp", "user_id"}}
+                if g_sets:
+                    g_cols = ", ".join(f"{'user_id' if k=='user_id' else k}=?" for k in g_sets)
+                    db.run(f"UPDATE guardians SET {g_cols} WHERE id=?", *g_sets.values(), pid)
+            else:
+                r_sets = {k: v for k, v in sets.items() if k in {"name", "phone", "email", "relationship", "lat", "lng", "location_at", "opted_in", "user_id"}}
+                if r_sets:
+                    r_cols = ", ".join(f"{k}=?" for k in r_sets)
+                    db.run(f"UPDATE responders SET {r_cols} WHERE id=?", *r_sets.values(), pid)
+            # Sync to people
+            p_sets = {k: v for k, v in sets.items() if k != "user_id"}
+            if p_sets:
+                p_cols = ", ".join(f"{k}=?" for k in p_sets)
+                db.run(f"UPDATE people SET {p_cols} WHERE id=?", *p_sets.values(), pid)
     return public(get(pid))
 
 
@@ -108,6 +197,7 @@ def verify(pid: str, verified: bool = True) -> dict:
     if p["kind"] != "responder":
         raise PeopleError("only responders need verifying")
     with db.lock:
+        db.run("UPDATE responders SET verified=? WHERE id=?", int(verified), pid)
         db.run("UPDATE people SET verified=? WHERE id=?", int(verified), pid)
     return public(get(pid))
 
@@ -115,21 +205,35 @@ def verify(pid: str, verified: bool = True) -> dict:
 def delete(pid: str) -> None:
     get(pid)
     with db.lock:
+        db.run("DELETE FROM guardians WHERE id=?", pid)
+        db.run("DELETE FROM responders WHERE id=?", pid)
         db.run("DELETE FROM people WHERE id=?", pid)
         db.run("DELETE FROM alerts WHERE person_id=?", pid)
 
 
 def link_telegram(code: str, chat_id: int) -> dict | None:
     """Called when someone taps Start on the bot with their personal code."""
-    p = db.one("SELECT * FROM people WHERE link_code=?", code)
+    p = db.one("SELECT * FROM guardians WHERE link_code=?", code)
+    if not p:
+        p = db.one("SELECT * FROM responders WHERE link_code=?", code)
+    if not p:
+        p = db.one("SELECT * FROM people WHERE link_code=?", code)
     if not p:
         return None
     with db.lock:
+        db.run("UPDATE guardians SET telegram_chat_id=? WHERE id=?", chat_id, p["id"])
+        db.run("UPDATE responders SET telegram_chat_id=? WHERE id=?", chat_id, p["id"])
         db.run("UPDATE people SET telegram_chat_id=? WHERE id=?", chat_id, p["id"])
     return get(p["id"])
 
 
 def by_chat(chat_id: int) -> list[dict]:
+    res = db.rows("SELECT * FROM guardians WHERE telegram_chat_id=?", chat_id)
+    if res:
+        return res
+    res = db.rows("SELECT * FROM responders WHERE telegram_chat_id=?", chat_id)
+    if res:
+        return res
     return db.rows("SELECT * FROM people WHERE telegram_chat_id=?", chat_id)
 
 
@@ -163,11 +267,12 @@ def join_by_invite(code: str, chat_id: int, tg_name: str) -> tuple[dict | None, 
     if not r:
         return None, False
     owner = r["key"].split(":", 1)[0] if ":" in r["key"] else None
-    existing = db.one("SELECT * FROM people WHERE kind='contact' AND telegram_chat_id=? AND owner IS ?", chat_id, owner)
+    existing = db.one("SELECT * FROM guardians WHERE telegram_chat_id=? AND user_id IS ?", chat_id, owner) or db.one("SELECT * FROM people WHERE kind='contact' AND telegram_chat_id=? AND owner IS ?", chat_id, owner)
     if existing:
         return get(existing["id"]), False
     p = create("contact", (tg_name or "Telegram contact").strip()[:60] or "Telegram contact", owner=owner)
     with db.lock:
+        db.run("UPDATE guardians SET telegram_chat_id=? WHERE id=?", chat_id, p["id"])
         db.run("UPDATE people SET telegram_chat_id=? WHERE id=?", chat_id, p["id"])
     return get(p["id"]), True
 
