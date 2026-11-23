@@ -69,6 +69,9 @@
     if (!e.target.closest("#logout-btn, #popover-logout-btn, #settings-logout-btn")) return;
     if (!(await show("Log out of Kavach on this device?", { ok: "Log out" }))) return;
     await nativeFetch("/auth/logout", { method: "POST", credentials: "same-origin" }).catch(() => {});
+    try {
+      ["kavach_token", "kavach.user", "kavach.sosSetup", "kavach.myDetails", "kavach.lastUser", "kavach_user_lat", "kavach_user_lng"].forEach((k) => localStorage.removeItem(k));
+    } catch {}
     location.replace("/login.html");
   });
 

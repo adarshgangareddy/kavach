@@ -137,12 +137,22 @@
 
   async function loadSetup() {
     try {
-      setup = await api("/sos/setup");
-      if (setup && Array.isArray(setup.contacts) && setup.contacts.length > 0) {
-        try { localStorage.setItem("kavach.sosSetup", JSON.stringify(setup)); } catch {}
+      const data = await api("/sos/setup");
+      if (data) {
+        setup = setup || {};
+        setup.name = data.name || setup.name;
+        setup.telegram = data.telegram || setup.telegram;
+        setup.email_on = data.email_on ?? setup.email_on;
+        setup.email_problem = data.email_problem;
+        if (Array.isArray(data.contacts)) {
+          setup.contacts = data.contacts;
+          try { localStorage.setItem("kavach.sosSetup", JSON.stringify(setup)); } catch {}
+        }
       }
     } catch {
-      els.channels.innerHTML = `<span class="chan chan--warn">Kavach offline</span>`;
+      if (els.channels) {
+        els.channels.innerHTML = `<span class="chan chan--warn">Kavach offline</span>`;
+      }
       return;
     }
     setup = setup || {};

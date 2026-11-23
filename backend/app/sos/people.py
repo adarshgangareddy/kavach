@@ -106,22 +106,22 @@ def get(pid: str) -> dict:
 def list_kind(kind: str, owner=None) -> list[dict]:
     uid = owner or context.current()
     if kind == "contact":
+        seen_ids = set()
+        out = []
         if uid:
-            rows = db.rows(
+            g_rows = db.rows(
                 "SELECT * FROM guardians WHERE user_id = ? ORDER BY created_at",
                 uid,
             )
-            if not rows:
-                rows = db.rows(
-                    "SELECT * FROM people WHERE kind='contact' AND (owner = ? OR owner IS NULL) ORDER BY created_at",
-                    uid,
-                )
+            p_rows = db.rows(
+                "SELECT * FROM people WHERE kind='contact' AND (owner = ? OR owner IS NULL) ORDER BY created_at",
+                uid,
+            )
         else:
-            rows = db.rows("SELECT * FROM guardians ORDER BY created_at")
-            if not rows:
-                rows = db.rows("SELECT * FROM people WHERE kind='contact' ORDER BY created_at")
-        out = []
-        for r in rows:
+            g_rows = db.rows("SELECT * FROM guardians ORDER BY created_at")
+            p_rows = db.rows("SELECT * FROM people WHERE kind='contact' ORDER BY created_at")
+
+        for r in (g_rows or []):
             d = dict(r)
             d["kind"] = "contact"
             d["owner"] = d.get("user_id") or d.get("owner")
@@ -130,19 +130,42 @@ def list_kind(kind: str, owner=None) -> list[dict]:
             d.setdefault("lat", None)
             d.setdefault("lng", None)
             d.setdefault("location_at", None)
+            seen_ids.add(d["id"])
             out.append(public(d))
+
+        for r in (p_rows or []):
+            d = dict(r)
+            if d.get("id") not in seen_ids:
+                d["kind"] = "contact"
+                d["owner"] = d.get("user_id") or d.get("owner")
+                d.setdefault("verified", 1)
+                d.setdefault("opted_in", 1)
+                d.setdefault("lat", None)
+                d.setdefault("lng", None)
+                d.setdefault("location_at", None)
+                seen_ids.add(d["id"])
+                out.append(public(d))
         return out
     else:
-        rows = db.rows("SELECT * FROM responders ORDER BY created_at")
-        if not rows:
-            rows = db.rows("SELECT * FROM people WHERE kind='responder' ORDER BY created_at")
+        seen_ids = set()
         out = []
-        for r in rows:
+        g_rows = db.rows("SELECT * FROM responders ORDER BY created_at")
+        p_rows = db.rows("SELECT * FROM people WHERE kind='responder' ORDER BY created_at")
+        for r in (g_rows or []):
             d = dict(r)
             d["kind"] = "responder"
             d["owner"] = d.get("user_id") or d.get("owner")
             d.setdefault("whatsapp", "")
+            seen_ids.add(d["id"])
             out.append(public(d))
+        for r in (p_rows or []):
+            d = dict(r)
+            if d.get("id") not in seen_ids:
+                d["kind"] = "responder"
+                d["owner"] = d.get("user_id") or d.get("owner")
+                d.setdefault("whatsapp", "")
+                seen_ids.add(d["id"])
+                out.append(public(d))
         return out
 
 

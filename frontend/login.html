@@ -344,7 +344,7 @@
     function forgetOtherUser(id) {
       try {
         if (localStorage.getItem("kavach.lastUser") !== id) {
-          ["kavach.myDetails", "kavach.sosSettings"].forEach((k) => localStorage.removeItem(k));
+          ["kavach.myDetails", "kavach.sosSettings", "kavach.sosSetup"].forEach((k) => localStorage.removeItem(k));
         }
         localStorage.setItem("kavach.lastUser", id);
       } catch { /* storage blocked: nothing kept to forget */ }

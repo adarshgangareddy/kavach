@@ -247,6 +247,9 @@
     if (desktopDashboardsMenu) desktopDashboardsMenu.style.display = "none";
     if (await window.kavachConfirm?.("Log out of Kavach on this device?", { ok: "Log out" })) {
       await fetch(`${API}/auth/logout`, { method: "POST" }).catch(() => {});
+      try {
+        ["kavach_token", "kavach.user", "kavach.sosSetup", "kavach.myDetails", "kavach.lastUser", "kavach_user_lat", "kavach_user_lng"].forEach((k) => localStorage.removeItem(k));
+      } catch {}
       location.replace("/login.html");
     }
   });

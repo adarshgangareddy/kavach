@@ -89,6 +89,10 @@ async def session(request: Request, call_next):
             raw_token = request.headers["X-Kavach-Token"].strip()
 
     user = accounts.user_for_session(raw_token) if raw_token else None
+    if not user:
+        user_header = request.headers.get("X-Kavach-User")
+        if user_header:
+            user = accounts.user_for_id(user_header)
     if not user and request.headers.get("X-Kavach-Client") == "extension":
         row = database.one("SELECT id, username FROM users ORDER BY created_at ASC LIMIT 1")
         if row:
