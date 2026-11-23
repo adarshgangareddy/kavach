@@ -691,12 +691,21 @@ def sos_key():
 async def sos_setup():
     """What the SOS setup screen needs: her name, contacts, and which alert channels work."""
     uid = context.current()
-    user_contacts = people.list_kind("contact") if uid else []
-    if not user_contacts and not uid:
-        user_contacts = people.list_kind("contact")
+    if not uid:
+        return {
+            "name": "Someone you know",
+            "telegram": {
+                "on": notify.telegram_on(),
+                "bot": await notify.bot_username(),
+                "problem": notify.problems.get("telegram"),
+            },
+            "email_on": notify.email_on(),
+            "email_problem": notify.problems.get("email"),
+            "radius_m": sos.RADIUS_M,
+        }
     return {
-        "name": people.her_name() if uid else "Someone you know",
-        "contacts": user_contacts,
+        "name": people.her_name(),
+        "contacts": people.list_kind("contact"),
         "telegram": {
             "on": notify.telegram_on(),
             "bot": await notify.bot_username(),

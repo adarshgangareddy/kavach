@@ -71,19 +71,20 @@
         </button>
 
         <!-- Desktop Dashboards Dropdown Menu -->
-        <div id="desktop-dashboards-menu" class="glass-panel" style="display:none; position:absolute; right:0; top:calc(100% + 12px); width:250px; padding:10px; border-radius:18px; border:1px solid rgba(255,255,255,0.15); background:rgba(15,20,32,0.96); backdrop-filter:blur(24px); -webkit-backdrop-filter:blur(24px); box-shadow:0 12px 40px rgba(0,0,0,0.8); z-index:99999; flex-direction:column; gap:4px;">
-          <div style="padding:6px 10px 8px; border-bottom:1px solid rgba(255,255,255,0.08); margin-bottom:4px; font-size:10.5px; font-weight:700; color:var(--muted); letter-spacing:0.08em; text-transform:uppercase;">
-            Dashboards & Navigation
+        <div id="desktop-dashboards-menu" class="glass-panel" style="display:none; position:absolute; right:0; top:calc(100% + 12px); width:min(340px, calc(100vw - 24px)); padding:14px; border-radius:20px; border:1px solid rgba(255,255,255,0.15); background:rgba(15,20,32,0.96); backdrop-filter:blur(28px); -webkit-backdrop-filter:blur(28px); box-shadow:0 16px 50px rgba(0,0,0,0.85); z-index:99999; flex-direction:column; gap:6px;">
+          <div style="padding:6px 10px 10px; border-bottom:1px solid rgba(255,255,255,0.08); margin-bottom:4px; display:flex; justify-content:space-between; align-items:center;">
+            <span style="font-size:11px; font-weight:700; color:var(--muted); letter-spacing:0.08em; text-transform:uppercase;">Dashboards & Features</span>
+            <span class="glass-badge" style="font-size:10px; color:#10b981; border-color:rgba(16,185,129,0.3);">Active Session</span>
           </div>
-          <button type="button" class="desktop-nav-item" data-nav="home"><span>🏠</span> Home</button>
-          <button type="button" class="desktop-nav-item" data-nav="guardians"><span>🛡️</span> Guardians</button>
+          <button type="button" class="desktop-nav-item" data-nav="home"><span>🏠</span> Home Dashboard</button>
+          <button type="button" class="desktop-nav-item" data-nav="guardians"><span>🛡️</span> Emergency Guardians</button>
           <button type="button" class="desktop-nav-item" data-nav="safetyspace"><span>🦺</span> Safety Space</button>
           <button type="button" class="desktop-nav-item" data-nav="vault"><span>🗄️</span> Evidence Vault</button>
-          <button type="button" class="desktop-nav-item" data-nav="responders"><span>🚨</span> Responders</button>
-          <button type="button" class="desktop-nav-item" data-nav="profile"><span>👤</span> Legal Profile</button>
+          <button type="button" class="desktop-nav-item" data-nav="responders"><span>🚨</span> Community Responders</button>
+          <button type="button" class="desktop-nav-item" data-nav="profile"><span>👤</span> User Legal Profile</button>
           <button type="button" class="desktop-nav-item" data-nav="settings"><span>⚙️</span> Settings & Security</button>
-          <button type="button" id="desktop-ai-menu-item" class="desktop-nav-item" style="color:#a5b4fc; font-weight:600;"><span>✨</span> Kavach AI</button>
-          <div style="border-top:1px solid rgba(255,255,255,0.08); margin-top:4px; padding-top:6px;">
+          <button type="button" id="desktop-ai-menu-item" class="desktop-nav-item" style="color:#a5b4fc; font-weight:600;"><span>✨</span> Kavach AI Assistant</button>
+          <div style="border-top:1px solid rgba(255,255,255,0.08); margin-top:6px; padding-top:8px;">
             <button type="button" id="desktop-menu-logout-btn" class="desktop-nav-item" style="color:#ef4444; font-weight:600;"><span>🚪</span> Sign Out</button>
           </div>
         </div>
@@ -707,92 +708,86 @@
           </div>
         </header>
         <div class="vault__body" style="max-width: 860px; margin: 0 auto; padding: 24px;">
-          <!-- SmartSpend Style Hero Banner -->
-          <div class="profile-hero" style="border-radius:24px; padding:24px; margin-bottom:24px;">
-            <div class="profile-avatar">
-              <span id="prof-avatar-letter">A</span>
-              <span class="avatar-online-dot"></span>
+          <!-- Profile Hero Banner with Avatar Edit Popover -->
+          <div class="profile-hero" style="border-radius:24px; padding:24px; margin-bottom:24px; position:relative;">
+            <div class="profile-avatar-container" style="position:relative; flex-shrink:0;">
+              <div class="profile-avatar">
+                <img id="prof-avatar-img" class="prof-avatar-img" alt="Profile" style="display:none; width:100%; height:100%; object-fit:cover; border-radius:50%;" />
+                <span id="prof-avatar-letter">A</span>
+                <span class="avatar-online-dot"></span>
+                <button type="button" id="prof-avatar-edit-badge" class="avatar-edit-badge" title="Edit Profile Photo & Details" aria-label="Edit Profile">📷</button>
+              </div>
+
+              <!-- Avatar Edit Popover Menu -->
+              <div id="avatar-edit-popover" class="glass-panel avatar-popover" style="display:none; position:absolute; top:calc(100% + 8px); left:0; min-width:210px; padding:10px; border-radius:16px; z-index:100; flex-direction:column; gap:4px; box-shadow:0 12px 36px rgba(0,0,0,0.7);">
+                <div style="font-size:11px; font-weight:700; color:var(--muted); text-transform:uppercase; letter-spacing:0.06em; padding:4px 8px 6px; border-bottom:1px solid rgba(255,255,255,0.08); margin-bottom:4px;">Profile Options</div>
+                <button type="button" id="avatar-opt-upload" class="avatar-popover-item" style="display:flex; align-items:center; gap:8px; width:100%; padding:8px 10px; background:transparent; border:none; color:#f8fafc; font-size:12.5px; border-radius:8px; cursor:pointer; text-align:left;">
+                  <span>🖼️</span> Upload Photo
+                </button>
+                <button type="button" id="avatar-opt-remove" class="avatar-popover-item" style="display:flex; align-items:center; gap:8px; width:100%; padding:8px 10px; background:transparent; border:none; color:#f87171; font-size:12.5px; border-radius:8px; cursor:pointer; text-align:left;">
+                  <span>🗑️</span> Remove Photo
+                </button>
+                <div style="border-top:1px solid rgba(255,255,255,0.08); margin:4px 0;"></div>
+                <button type="button" id="avatar-opt-details" class="avatar-popover-item" style="display:flex; align-items:center; gap:8px; width:100%; padding:8px 10px; background:transparent; border:none; color:var(--brand, #f2b8c6); font-weight:600; font-size:12.5px; border-radius:8px; cursor:pointer; text-align:left;">
+                  <span>✏️</span> Edit Personal Details
+                </button>
+              </div>
+              <input type="file" id="avatar-file-input" accept="image/*" style="display:none;" />
             </div>
+
             <div style="flex:1;">
               <div style="display:flex; align-items:center; gap:10px; margin-bottom:4px; flex-wrap:wrap;">
                 <h2 id="prof-display-name" style="margin:0; font-size:22px; font-weight:700;">adarshavg</h2>
                 <span class="glass-badge" style="color:#10b981; border-color:rgba(16,185,129,0.3);">Protected by Kavach</span>
               </div>
-              <div id="prof-display-email" style="font-size:13.5px; color:var(--muted); margin-bottom:12px;">adarshavg@kavach.safety</div>
-              <div style="display:flex; gap:16px; font-size:12px; color:var(--muted); flex-wrap:wrap;">
-                <span>🛡️ SHA-256 Vault Sealing</span>
-                <span>⚖️ BNS / IT Act Integration</span>
-                <span>📍 GPS Positioning Enabled</span>
-              </div>
+              <div id="prof-display-email" style="font-size:13.5px; color:var(--muted);">adarshavg@kavach.safety</div>
             </div>
           </div>
 
-          <!-- 3 SmartSpend KPI Metric Cards -->
-          <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(220px, 1fr)); gap:16px; margin-bottom:24px;">
-            <div class="glass-card" style="padding:18px; border-radius:18px;">
-              <div style="font-size:12px; color:var(--muted); margin-bottom:4px;">EVIDENCE STATUS</div>
-              <strong style="font-size:16px; color:#3ecf8e; display:block;">Tamper-Proof</strong>
-              <small style="color:var(--muted); font-size:11.5px;">SHA-256 Chained Vault</small>
-            </div>
-            <div class="glass-card" style="padding:18px; border-radius:18px;">
-              <div style="font-size:12px; color:var(--muted); margin-bottom:4px;">SAFETY NETWORK</div>
-              <strong style="font-size:16px; color:#f2b8c6; display:block;" id="prof-kpi-guardians">Guardians Linked</strong>
-              <small style="color:var(--muted); font-size:11.5px;">Auto Telegram & Email Alert</small>
-            </div>
-            <div class="glass-card" style="padding:18px; border-radius:18px;">
-              <div style="font-size:12px; color:var(--muted); margin-bottom:4px;">LEGAL INTEGRATION</div>
-              <strong style="font-size:16px; color:#6366f1; display:block;">Auto-Fill Ready</strong>
-              <small style="color:var(--muted); font-size:11.5px;">Cyber Cell & Police Form</small>
-            </div>
-          </div>
-
-          <!-- Google Profile Style Read-Only Sections View -->
+          <!-- Google Profile Style Read-Only Sections View (Personal Details Only) -->
           <div id="profile-sections-view" style="display:flex; flex-direction:column; gap:20px;">
-            <!-- Header bar with Edit button -->
+            <!-- Header bar -->
             <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
               <div>
-                <strong style="font-size:16px; color:#fff; display:block;">Profile Information</strong>
-                <span style="font-size:12.5px; color:var(--muted);">Personal info and options to manage it across Kavach legal petitions.</span>
+                <strong style="font-size:16px; color:#fff; display:block;">Personal Information</strong>
+                <span style="font-size:12.5px; color:var(--muted);">Personal and legal jurisdiction details automatically synchronized into official complaints.</span>
               </div>
-              <button type="button" id="prof-toggle-edit-btn" class="btn btn--primary small" style="display:inline-flex; align-items:center; gap:8px; padding:8px 18px; border-radius:10px; font-weight:600;">
-                ✏️ Edit Details
-              </button>
             </div>
 
             <!-- Basic Info Card (Google Account Style) -->
             <div class="glass-panel" style="padding:0; border-radius:20px; overflow:hidden;">
               <div style="padding:18px 22px; border-bottom:1px solid rgba(255,255,255,0.06); background:rgba(255,255,255,0.02);">
                 <strong style="font-size:15px; color:#fff; display:block;">Basic info</strong>
-                <span style="font-size:12px; color:var(--muted);">Some info may be visible to police officials during complaint filing.</span>
+                <span style="font-size:12px; color:var(--muted);">Used to identify the complainant in formal police petitions.</span>
               </div>
 
               <!-- Profile picture row -->
               <div style="display:flex; justify-content:space-between; align-items:center; padding:16px 22px; border-bottom:1px solid rgba(255,255,255,0.05);">
                 <span style="font-size:12.5px; color:var(--muted); width:180px; text-transform:uppercase; letter-spacing:0.04em;">Profile picture</span>
                 <div style="flex:1; display:flex; align-items:center; gap:12px;">
-                  <div style="width:36px; height:36px; border-radius:50%; background:linear-gradient(135deg, #f2b8c6, #b9a6e8); display:flex; align-items:center; justify-content:center; color:#0c0e12; font-weight:800; font-size:14px;">
-                    <span id="prof-row-avatar">U</span>
+                  <div style="width:36px; height:36px; border-radius:50%; background:linear-gradient(135deg, #f2b8c6, #b9a6e8); display:flex; align-items:center; justify-content:center; color:#0c0e12; font-weight:800; font-size:14px; overflow:hidden;">
+                    <span id="prof-row-avatar">A</span>
                   </div>
-                  <span style="font-size:12px; color:var(--muted);">A photo helps personalize your account</span>
+                  <span style="font-size:12px; color:var(--muted);">Tap camera icon on avatar above to customize</span>
                 </div>
               </div>
 
               <!-- Name row -->
               <div style="display:flex; justify-content:space-between; align-items:center; padding:16px 22px; border-bottom:1px solid rgba(255,255,255,0.05);">
                 <span style="font-size:12.5px; color:var(--muted); width:180px; text-transform:uppercase; letter-spacing:0.04em;">Name</span>
-                <strong id="prof-row-name" style="flex:1; font-size:13.5px; color:#fff; font-weight:600;">Kavach User</strong>
+                <strong id="prof-row-name" style="flex:1; font-size:13.5px; color:#fff; font-weight:600;">adarshavg</strong>
               </div>
 
               <!-- Contact info: Email row -->
               <div style="display:flex; justify-content:space-between; align-items:center; padding:16px 22px; border-bottom:1px solid rgba(255,255,255,0.05);">
                 <span style="font-size:12.5px; color:var(--muted); width:180px; text-transform:uppercase; letter-spacing:0.04em;">Email</span>
-                <span id="prof-row-email" style="flex:1; font-size:13px; color:#e2e8f0;">user@kavach.safety</span>
+                <span id="prof-row-email" style="flex:1; font-size:13px; color:#e2e8f0;">adarshavg@kavach.safety</span>
               </div>
 
               <!-- Contact info: Phone row -->
               <div style="display:flex; justify-content:space-between; align-items:center; padding:16px 22px; border-bottom:1px solid rgba(255,255,255,0.05);">
                 <span style="font-size:12.5px; color:var(--muted); width:180px; text-transform:uppercase; letter-spacing:0.04em;">Phone</span>
-                <span id="prof-row-phone" style="flex:1; font-size:13px; color:#e2e8f0;">Not added</span>
+                <span id="prof-row-phone" style="flex:1; font-size:13px; color:#e2e8f0;">7795806293</span>
               </div>
 
               <!-- Contact info: Alt Phone row -->
@@ -812,7 +807,7 @@
               <!-- Residential Street Address row -->
               <div style="display:flex; justify-content:space-between; align-items:center; padding:16px 22px; border-bottom:1px solid rgba(255,255,255,0.05);">
                 <span style="font-size:12.5px; color:var(--muted); width:180px; text-transform:uppercase; letter-spacing:0.04em;">Residential Address</span>
-                <span id="prof-row-address" style="flex:1; font-size:13px; color:#e2e8f0;">Not specified</span>
+                <span id="prof-row-address" style="flex:1; font-size:13px; color:#e2e8f0;">Reva university</span>
               </div>
 
               <!-- City / State row -->
@@ -833,22 +828,6 @@
                 <span class="glass-badge" style="color:#10b981; border-color:rgba(16,185,129,0.3); font-size:11.5px; font-weight:600;">
                   ✓ Verified Section 65B IT Act Complainant
                 </span>
-              </div>
-            </div>
-
-            <!-- Emergency Guardians & Safety Circle Section (Google Style) -->
-            <div class="glass-panel" style="padding:0; border-radius:20px; overflow:hidden;">
-              <div style="padding:18px 22px; border-bottom:1px solid rgba(255,255,255,0.06); background:rgba(255,255,255,0.02); display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
-                <div>
-                  <strong style="font-size:15px; color:#fff; display:block;">Active Emergency Guardians</strong>
-                  <span style="font-size:12px; color:var(--muted);">Contacts alerted immediately during an SOS emergency with live GPS location.</span>
-                </div>
-                <button type="button" id="prof-manage-guardians-btn" class="btn btn--primary small" style="font-size:11.5px; padding:6px 14px; border-radius:8px; font-weight:600;">
-                  + Add / Manage Guardians
-                </button>
-              </div>
-              <div id="prof-guardians-list" style="padding:16px 22px; display:flex; flex-direction:column; gap:10px;">
-                <span style="font-size:12.5px; color:var(--muted);">Loading trusted guardians…</span>
               </div>
             </div>
           </div>
@@ -941,24 +920,18 @@
             
             <!-- Card 1: Account & Authentication -->
             <div class="glass-panel" style="padding:22px; border-radius:20px;">
-              <strong style="font-size:15.5px; display:block; margin-bottom:4px; color:var(--text);">Account & Authentication</strong>
-              <p style="font-size:12px; color:var(--muted); margin-bottom:16px;">Credentials, session status, and password hashing security.</p>
+              <strong style="font-size:15.5px; display:block; margin-bottom:4px; color:var(--text);">Account Profile & Credentials</strong>
+              <p style="font-size:12px; color:var(--muted); margin-bottom:16px;">Active user profile authenticated with secure session tokens and Argon2id hashing.</p>
               
-              <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; padding:12px 16px; background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.06); border-radius:14px; margin-bottom:14px;">
+              <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; padding:14px 18px; background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.06); border-radius:14px;">
                 <div>
-                  <strong id="settings-user-name" style="font-size:14px; color:#fff; display:block;">Kavach User</strong>
-                  <small id="settings-user-email" style="font-size:12px; color:var(--muted);">user@kavach.safety</small>
+                  <strong id="settings-user-name" style="font-size:14.5px; color:#fff; display:block;">adarshavg</strong>
+                  <small id="settings-user-email" style="font-size:12.5px; color:var(--muted);">adarshavg@kavach.safety</small>
                 </div>
-                <span class="glass-badge" style="color:#10b981; border-color:rgba(16,185,129,0.3);">✓ Argon2id Protected</span>
-              </div>
-
-              <div style="display:flex; gap:12px; flex-wrap:wrap;">
-                <button type="button" id="settings-logout-btn" class="btn btn--ghost" style="color:#f2b8c6; border-color:rgba(242,184,198,0.3); font-size:12.5px; padding:9px 18px; border-radius:10px;">
-                  🚪 Sign Out
-                </button>
-                <button type="button" id="settings-delete-account-btn" class="btn btn--ghost" style="color:#ef4444; border-color:rgba(239,68,68,0.35); font-size:12.5px; padding:9px 18px; border-radius:10px;">
-                  🗑️ Delete Account & Wipe Data
-                </button>
+                <div style="display:flex; gap:8px; align-items:center;">
+                  <span class="glass-badge" style="color:#10b981; border-color:rgba(16,185,129,0.3);">✓ Argon2id Protected</span>
+                  <span class="glass-badge" style="color:#6366f1; border-color:rgba(99,102,241,0.3);">Session Active</span>
+                </div>
               </div>
             </div>
 
@@ -967,12 +940,12 @@
               <strong style="font-size:15.5px; display:block; margin-bottom:4px; color:var(--text);">Location & Emergency Dispatch</strong>
               <p style="font-size:12px; color:var(--muted); margin-bottom:16px;">Automated device GPS synchronization for nearby responder alerts.</p>
               
-              <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; padding:12px 16px; background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.06); border-radius:14px; margin-bottom:14px;">
+              <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; padding:14px 18px; background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.06); border-radius:14px;">
                 <div>
                   <strong style="font-size:13.5px; color:#fff; display:block;">Live Location Synchronization</strong>
                   <small style="font-size:11.5px; color:var(--muted);">Automatically syncs your coordinates upon opening the app and after returning online.</small>
                 </div>
-                <button type="button" id="settings-recheck-loc-btn" class="btn btn--primary small" style="background:#2563eb; border-color:#2563eb; font-size:12px; padding:6px 14px; border-radius:8px;">
+                <button type="button" id="settings-recheck-loc-btn" class="btn btn--primary small" style="background:#2563eb; border-color:#2563eb; font-size:12px; padding:7px 16px; border-radius:8px; font-weight:600;">
                   Confirm Location Now
                 </button>
               </div>
@@ -984,14 +957,43 @@
               <p style="font-size:12px; color:var(--muted); margin-bottom:16px;">Cryptographic safeguards adhering to Bharatiya Nyaya Sanhita (BNS) 2023 & IT Act 2000 Section 65B.</p>
               
               <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;" class="details-grid">
-                <div class="glass-card" style="padding:14px; border-radius:14px;">
-                  <strong style="display:block; font-size:13px; color:#3ecf8e; margin-bottom:2px;">🔒 SHA-256 Chained Vault</strong>
-                  <small style="color:var(--muted); font-size:11.5px;">Every saved evidence record is chained with cryptographic hash integrity.</small>
+                <div class="glass-card" style="padding:16px; border-radius:16px;">
+                  <strong style="display:block; font-size:13px; color:#3ecf8e; margin-bottom:4px;">🔒 SHA-256 Chained Vault</strong>
+                  <small style="color:var(--muted); font-size:11.5px; line-height:1.4; display:block;">Every saved evidence record is chained with cryptographic hash integrity.</small>
                 </div>
-                <div class="glass-card" style="padding:14px; border-radius:14px;">
-                  <strong style="display:block; font-size:13px; color:#6366f1; margin-bottom:2px;">⚖️ Section 65B Electronic Certificate</strong>
-                  <small style="color:var(--muted); font-size:11.5px;">Auto-generated PDF complaints include legal compliance certifications for police filing.</small>
+                <div class="glass-card" style="padding:16px; border-radius:16px;">
+                  <strong style="display:block; font-size:13px; color:#6366f1; margin-bottom:4px;">⚖️ Section 65B Electronic Certificate</strong>
+                  <small style="color:var(--muted); font-size:11.5px; line-height:1.4; display:block;">Auto-generated PDF complaints include legal compliance certifications for police filing.</small>
                 </div>
+              </div>
+            </div>
+
+            <!-- Card 4: Account Lifecycle & Session Control (Positioned at the Bottom) -->
+            <div class="glass-panel" style="padding:22px; border-radius:20px; border-color:rgba(239,68,68,0.22); background:linear-gradient(135deg, rgba(239,68,68,0.04), rgba(15,20,32,0.88));">
+              <div style="display:flex; align-items:center; gap:8px; margin-bottom:4px;">
+                <span style="font-size:16px;">⚠️</span>
+                <strong style="font-size:15.5px; color:#f87171;">Account Lifecycle & Danger Zone</strong>
+              </div>
+              <p style="font-size:12px; color:var(--muted); margin-bottom:18px;">Manage your active session or permanently wipe all cryptographic records from this device.</p>
+              
+              <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:14px; padding:16px; background:rgba(0,0,0,0.28); border:1px solid rgba(255,255,255,0.06); border-radius:16px;">
+                <div>
+                  <strong style="font-size:13.5px; color:#fff; display:block;">Active Session Control</strong>
+                  <small style="font-size:11.5px; color:var(--muted);">Sign out from this terminal and clear session tokens safely.</small>
+                </div>
+                <button type="button" id="settings-logout-btn" class="btn btn--ghost" style="color:#f2b8c6; border-color:rgba(242,184,198,0.4); font-size:12.5px; padding:9px 22px; border-radius:10px; font-weight:600;">
+                  🚪 Sign Out
+                </button>
+              </div>
+
+              <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:14px; padding:16px; background:rgba(239,68,68,0.06); border:1px solid rgba(239,68,68,0.25); border-radius:16px; margin-top:12px;">
+                <div>
+                  <strong style="font-size:13.5px; color:#ef4444; display:block;">Permanent Data Wipe & Account Deletion</strong>
+                  <small style="font-size:11.5px; color:var(--muted);">Permanently unlinks all guardians, clears vault hashes, and purges account profile.</small>
+                </div>
+                <button type="button" id="settings-delete-account-btn" class="btn btn--ghost" style="color:#ef4444; border-color:rgba(239,68,68,0.5); background:rgba(239,68,68,0.1); font-size:12.5px; padding:9px 22px; border-radius:10px; font-weight:600;">
+                  🗑️ Delete Account & Wipe Data
+                </button>
               </div>
             </div>
 

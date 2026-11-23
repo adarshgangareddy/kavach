@@ -220,7 +220,7 @@
     });
   }
 
-  function requestDeviceLocation(isPeriodic = false, isUserClick = false) {
+  async function requestDeviceLocation(isPeriodic = false, isUserClick = false) {
     function handleLocationSuccess(lat, lng, label = "Live Device GPS") {
       isLocationGranted = true;
       hideLocationAccuracyModal();
@@ -363,14 +363,12 @@
     const email = u.email || `${u.username || "adarshavg"}@kavach.safety`;
     const initial = (name[0] || "A").toUpperCase();
 
-    if (profAvatar) profAvatar.textContent = initial;
     if (profDisplayName) profDisplayName.textContent = name;
     if (profDisplayEmail) profDisplayEmail.textContent = email;
-
-    if (topAvatarLetter) topAvatarLetter.textContent = initial;
-    if (popoverAvatarLetter) popoverAvatarLetter.textContent = initial;
     if (popoverName) popoverName.textContent = name;
     if (popoverEmail) popoverEmail.textContent = email;
+
+    updateAvatarDisplay(null, initial);
 
     if (profName) profName.value = u.full_name || u.username || "adarshavg";
     if (profPhone) profPhone.value = u.phone || "";
@@ -410,57 +408,108 @@
         try { localStorage.setItem("kavach.user", JSON.stringify(u)); } catch {}
         applyUserData(u);
       }
-
-      // Sync KPI count & render guardians list in Profile
-      try {
-        const sRes = await fetch(`${API}/sos/setup`, {
-          credentials: "include",
-          headers: getAuthHeaders(),
-        });
-        if (sRes.ok) {
-          const sData = await sRes.json();
-          const contacts = sData.contacts || [];
-          if (profKpiGuardians) profKpiGuardians.textContent = `${contacts.length} Guardian${contacts.length === 1 ? "" : "s"} Active`;
-          renderProfileGuardians(contacts);
-        }
-      } catch {}
     } catch (err) {
       console.warn("Could not load user profile:", err);
     }
   }
 
-  function renderProfileGuardians(contacts = []) {
-    const listEl = document.getElementById("prof-guardians-list");
-    if (!listEl) return;
-    if (!contacts.length) {
-      listEl.innerHTML = `
-        <div style="color:var(--muted); font-size:12.5px; padding:6px 0;">
-          No emergency guardians configured yet. Tap below or switch to Guardians to add your circle.
-        </div>`;
-      return;
+  const profAvatarEditBadge = $("#prof-avatar-edit-badge");
+  const avatarEditPopover = $("#avatar-edit-popover");
+  const avatarFileInput = $("#avatar-file-input");
+  const avatarOptUpload = $("#avatar-opt-upload");
+  const avatarOptRemove = $("#avatar-opt-remove");
+  const avatarOptDetails = $("#avatar-opt-details");
+  const profAvatarImg = $("#prof-avatar-img");
+
+  function updateAvatarDisplay(avatarUrl, initial) {
+    const customAvatar = avatarUrl || localStorage.getItem("kavach_user_avatar");
+    if (customAvatar) {
+      if (profAvatarImg) {
+        profAvatarImg.src = customAvatar;
+        profAvatarImg.style.display = "block";
+      }
+      if (profAvatar) profAvatar.style.display = "none";
+
+      const topAvatar = document.querySelector("#top-avatar-letter");
+      if (topAvatar) {
+        topAvatar.innerHTML = `<img src="${customAvatar}" style="width:100%;height:100%;border-radius:50%;object-fit:cover;" alt="Avatar" />`;
+      }
+      if (popoverAvatarLetter) {
+        popoverAvatarLetter.innerHTML = `<img src="${customAvatar}" style="width:100%;height:100%;border-radius:50%;object-fit:cover;" alt="Avatar" />`;
+      }
+      if (profRowAvatar) {
+        profRowAvatar.innerHTML = `<img src="${customAvatar}" style="width:100%;height:100%;border-radius:50%;object-fit:cover;" alt="Avatar" />`;
+      }
+    } else {
+      if (profAvatarImg) {
+        profAvatarImg.src = "";
+        profAvatarImg.style.display = "none";
+      }
+      if (profAvatar) {
+        profAvatar.style.display = "inline";
+        profAvatar.textContent = initial || "A";
+      }
+      const topAvatar = document.querySelector("#top-avatar-letter");
+      if (topAvatar) topAvatar.textContent = initial || "A";
+      if (popoverAvatarLetter) popoverAvatarLetter.textContent = initial || "A";
+      if (profRowAvatar) profRowAvatar.textContent = initial || "A";
     }
-    listEl.innerHTML = contacts.map(c => `
-      <div class="glass-card" style="display:flex; justify-content:space-between; align-items:center; padding:12px 16px; border-radius:14px; flex-wrap:wrap; gap:8px;">
-        <div style="display:flex; align-items:center; gap:12px;">
-          <div style="width:36px; height:36px; border-radius:50%; background:linear-gradient(135deg, #f2b8c6, #b9a6e8); display:flex; align-items:center; justify-content:center; color:#0c0e12; font-weight:700; font-size:14px;">
-            ${((c.name || 'G')[0] || 'G').toUpperCase()}
-          </div>
-          <div>
-            <strong style="color:#fff; font-size:13.5px;">${c.name}</strong>
-            <span class="glass-badge" style="color:var(--brand); border-color:rgba(242,184,198,0.3); font-size:10px; margin-left:6px;">${c.relationship || 'Guardian'}</span>
-            <div style="color:var(--muted); font-size:11px; margin-top:2px;">${[c.phone ? '📞 ' + c.phone : '', c.whatsapp ? '💬 WA: ' + c.whatsapp : '', c.email || ''].filter(Boolean).join(' · ')}</div>
-          </div>
-        </div>
-        <div style="display:flex; gap:8px; align-items:center;">
-          ${c.phone ? `<a href="tel:${c.phone}" class="btn btn--primary small" style="background:#10b981; border-color:#10b981; color:#fff; font-size:11px; padding:5px 10px; border-radius:6px; text-decoration:none; font-weight:700;">📞 Call</a>` : ''}
-          ${c.telegram_linked ? `<span class="glass-badge" style="color:#10b981; border-color:rgba(16,185,129,0.3); font-size:10.5px;">✓ Telegram</span>` : ''}
-        </div>
-      </div>
-    `).join("");
   }
 
-  document.getElementById("prof-manage-guardians-btn")?.addEventListener("click", () => {
-    window.kavachNav?.go("guardians");
+  profAvatarEditBadge?.addEventListener("click", (e) => {
+    e.stopPropagation();
+    if (!avatarEditPopover) return;
+    const isHidden = avatarEditPopover.style.display === "none" || !avatarEditPopover.style.display;
+    avatarEditPopover.style.display = isHidden ? "flex" : "none";
+  });
+
+  document.addEventListener("click", (e) => {
+    if (avatarEditPopover && avatarEditPopover.style.display === "flex") {
+      if (!avatarEditPopover.contains(e.target) && e.target !== profAvatarEditBadge) {
+        avatarEditPopover.style.display = "none";
+      }
+    }
+  });
+
+  avatarOptUpload?.addEventListener("click", (e) => {
+    e.stopPropagation();
+    if (avatarEditPopover) avatarEditPopover.style.display = "none";
+    avatarFileInput?.click();
+  });
+
+  avatarFileInput?.addEventListener("change", (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      const dataUrl = ev.target.result;
+      try {
+        localStorage.setItem("kavach_user_avatar", dataUrl);
+      } catch (err) {
+        console.warn("Avatar storage quota exceeded", err);
+      }
+      const name = profDisplayName?.textContent || "A";
+      updateAvatarDisplay(dataUrl, (name[0] || "A").toUpperCase());
+      window.kavach?.toast("✓ Profile photo updated!");
+    };
+    reader.readAsDataURL(file);
+  });
+
+  avatarOptRemove?.addEventListener("click", (e) => {
+    e.stopPropagation();
+    if (avatarEditPopover) avatarEditPopover.style.display = "none";
+    localStorage.removeItem("kavach_user_avatar");
+    const name = profDisplayName?.textContent || "A";
+    updateAvatarDisplay(null, (name[0] || "A").toUpperCase());
+    window.kavach?.toast("Profile photo removed.");
+  });
+
+  avatarOptDetails?.addEventListener("click", (e) => {
+    e.stopPropagation();
+    if (avatarEditPopover) avatarEditPopover.style.display = "none";
+    if (profSectionsView) profSectionsView.style.display = "none";
+    if (profFormWrap) profFormWrap.style.display = "flex";
+    profName?.focus();
   });
 
   function updateGoogleProfileSections(u = {}, stored = {}) {
@@ -473,7 +522,7 @@
     const station = stored.police_station || "Indiranagar Cyber Crime Station";
     const initial = (name[0] || "A").toUpperCase();
 
-    if (profRowAvatar) profRowAvatar.textContent = initial;
+    updateAvatarDisplay(null, initial);
     if (profRowName) profRowName.textContent = name;
     if (profRowEmail) profRowEmail.textContent = email;
     if (profRowPhone) profRowPhone.textContent = phone;
@@ -482,21 +531,6 @@
     if (profRowCity) profRowCity.textContent = city;
     if (profRowStation) profRowStation.textContent = station;
 
-    if (profSectionsView) profSectionsView.style.display = "flex";
-    if (profFormWrap) profFormWrap.style.display = "none";
-  }
-    const station = stored.police_station || "Indiranagar Cyber Crime Station";
-
-    if (profRowAvatar) profRowAvatar.textContent = (name[0] || "U").toUpperCase();
-    if (profRowName) profRowName.textContent = name;
-    if (profRowEmail) profRowEmail.textContent = email;
-    if (profRowPhone) profRowPhone.textContent = phone;
-    if (profRowAltPhone) profRowAltPhone.textContent = altPhone;
-    if (profRowAddress) profRowAddress.textContent = address;
-    if (profRowCity) profRowCity.textContent = city;
-    if (profRowStation) profRowStation.textContent = station;
-
-    // Show Google profile section card view and hide edit form
     if (profSectionsView) profSectionsView.style.display = "flex";
     if (profFormWrap) profFormWrap.style.display = "none";
   }
@@ -538,7 +572,8 @@
     try {
       const res = await fetch(`${API}/auth/profile`, {
         method: "PUT",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", ...getAuthHeaders() },
+        credentials: "include",
         body: JSON.stringify(payload),
       });
 

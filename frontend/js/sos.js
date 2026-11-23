@@ -183,27 +183,29 @@
             ? `<button type="button" class="link-btn" data-qr="${esc(link)}" data-who="${esc(c.name)}" style="font-size:11px; border-radius:6px; padding:3px 8px;">Connect Telegram</button>`
             : `<span class="muted small">Telegram off</span>`;
         const details = [c.phone ? `📞 ${c.phone}` : '', c.whatsapp ? `💬 WA: ${c.whatsapp}` : '', c.email || ''].filter(Boolean).join(' · ');
-        return `<li class="contact-row glass-card" style="display:flex; justify-content:space-between; align-items:center; padding:16px 20px; border-radius:18px; margin-bottom:10px; list-style:none; flex-wrap:wrap; gap:12px;">
-          <div style="display:flex; align-items:center; gap:14px;">
-            <div class="avatar" style="width:44px; height:44px; border-radius:50%; background:linear-gradient(135deg, #f2b8c6, #b9a6e8); color:#0c0e12; display:flex; align-items:center; justify-content:center; font-weight:800; font-size:16px; box-shadow:0 4px 12px rgba(242,184,198,0.25);">
-              ${esc((c.name.match(/[\p{L}\p{N}]/u)?.[0] || "?").toUpperCase())}
-            </div>
-            <div>
-              <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
-                <strong style="font-weight:700; font-size:14.5px; color:#fff;">${esc(c.name)}</strong>
-                <span class="glass-badge" style="color:var(--brand); border-color:rgba(242,184,198,0.3); font-size:11px;">${esc(c.relationship || 'Guardian')}</span>
+        return `<li class="contact-row glass-card">
+          <div class="contact-row__head">
+            <div style="display:flex; align-items:center; gap:12px; min-width:0;">
+              <div class="avatar" style="width:42px; height:42px; min-width:42px; border-radius:50%; background:linear-gradient(135deg, #f2b8c6, #b9a6e8); color:#0c0e12; display:flex; align-items:center; justify-content:center; font-weight:800; font-size:15px; box-shadow:0 4px 12px rgba(242,184,198,0.25); flex-shrink:0;">
+                ${esc((c.name.match(/[\p{L}\p{N}]/u)?.[0] || "?").toUpperCase())}
               </div>
-              <div style="font-size:12px; color:var(--muted); margin-top:3px;">
-                ${esc(details || "No contact details")}
+              <div style="min-width:0;">
+                <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+                  <strong style="font-weight:700; font-size:15px; color:#fff;">${esc(c.name)}</strong>
+                  <span class="glass-badge" style="color:var(--brand); border-color:rgba(242,184,198,0.3); font-size:10.5px; padding:2px 8px;">${esc(c.relationship || 'Guardian')}</span>
+                </div>
+                <div style="font-size:12px; color:var(--muted); margin-top:3px; word-break:break-word;">
+                  ${esc(details || "No contact details")}
+                </div>
               </div>
             </div>
+            <button type="button" class="row-del" data-del="${esc(c.id)}" title="Remove Guardian" style="background:transparent; border:none; color:var(--muted); font-size:22px; cursor:pointer; padding:4px 8px; line-height:1; flex-shrink:0;">×</button>
           </div>
-          <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
-            ${c.phone ? `<a href="tel:${esc(c.phone)}" class="btn btn--primary small" style="background:#10b981; border-color:#10b981; color:#fff; font-size:11.5px; padding:6px 12px; border-radius:8px; text-decoration:none; display:inline-flex; align-items:center; gap:4px; font-weight:700;">📞 Call</a>` : ""}
-            ${c.whatsapp ? `<a href="https://wa.me/${esc(c.whatsapp.replace(/[^0-9]/g, ''))}" target="_blank" rel="noopener" class="btn btn--ghost small" style="color:#25d366; border-color:rgba(37,211,102,0.4); font-size:11px; padding:6px 10px; border-radius:8px; text-decoration:none;">💬 WhatsApp</a>` : ""}
+          <div class="contact-row__actions">
+            ${c.phone ? `<a href="tel:${esc(c.phone)}" class="btn btn--primary small" style="background:#10b981; border-color:#10b981; color:#fff; font-size:12px; padding:6px 14px; border-radius:8px; text-decoration:none; display:inline-flex; align-items:center; gap:4px; font-weight:700;">📞 Call</a>` : ""}
+            ${c.whatsapp ? `<a href="https://wa.me/${esc(c.whatsapp.replace(/[^0-9]/g, ''))}" target="_blank" rel="noopener" class="btn btn--ghost small" style="color:#25d366; border-color:rgba(37,211,102,0.4); font-size:11.5px; padding:6px 12px; border-radius:8px; text-decoration:none; font-weight:600;">💬 WhatsApp</a>` : ""}
             ${tg}
             <button type="button" class="btn btn--ghost small" data-siren="${esc(c.id)}" style="color:#ef4444; border-color:#ef4444; font-size:11.5px; padding:6px 12px; border-radius:8px; font-weight:600;">🚨 Siren Alert</button>
-            <button type="button" class="row-del" data-del="${esc(c.id)}" title="Remove Guardian" style="background:transparent; border:none; color:var(--muted); font-size:20px; cursor:pointer; padding:4px 8px; line-height:1;">×</button>
           </div>
         </li>`;
       })
