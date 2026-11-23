@@ -1928,31 +1928,52 @@ body.vaulting .composer {
   flex: 1;
   min-width: 0;
   display: flex;
-  gap: 10px;
-  justify-content: space-between;
+  flex-direction: column;
+  gap: 8px;
 }
 
 .rec-text {
-  font-size: 13px;
+  font-size: 13.5px;
+  line-height: 1.5;
   min-width: 0;
-  overflow-wrap: anywhere;
+  word-break: break-word;
+  overflow-wrap: break-word;
+  color: #e2e8f0;
 }
 
 .rec-hash {
-  flex: none;
+  align-self: flex-start;
   font: 11px/1.4 ui-monospace, SFMono-Regular, Menlo, monospace;
   color: var(--muted);
-  padding-top: 2px;
+  background: rgba(0, 0, 0, 0.45);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 8px;
+  padding: 4px 10px;
   cursor: help;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.rec-hash::before {
+  content: "🔒 SHA-256";
+  font-weight: 700;
+  color: #3ecf8e;
+  font-size: 10px;
+  letter-spacing: 0.04em;
 }
 
 .flag-tag {
+  display: inline-block;
   font-size: 10px;
   font-weight: 700;
   color: var(--risk-high);
   background: var(--risk-high-bg);
-  padding: 0 5px;
+  padding: 1px 6px;
   border-radius: 4px;
+  white-space: nowrap;
+  vertical-align: middle;
+  margin-left: 6px;
 }
 
 .ok .rec-status {

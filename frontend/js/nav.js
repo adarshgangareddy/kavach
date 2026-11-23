@@ -46,6 +46,7 @@
     const chatArea = document.querySelector("#chat-area");
     if (chatArea) chatArea.hidden = true;
 
+    mobile.pill(null);
     body.classList.remove("vaulting", "sosing", "calling");
   }
 

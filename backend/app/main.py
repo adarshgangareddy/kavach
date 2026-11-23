@@ -688,9 +688,22 @@ def sos_key():
 
 
 @app.get("/sos/setup")
-async def sos_setup():
+async def sos_setup(request: Request):
     """What the SOS setup screen needs: her name, contacts, and which alert channels work."""
     uid = context.current()
+    if not uid:
+        raw_token = request.cookies.get(SESSION_COOKIE)
+        if not raw_token:
+            auth_h = request.headers.get("Authorization", "")
+            if auth_h.startswith("Bearer "):
+                raw_token = auth_h[7:].strip()
+            elif "X-Kavach-Token" in request.headers:
+                raw_token = request.headers["X-Kavach-Token"].strip()
+        if raw_token:
+            u = accounts.user_for_session(raw_token)
+            if u:
+                uid = u["id"]
+
     if not uid:
         return {
             "name": "Someone you know",
@@ -705,7 +718,7 @@ async def sos_setup():
         }
     return {
         "name": people.her_name(),
-        "contacts": people.list_kind("contact"),
+        "contacts": people.list_kind("contact", owner=uid),
         "telegram": {
             "on": notify.telegram_on(),
             "bot": await notify.bot_username(),

@@ -360,7 +360,7 @@
 
   function applyUserData(u = {}) {
     const name = u.full_name || u.username || "adarshavg";
-    const email = u.email || `${u.username || "adarshavg"}@kavach.safety`;
+    const email = u.email || (u.username === "adarshavg" ? "adarshavg26@gmail.com" : `${u.username || "adarshavg"}@kavach.safety`);
     const initial = (name[0] || "A").toUpperCase();
 
     if (profDisplayName) profDisplayName.textContent = name;
@@ -371,10 +371,10 @@
     updateAvatarDisplay(null, initial);
 
     if (profName) profName.value = u.full_name || u.username || "adarshavg";
-    if (profPhone) profPhone.value = u.phone || "";
-    if (profEmail) profEmail.value = u.email || email;
-    if (profCity) profCity.value = u.city || "";
-    if (profAddress) profAddress.value = u.address || "";
+    if (profPhone) profPhone.value = u.phone || "7795806293";
+    if (profEmail) profEmail.value = email;
+    if (profCity) profCity.value = u.city || "Bengaluru, Karnataka";
+    if (profAddress) profAddress.value = u.address || "Reva university";
 
     let stored = {};
     try {
@@ -514,10 +514,10 @@
 
   function updateGoogleProfileSections(u = {}, stored = {}) {
     const name = u.full_name || u.username || stored.name || "adarshavg";
-    const email = u.email || stored.email || `${u.username || "adarshavg"}@kavach.safety`;
-    const phone = u.phone || stored.phone || "Not added";
+    const email = u.email || stored.email || (u.username === "adarshavg" ? "adarshavg26@gmail.com" : `${u.username || "adarshavg"}@kavach.safety`);
+    const phone = u.phone || stored.phone || "7795806293";
     const altPhone = stored.alt_phone || "Not added";
-    const address = u.address || stored.address || "Not specified";
+    const address = u.address || stored.address || "Reva university";
     const city = u.city || stored.city || "Bengaluru, Karnataka";
     const station = stored.police_station || "Indiranagar Cyber Crime Station";
     const initial = (name[0] || "A").toUpperCase();
@@ -725,38 +725,46 @@
         const initials = (r.name || "R")[0].toUpperCase();
         const org = r.relationship !== "Guardian" ? r.relationship : "Safety Volunteer";
         const tgBadge = r.telegram_linked
-          ? '<span class="glass-badge" style="color:#3ecf8e; border-color:rgba(62,207,142,0.3); font-size:10px;">✓ Telegram Linked</span>'
-          : '<span class="glass-badge" style="color:var(--muted); font-size:10px;">Awaiting Bot Link</span>';
+          ? '<span class="glass-badge" style="color:#3ecf8e; border-color:rgba(62,207,142,0.3); font-size:10.5px; font-weight:600;">✓ Telegram Linked</span>'
+          : '<span class="glass-badge" style="color:var(--muted); font-size:10.5px;">Awaiting Telegram</span>';
 
         const distanceTag = r.distance_km !== null
           ? r.is_nearby
-            ? `<span class="glass-badge" style="color:#10b981; border-color:rgba(16,185,129,0.35); font-weight:700;">📍 ${r.distance_km} km away · Within Radius</span>`
-            : `<span class="glass-badge" style="color:#f5a524; border-color:rgba(245,165,36,0.35);">📍 ${r.distance_km} km away · Outside Zone</span>`
-          : '<span class="glass-badge" style="color:var(--muted);">No Location</span>';
+            ? `<span class="glass-badge" style="color:#10b981; border-color:rgba(16,185,129,0.35); font-weight:700; font-size:11px;">📍 ${r.distance_km} km away · Within Radius</span>`
+            : `<span class="glass-badge" style="color:#f5a524; border-color:rgba(245,165,36,0.35); font-size:11px;">📍 ${r.distance_km} km away · Outside Zone</span>`
+          : '<span class="glass-badge" style="color:var(--muted); font-size:11px;">No Location</span>';
 
         return `
-          <div class="glass-card" style="padding: 16px 20px; display: flex; justify-content: space-between; align-items: center; gap: 14px; flex-wrap: wrap; border-radius: 16px; border-color: ${r.is_nearby ? "rgba(16,185,129,0.3)" : "rgba(255,255,255,0.08)"};">
-            <div style="display: flex; align-items: center; gap: 14px;">
-              <div style="width: 44px; height: 44px; border-radius: 50%; background: ${r.is_nearby ? "linear-gradient(135deg, #10b981, #6366f1)" : "linear-gradient(135deg, #64748b, #475569)"}; display: flex; align-items: center; justify-content: center; font-weight: 700; color: #fff; font-size: 16px; box-shadow: 0 4px 14px rgba(0,0,0,0.3);">
-                ${initials}
+          <div class="glass-card resp-card" style="padding: 16px 18px; display: flex; flex-direction: column; gap: 12px; border-radius: 18px; border-color: ${r.is_nearby ? "rgba(16,185,129,0.3)" : "rgba(255,255,255,0.08)"}; margin-bottom: 12px; background: rgba(18, 24, 38, 0.75);">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; width: 100%;">
+              <div style="display: flex; align-items: center; gap: 12px; min-width: 0;">
+                <div class="avatar" style="width: 44px; height: 44px; min-width: 44px; max-width: 44px; min-height: 44px; max-height: 44px; aspect-ratio: 1 / 1; flex-shrink: 0; border-radius: 50% !important; background: ${r.is_nearby ? "linear-gradient(135deg, #10b981, #6366f1)" : "linear-gradient(135deg, #64748b, #475569)"}; display: flex; align-items: center; justify-content: center; font-weight: 800; color: #fff; font-size: 16px; box-shadow: 0 4px 12px rgba(0,0,0,0.35);">
+                  ${initials}
+                </div>
+                <div style="min-width: 0;">
+                  <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                    <strong style="font-size: 15px; color: #fff;">${r.name}</strong>
+                    <span class="glass-badge" style="color: #a5b4fc; border-color: rgba(99,102,241,0.3); font-size: 10.5px; font-weight: 600; text-transform: uppercase;">${org}</span>
+                  </div>
+                  <div style="font-size: 12px; color: var(--muted); margin-top: 3px; word-break: break-word;">
+                    ${[r.email ? '✉️ ' + r.email : '', r.phone ? '📞 ' + r.phone : ''].filter(Boolean).join(' · ')}
+                  </div>
+                </div>
               </div>
-              <div>
-                <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
-                  <strong style="font-size: 14.5px; color: var(--text);">${r.name}</strong>
-                  <span class="glass-badge" style="color: #a5b4fc; border-color: rgba(99,102,241,0.3); font-size: 10px;">${org}</span>
-                  ${distanceTag}
-                </div>
-                <div style="font-size: 12px; color: var(--muted); margin-top: 4px;">
-                  📧 ${r.email || "No email"} · 📞 ${r.phone || "No phone"}
-                </div>
+              <div style="flex-shrink: 0;">
+                ${distanceTag}
               </div>
             </div>
-            <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
-              ${tgBadge}
-              ${r.phone ? `<a href="tel:${r.phone}" class="btn btn--primary small" style="background:#10b981; border-color:#10b981; color:#fff; font-size: 11.5px; padding: 5px 12px; border-radius: 8px; text-decoration: none; font-weight:600;">📞 Call</a>` : ""}
-              <button type="button" class="btn btn--ghost small" data-update-loc="${r.id}" data-name="${r.name}" style="font-size: 11px; padding: 5px 10px; border-radius: 8px;" title="Sync this responder's location to current device GPS">
-                📍 Sync GPS
-              </button>
+            <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px; width: 100%; padding-top: 10px; border-top: 1px solid rgba(255,255,255,0.07);">
+              <div style="display: flex; align-items: center; gap: 6px;">
+                ${tgBadge}
+              </div>
+              <div style="display: flex; align-items: center; gap: 8px; margin-left: auto;">
+                ${r.phone ? `<a href="tel:${r.phone}" class="btn btn--primary small" style="background:#10b981; border-color:#10b981; color:#fff; font-size: 11.5px; padding: 6px 14px; border-radius: 8px; text-decoration: none; font-weight: 700; display: inline-flex; align-items: center; gap: 4px;">📞 Call</a>` : ""}
+                <button type="button" class="btn btn--ghost small" data-update-loc="${r.id}" data-name="${r.name}" style="font-size: 11.5px; padding: 6px 12px; border-radius: 8px; font-weight: 600;" title="Sync this responder's location to current device GPS">
+                  📍 Sync GPS
+                </button>
+              </div>
             </div>
           </div>
         `;
