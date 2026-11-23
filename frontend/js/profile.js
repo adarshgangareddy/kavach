@@ -349,11 +349,19 @@
 
   function getAuthHeaders(custom = {}) {
     let token = "";
-    try { token = localStorage.getItem("kavach_token") || ""; } catch {}
+    let userId = "";
+    try {
+      token = localStorage.getItem("kavach_token") || "";
+      const u = JSON.parse(localStorage.getItem("kavach.user") || "{}");
+      userId = u.id || localStorage.getItem("kavach.lastUser") || "";
+    } catch {}
     const h = { ...custom };
     if (token) {
       h["Authorization"] = `Bearer ${token}`;
       h["X-Kavach-Token"] = token;
+    }
+    if (userId) {
+      h["X-Kavach-User"] = userId;
     }
     return h;
   }
@@ -725,36 +733,37 @@
         const initials = (r.name || "R")[0].toUpperCase();
         const org = r.relationship !== "Guardian" ? r.relationship : "Safety Volunteer";
         const tgBadge = r.telegram_linked
-          ? '<span class="glass-badge" style="color:#3ecf8e; border-color:rgba(62,207,142,0.3); font-size:10.5px; font-weight:600;">✓ Telegram Linked</span>'
-          : '<span class="glass-badge" style="color:var(--muted); font-size:10.5px;">Awaiting Telegram</span>';
+          ? '<span class="glass-badge" style="color:#3ecf8e; border-color:rgba(62,207,142,0.3); font-size:10.5px; font-weight:600; white-space:nowrap;">✓ Telegram Linked</span>'
+          : '<span class="glass-badge" style="color:var(--muted); font-size:10.5px; white-space:nowrap;">Awaiting Telegram</span>';
 
         const distanceTag = r.distance_km !== null
           ? r.is_nearby
-            ? `<span class="glass-badge" style="color:#10b981; border-color:rgba(16,185,129,0.35); font-weight:700; font-size:11px;">📍 ${r.distance_km} km away · Within Radius</span>`
-            : `<span class="glass-badge" style="color:#f5a524; border-color:rgba(245,165,36,0.35); font-size:11px;">📍 ${r.distance_km} km away · Outside Zone</span>`
-          : '<span class="glass-badge" style="color:var(--muted); font-size:11px;">No Location</span>';
+            ? `<span class="glass-badge" style="color:#10b981; border-color:rgba(16,185,129,0.35); font-weight:700; font-size:11px; white-space:nowrap; display:inline-flex; align-items:center; gap:4px;">📍 ${r.distance_km} km away · Within Radius</span>`
+            : `<span class="glass-badge" style="color:#f5a524; border-color:rgba(245,165,36,0.35); font-size:11px; white-space:nowrap; display:inline-flex; align-items:center; gap:4px;">📍 ${r.distance_km} km away · Outside Zone</span>`
+          : '<span class="glass-badge" style="color:var(--muted); font-size:11px; white-space:nowrap;">No Location</span>';
 
         return `
-          <div class="glass-card resp-card" style="padding: 16px 18px; display: flex; flex-direction: column; gap: 12px; border-radius: 18px; border-color: ${r.is_nearby ? "rgba(16,185,129,0.3)" : "rgba(255,255,255,0.08)"}; margin-bottom: 12px; background: rgba(18, 24, 38, 0.75);">
-            <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; width: 100%;">
-              <div style="display: flex; align-items: center; gap: 12px; min-width: 0;">
-                <div class="avatar" style="width: 44px; height: 44px; min-width: 44px; max-width: 44px; min-height: 44px; max-height: 44px; aspect-ratio: 1 / 1; flex-shrink: 0; border-radius: 50% !important; background: ${r.is_nearby ? "linear-gradient(135deg, #10b981, #6366f1)" : "linear-gradient(135deg, #64748b, #475569)"}; display: flex; align-items: center; justify-content: center; font-weight: 800; color: #fff; font-size: 16px; box-shadow: 0 4px 12px rgba(0,0,0,0.35);">
-                  ${initials}
-                </div>
-                <div style="min-width: 0;">
-                  <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
-                    <strong style="font-size: 15px; color: #fff;">${r.name}</strong>
-                    <span class="glass-badge" style="color: #a5b4fc; border-color: rgba(99,102,241,0.3); font-size: 10.5px; font-weight: 600; text-transform: uppercase;">${org}</span>
-                  </div>
-                  <div style="font-size: 12px; color: var(--muted); margin-top: 3px; word-break: break-word;">
-                    ${[r.email ? '✉️ ' + r.email : '', r.phone ? '📞 ' + r.phone : ''].filter(Boolean).join(' · ')}
-                  </div>
-                </div>
+          <div class="glass-card resp-card" style="padding: 16px; display: flex; flex-direction: column; gap: 12px; border-radius: 18px; border-color: ${r.is_nearby ? "rgba(16,185,129,0.3)" : "rgba(255,255,255,0.08)"}; margin-bottom: 12px; background: rgba(18, 24, 38, 0.75); width: 100%; box-sizing: border-box;">
+            <!-- Header: Avatar + Identity Column -->
+            <div style="display: flex; align-items: flex-start; gap: 12px; width: 100%;">
+              <div class="avatar" style="width: 44px; height: 44px; min-width: 44px; max-width: 44px; min-height: 44px; max-height: 44px; aspect-ratio: 1 / 1; flex-shrink: 0; border-radius: 50% !important; background: ${r.is_nearby ? "linear-gradient(135deg, #10b981, #6366f1)" : "linear-gradient(135deg, #64748b, #475569)"}; display: flex; align-items: center; justify-content: center; font-weight: 800; color: #fff; font-size: 16px; box-shadow: 0 4px 12px rgba(0,0,0,0.35);">
+                ${initials}
               </div>
-              <div style="flex-shrink: 0;">
-                ${distanceTag}
+              <div style="flex: 1; min-width: 0;">
+                <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap;">
+                  <strong style="font-size: 15.5px; color: #fff; font-weight: 700;">${r.name}</strong>
+                  <div>${distanceTag}</div>
+                </div>
+                <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap; margin-top: 4px;">
+                  <span class="glass-badge" style="color: #a5b4fc; border-color: rgba(99,102,241,0.3); font-size: 10.5px; font-weight: 600; text-transform: uppercase;">${org}</span>
+                </div>
+                <div style="font-size: 12.5px; color: var(--muted); margin-top: 6px; word-break: break-all; overflow-wrap: anywhere; line-height: 1.4;">
+                  ${[r.email ? '✉️ ' + r.email : '', r.phone ? '📞 ' + r.phone : ''].filter(Boolean).join(' · ')}
+                </div>
               </div>
             </div>
+
+            <!-- Footer: Telegram + Actions -->
             <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px; width: 100%; padding-top: 10px; border-top: 1px solid rgba(255,255,255,0.07);">
               <div style="display: flex; align-items: center; gap: 6px;">
                 ${tgBadge}

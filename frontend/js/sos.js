@@ -57,11 +57,17 @@
 
   async function api(path, opts = {}) {
     let token = "";
-    try { token = localStorage.getItem("kavach_token") || ""; } catch {}
+    let userId = "";
+    try {
+      token = localStorage.getItem("kavach_token") || "";
+      const u = JSON.parse(localStorage.getItem("kavach.user") || "{}");
+      userId = u.id || localStorage.getItem("kavach.lastUser") || "";
+    } catch {}
     const headers = {
       ...(opts.headers || {}),
       ...(opts.body ? { "Content-Type": "application/json" } : {}),
       ...(token ? { "Authorization": `Bearer ${token}`, "X-Kavach-Token": token } : {}),
+      ...(userId ? { "X-Kavach-User": userId } : {}),
     };
     const res = await fetch(`${API}${path}`, {
       ...opts,
@@ -71,6 +77,16 @@
     const body = await res.json().catch(() => ({}));
     if (!res.ok) throw new Error(body.detail || `HTTP ${res.status}`);
     return body;
+  }
+
+  function loadCachedSetup() {
+    try {
+      const cached = JSON.parse(localStorage.getItem("kavach.sosSetup") || "null");
+      if (cached && Array.isArray(cached.contacts) && cached.contacts.length > 0) {
+        setup = cached;
+        renderContacts();
+      }
+    } catch {}
   }
 
   // ---------- this-device settings (caller name, location mode) ----------
@@ -122,6 +138,9 @@
   async function loadSetup() {
     try {
       setup = await api("/sos/setup");
+      if (setup && Array.isArray(setup.contacts) && setup.contacts.length > 0) {
+        try { localStorage.setItem("kavach.sosSetup", JSON.stringify(setup)); } catch {}
+      }
     } catch {
       els.channels.innerHTML = `<span class="chan chan--warn">Kavach offline</span>`;
       return;
@@ -1011,6 +1030,7 @@
     if (safetyspacePhone) safetyspacePhone.style.display = "none";
     if (addGuardianCard) addGuardianCard.style.display = "none";
 
+    loadCachedSetup();
     loadSetup();
     restoreActive();
   }
@@ -1061,6 +1081,7 @@
 
   els.btn.addEventListener("click", open);
   applyCaller();
+  loadCachedSetup();
   loadSetup();
   window.kavachSos = { open, close, markSafe, openLive, loadSetup };
 })();

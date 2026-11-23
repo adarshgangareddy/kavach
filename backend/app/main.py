@@ -112,8 +112,28 @@ async def custom_404_handler(request: Request, exc: HTTPException):
     return JSONResponse(status_code=404, content={"detail": exc.detail or "Not Found"})
 
 
-def require_user() -> str:
+def require_user(request: Request = None) -> str:
     uid = context.current()
+    if not uid and request:
+        raw_token = request.cookies.get(SESSION_COOKIE)
+        if not raw_token:
+            auth_h = request.headers.get("Authorization", "")
+            if auth_h.startswith("Bearer "):
+                raw_token = auth_h[7:].strip()
+            elif "X-Kavach-Token" in request.headers:
+                raw_token = request.headers["X-Kavach-Token"].strip()
+        if raw_token:
+            u = accounts.user_for_session(raw_token)
+            if u:
+                uid = u["id"]
+        if not uid:
+            user_header = request.headers.get("X-Kavach-User")
+            if user_header:
+                u = accounts.user_for_id(user_header)
+                if u:
+                    uid = u["id"]
+        if uid:
+            context.set_current(uid)
     if not uid:
         raise HTTPException(401, "Please log in")
     return uid
@@ -703,6 +723,12 @@ async def sos_setup(request: Request):
             u = accounts.user_for_session(raw_token)
             if u:
                 uid = u["id"]
+        if not uid:
+            user_header = request.headers.get("X-Kavach-User")
+            if user_header:
+                u = accounts.user_for_id(user_header)
+                if u:
+                    uid = u["id"]
 
     if not uid:
         return {
@@ -717,7 +743,7 @@ async def sos_setup(request: Request):
             "radius_m": sos.RADIUS_M,
         }
     return {
-        "name": people.her_name(),
+        "name": people.her_name(owner=uid),
         "contacts": people.list_kind("contact", owner=uid),
         "telegram": {
             "on": notify.telegram_on(),

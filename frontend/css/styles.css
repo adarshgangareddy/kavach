@@ -5421,3 +5421,42 @@ body.sosing .app {
 #chain-pill {
   box-shadow: 0 0 16px rgba(16, 185, 129, 0.2) !important;
 }
+
+/* ==========================================================================
+   Responders Responsive Layout Grid & Cards
+   ========================================================================== */
+.responders-layout-grid {
+  display: grid;
+  grid-template-columns: 1fr 340px;
+  gap: 24px;
+  align-items: start;
+}
+
+@media (max-width: 860px) {
+  .responders-layout-grid {
+    grid-template-columns: 1fr !important;
+    gap: 16px !important;
+  }
+
+  #responders-view .vault__body {
+    padding: 14px 12px !important;
+  }
+}
+
+.resp-card {
+  width: 100% !important;
+  box-sizing: border-box !important;
+}
+
+.resp-card .avatar {
+  width: 44px !important;
+  height: 44px !important;
+  min-width: 44px !important;
+  max-width: 44px !important;
+  min-height: 44px !important;
+  max-height: 44px !important;
+  aspect-ratio: 1 / 1 !important;
+  border-radius: 50% !important;
+  flex-shrink: 0 !important;
+}
+
