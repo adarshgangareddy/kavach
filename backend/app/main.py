@@ -707,11 +707,9 @@ def sos_key():
     return {"alg": "RSA-OAEP-256", "spki": sos_crypto.public_key_spki_b64()}
 
 
-@app.get("/sos/setup")
-async def sos_setup(request: Request):
-    """What the SOS setup screen needs: her name, contacts, and which alert channels work."""
+def _resolve_request_uid(request: Request) -> str | None:
     uid = context.current()
-    if not uid:
+    if not uid and request:
         raw_token = request.cookies.get(SESSION_COOKIE)
         if not raw_token:
             auth_h = request.headers.get("Authorization", "")
@@ -729,7 +727,15 @@ async def sos_setup(request: Request):
                 u = accounts.user_for_id(user_header)
                 if u:
                     uid = u["id"]
+        if uid:
+            context.set_current(uid)
+    return uid
 
+
+@app.get("/sos/setup")
+async def sos_setup(request: Request):
+    """What the SOS setup screen needs: her name, contacts, and which alert channels work."""
+    uid = _resolve_request_uid(request)
     if not uid:
         return {
             "name": "Someone you know",
@@ -888,31 +894,6 @@ def people_list(kind: str = "contact"):
     if kind == "contact":
         require_user()
     return {"people": people.list_kind(kind)}
-
-
-def _resolve_request_uid(request: Request) -> str | None:
-    uid = context.current()
-    if not uid and request:
-        raw_token = request.cookies.get(SESSION_COOKIE)
-        if not raw_token:
-            auth_h = request.headers.get("Authorization", "")
-            if auth_h.startswith("Bearer "):
-                raw_token = auth_h[7:].strip()
-            elif "X-Kavach-Token" in request.headers:
-                raw_token = request.headers["X-Kavach-Token"].strip()
-        if raw_token:
-            u = accounts.user_for_session(raw_token)
-            if u:
-                uid = u["id"]
-        if not uid:
-            user_header = request.headers.get("X-Kavach-User")
-            if user_header:
-                u = accounts.user_for_id(user_header)
-                if u:
-                    uid = u["id"]
-        if uid:
-            context.set_current(uid)
-    return uid
 
 
 @app.post("/people")

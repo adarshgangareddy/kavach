@@ -747,8 +747,8 @@
 
         const distanceTag = r.distance_km !== null
           ? r.is_nearby
-            ? `<span class="glass-badge" style="color:#10b981; border-color:rgba(16,185,129,0.35); font-weight:700; font-size:11px; white-space:nowrap; display:inline-flex; align-items:center; gap:4px;">📍 ${r.distance_km} km away · Within Radius</span>`
-            : `<span class="glass-badge" style="color:#f5a524; border-color:rgba(245,165,36,0.35); font-size:11px; white-space:nowrap; display:inline-flex; align-items:center; gap:4px;">📍 ${r.distance_km} km away · Outside Zone</span>`
+            ? `<span class="glass-badge" style="color:#10b981; border-color:rgba(16,185,129,0.35); background:rgba(16,185,129,0.08); font-weight:700; font-size:11px; white-space:nowrap; display:inline-flex; align-items:center; gap:4px;">📍 ${r.distance_km} km away · In Radius</span>`
+            : `<span class="glass-badge" style="color:#f5a524; border-color:rgba(245,165,36,0.35); background:rgba(245,165,36,0.08); font-size:11px; white-space:nowrap; display:inline-flex; align-items:center; gap:4px;">📍 ${r.distance_km} km away · Outside Zone</span>`
           : '<span class="glass-badge" style="color:var(--muted); font-size:11px; white-space:nowrap;">No Location</span>';
 
         const editBtn = isSelf
@@ -756,25 +756,32 @@
           : '';
 
         return `
-          <div class="glass-card resp-card" style="padding: 16px; display: flex; flex-direction: column; gap: 12px; border-radius: 18px; border-color: ${isSelf ? "rgba(99,102,241,0.5)" : (r.is_nearby ? "rgba(16,185,129,0.3)" : "rgba(255,255,255,0.08)")}; margin-bottom: 12px; background: ${isSelf ? "rgba(25, 28, 48, 0.85)" : "rgba(18, 24, 38, 0.75)"}; width: 100%; box-sizing: border-box;">
+          <div class="glass-card resp-card" style="padding: 16px; display: flex; flex-direction: column; gap: 12px; border-radius: 18px; border-color: ${isSelf ? "rgba(99,102,241,0.55)" : (r.is_nearby ? "rgba(16,185,129,0.3)" : "rgba(255,255,255,0.08)")}; margin-bottom: 12px; background: ${isSelf ? "rgba(25, 28, 48, 0.9)" : "rgba(18, 24, 38, 0.75)"}; width: 100%; box-sizing: border-box;">
             <!-- Header: Avatar + Identity Column -->
             <div style="display: flex; align-items: flex-start; gap: 12px; width: 100%;">
               <div class="avatar" style="width: 44px; height: 44px; min-width: 44px; max-width: 44px; min-height: 44px; max-height: 44px; aspect-ratio: 1 / 1; flex-shrink: 0; border-radius: 50% !important; background: ${isSelf ? "linear-gradient(135deg, #6366f1, #10b981)" : (r.is_nearby ? "linear-gradient(135deg, #10b981, #6366f1)" : "linear-gradient(135deg, #64748b, #475569)")}; display: flex; align-items: center; justify-content: center; font-weight: 800; color: #fff; font-size: 16px; box-shadow: 0 4px 12px rgba(0,0,0,0.35);">
                 ${initials}
               </div>
               <div style="flex: 1; min-width: 0;">
-                <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap;">
-                  <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
-                    <strong style="font-size: 15.5px; color: #fff; font-weight: 700;">${r.name}</strong>
-                    ${selfBadge}
-                  </div>
-                  <div>${distanceTag}</div>
+                <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                  <strong style="font-size: 15.5px; color: #fff; font-weight: 700; letter-spacing: -0.01em;">${r.name}</strong>
+                  ${selfBadge}
                 </div>
-                <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap; margin-top: 4px;">
-                  <span class="glass-badge" style="color: #a5b4fc; border-color: rgba(99,102,241,0.3); font-size: 10.5px; font-weight: 600; text-transform: uppercase;">${org}</span>
+                <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap; margin-top: 5px;">
+                  <span class="glass-badge" style="color: #a5b4fc; border-color: rgba(99,102,241,0.3); background: rgba(99,102,241,0.08); font-size: 10.5px; font-weight: 600; text-transform: uppercase;">🏢 ${org}</span>
+                  ${distanceTag}
                 </div>
-                <div style="font-size: 12.5px; color: var(--muted); margin-top: 6px; word-break: break-all; overflow-wrap: anywhere; line-height: 1.4;">
-                  ${[r.email ? '✉️ ' + r.email : '', r.phone ? '📞 ' + r.phone : ''].filter(Boolean).join(' · ')}
+                <div style="display: flex; flex-direction: column; gap: 4px; margin-top: 8px; font-size: 12px; color: var(--muted);">
+                  ${r.email ? `
+                    <div style="display: flex; align-items: center; gap: 6px; min-width: 0;">
+                      <span style="font-size: 12px; flex-shrink: 0; opacity: 0.85;">✉️</span>
+                      <span style="color: #cbd5e1; word-break: break-word; overflow-wrap: break-word; font-size: 12px;">${r.email}</span>
+                    </div>` : ''}
+                  ${r.phone ? `
+                    <div style="display: flex; align-items: center; gap: 6px; min-width: 0;">
+                      <span style="font-size: 12px; flex-shrink: 0; opacity: 0.85;">📞</span>
+                      <span style="color: #cbd5e1; font-size: 12px;">${r.phone}</span>
+                    </div>` : ''}
                 </div>
               </div>
             </div>

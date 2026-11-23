@@ -5443,9 +5443,21 @@ body.sosing .app {
   }
 }
 
+@media (max-width: 600px) {
+  #responders-view .glass-panel {
+    padding: 14px 12px !important;
+    border-radius: 16px !important;
+  }
+
+  .resp-card {
+    padding: 14px 12px !important;
+  }
+}
+
 .resp-card {
   width: 100% !important;
   box-sizing: border-box !important;
+  word-wrap: break-word !important;
 }
 
 .resp-card .avatar {
