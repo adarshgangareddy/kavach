@@ -83,8 +83,9 @@
 
   // Detect active contact name in WhatsApp Web header
   function getWhatsAppActiveContact() {
-    const panel = document.querySelector("#main, div[data-testid='conversation-panel-wrapper'], div[role='region']");
-    const header = panel ? panel.querySelector("header") : document.querySelector("#main header");
+    const mainPanel = document.querySelector("#main") || document.querySelector("div[data-testid='conversation-panel-wrapper']");
+    if (!mainPanel) return null;
+    const header = mainPanel.querySelector("header");
     if (!header) return null;
 
     // 1. Explicit chat title data-testid
@@ -167,16 +168,16 @@
 
   // Extract messages from modern WhatsApp Web DOM
   function parseWhatsAppMessages() {
+    // 1. Strict active conversation panel ONLY (#main)
+    const mainPanel = document.querySelector("#main") || document.querySelector("div[data-testid='conversation-panel-wrapper']");
+    if (!mainPanel) return null;
+
     const contactName = getWhatsAppActiveContact();
     if (!contactName) return null;
 
-    // Strict active conversation panel only (#main)
-    const mainPanel = document.querySelector("#main, div[data-testid='conversation-panel-wrapper'], div[role='region']");
-    if (!mainPanel) return null;
-
-    // Find all message containers strictly inside the active conversation panel
+    // 2. Find ONLY message containers inside #main — NEVER use div[role='row'] which matches sidebar items!
     const rows = mainPanel.querySelectorAll(
-      "div[data-testid='msg-container'], div[role='row'], div.message-in, div.message-out, div[class*='message-in'], div[class*='message-out']"
+      "div[data-testid='msg-container'], div.message-in, div.message-out, div[class*='message-in'], div[class*='message-out']"
     );
     if (!rows.length) return null;
 
@@ -184,8 +185,8 @@
     const seenTexts = new Set();
 
     rows.forEach((node, idx) => {
-      // Strictly ignore any node originating from the sidebar chat list (#pane-side) or header/footer
-      if (node.closest("#pane-side, div[data-testid='chat-list'], header, footer")) return;
+      // Must not be in header, footer (input bar), or any sidebar
+      if (node.closest("header, footer, #pane-side, #side, div[data-testid='chat-list']")) return;
 
       const text = extractWhatsAppMessageText(node);
       if (!text) return;
@@ -203,6 +204,8 @@
         timestamp: "",
       });
     });
+
+    if (!messages.length) return null;
 
     return {
       platform: "whatsapp-web",
@@ -364,23 +367,36 @@
             // Auto-save ONLY for 95%+ Critical Threat (once per incident fingerprint)
             if (!autoVaultSaved.has(fingerprint)) {
               autoVaultSaved.add(fingerprint);
-              const vaultPayload = {
-                platform: chatData.platform,
-                conversation: chatData.contact_name,
-                messages: chatData.messages.map((m) => ({
-                  ref: m.id,
-                  sender: m.sender,
-                  text: m.text,
-                  time: m.timestamp || "",
-                  flagged: m.sender !== "me",
-                })),
-                analysis: verdict,
-                client_captured_at: new Date().toISOString(),
-                incident_date: new Date().toISOString().slice(0, 10),
-              };
-              chrome.runtime?.sendMessage?.({
-                type: "SAVE_TO_VAULT",
-                payload: vaultPayload,
+
+              chrome.runtime?.sendMessage?.({ type: "CAPTURE_CHAT_SCREENSHOT" }, (shotResp) => {
+                const screenshots = [];
+                if (shotResp && shotResp.ok && shotResp.dataUrl) {
+                  screenshots.push({
+                    data_url: shotResp.dataUrl,
+                    kind: "chat_capture",
+                  });
+                }
+
+                const vaultPayload = {
+                  platform: chatData.platform,
+                  conversation: chatData.contact_name || "WhatsApp Contact",
+                  messages: chatData.messages.map((m) => ({
+                    ref: m.id,
+                    sender: m.sender,
+                    text: m.text,
+                    time: m.timestamp || "",
+                    flagged: m.sender !== "me",
+                  })),
+                  screenshots: screenshots,
+                  analysis: verdict,
+                  client_captured_at: new Date().toISOString(),
+                  incident_date: new Date().toISOString().slice(0, 10),
+                };
+
+                chrome.runtime?.sendMessage?.({
+                  type: "SAVE_TO_VAULT",
+                  payload: vaultPayload,
+                });
               });
             }
           }
@@ -487,43 +503,56 @@
     if (vaultBtn) {
       vaultBtn.onclick = () => {
         vaultBtn.disabled = true;
-        vaultBtn.textContent = "⏳ Sealing Evidence...";
+        vaultBtn.textContent = "📸 Capturing & Sealing...";
 
-        const vaultPayload = {
-          platform: chatData.platform,
-          conversation: senderName,
-          messages: chatData.messages.map((m) => ({
-            ref: m.id,
-            sender: m.sender,
-            text: m.text,
-            time: m.timestamp || "",
-            flagged: m.sender !== "me",
-          })),
-          analysis: verdict,
-          client_captured_at: new Date().toISOString(),
-          incident_date: new Date().toISOString().slice(0, 10),
-        };
-
-        chrome.runtime?.sendMessage?.(
-          {
-            type: "SAVE_TO_VAULT",
-            payload: vaultPayload,
-          },
-          (resp) => {
-            if (resp && resp.ok) {
-              vaultBtn.textContent = "✓ Sealed in Vault!";
-              vaultBtn.style.background = "#10b981";
-              vaultBtn.style.borderColor = "#10b981";
-              const targetUrl = resp.apiUrl || currentBackendUrl;
-              setTimeout(() => {
-                window.open(`${targetUrl}/index.html#vault`, "_blank");
-              }, 600);
-            } else {
-              vaultBtn.disabled = false;
-              vaultBtn.textContent = "⚠️ Save Failed - Retry";
-            }
+        // Capture visible chat screenshot
+        chrome.runtime?.sendMessage?.({ type: "CAPTURE_CHAT_SCREENSHOT" }, (shotResp) => {
+          const screenshots = [];
+          if (shotResp && shotResp.ok && shotResp.dataUrl) {
+            screenshots.push({
+              data_url: shotResp.dataUrl,
+              kind: "chat_capture",
+            });
           }
-        );
+
+          const targetContactName = chatData.contact_name || senderName || "WhatsApp Contact";
+          const vaultPayload = {
+            platform: chatData.platform,
+            conversation: targetContactName,
+            messages: chatData.messages.map((m) => ({
+              ref: m.id,
+              sender: m.sender,
+              text: m.text,
+              time: m.timestamp || "",
+              flagged: m.sender !== "me",
+            })),
+            screenshots: screenshots,
+            analysis: verdict,
+            client_captured_at: new Date().toISOString(),
+            incident_date: new Date().toISOString().slice(0, 10),
+          };
+
+          chrome.runtime?.sendMessage?.(
+            {
+              type: "SAVE_TO_VAULT",
+              payload: vaultPayload,
+            },
+            (resp) => {
+              if (resp && resp.ok) {
+                vaultBtn.textContent = "✓ Sealed in Vault!";
+                vaultBtn.style.background = "#10b981";
+                vaultBtn.style.borderColor = "#10b981";
+                const targetUrl = resp.apiUrl || currentBackendUrl;
+                setTimeout(() => {
+                  window.open(`${targetUrl}/index.html#vault`, "_blank");
+                }, 600);
+              } else {
+                vaultBtn.disabled = false;
+                vaultBtn.textContent = "⚠️ Save Failed - Retry";
+              }
+            }
+          );
+        });
       };
     }
 

@@ -210,6 +210,21 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
     return true;
   }
 
+  if (msg.type === "CAPTURE_CHAT_SCREENSHOT") {
+    try {
+      chrome.tabs.captureVisibleTab(null, { format: "png" }, (dataUrl) => {
+        if (chrome.runtime.lastError || !dataUrl) {
+          sendResponse({ ok: false, error: chrome.runtime.lastError?.message || "Capture failed" });
+        } else {
+          sendResponse({ ok: true, dataUrl });
+        }
+      });
+    } catch (e) {
+      sendResponse({ ok: false, error: e.message });
+    }
+    return true;
+  }
+
   if (msg.type === "PAIR_DEVICE_IDENTITY") {
     // Store device-level pairing between WhatsApp Web user and local Kavach account
     chrome.storage.local.set({
