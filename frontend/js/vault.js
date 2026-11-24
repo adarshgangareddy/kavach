@@ -197,7 +197,10 @@
     statusById = Object.fromEntries(
       records.map((r) => [r.id, verified ? data.verification.records.find((v) => v.id === r.id)?.status : "unchecked"])
     );
-    els.count.textContent = records.filter((r) => r.kind === "message").length;
+    const msgCount = records.filter((r) => r.kind === "message").length;
+    els.count.textContent = msgCount;
+    const menuVaultBadge = document.querySelector("#menu-vault-badge");
+    if (menuVaultBadge) menuVaultBadge.textContent = msgCount;
     render();
     renderPanel();
   }
@@ -376,7 +379,10 @@
   async function refreshCount() {
     try {
       const data = await api("/evidence");
-      els.count.textContent = data.records.filter((r) => r.kind === "message").length;
+      const msgCount = data.records.filter((r) => r.kind === "message").length;
+      els.count.textContent = msgCount;
+      const menuVaultBadge = document.querySelector("#menu-vault-badge");
+      if (menuVaultBadge) menuVaultBadge.textContent = msgCount;
     } catch {
       /* backend offline: the Shield panel already says so */
     }

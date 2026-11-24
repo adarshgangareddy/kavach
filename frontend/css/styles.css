@@ -4997,27 +4997,7 @@ body.sosing .app {
   transform: translateY(-1px);
 }
 
-.desktop-nav-item, #desktop-dashboards-menu button {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  width: 100%;
-  padding: 8px 12px;
-  background: transparent;
-  border: none;
-  border-radius: 8px;
-  color: var(--text);
-  font-size: 13px;
-  font-weight: 500;
-  cursor: pointer;
-  text-align: left;
-  transition: background 0.15s ease;
-}
-
-.desktop-nav-item:hover, #desktop-dashboards-menu button:hover {
-  background: rgba(255, 255, 255, 0.08);
-  color: #fff;
-}
+/* Desktop Nav and Dashboards Menu styled in Luxury Glassmorphic section below */
 
 /* Comprehensive Mobile Layout Improvements (<820px) */
 @media (max-width: 820px) {
@@ -5329,24 +5309,313 @@ body.sosing .app {
 /* ==========================================================================
    Enhanced Dashboards Menu & Navigation
    ========================================================================== */
-#desktop-dashboards-menu {
-  backdrop-filter: blur(32px) !important;
-  -webkit-backdrop-filter: blur(32px) !important;
-  background: rgba(12, 16, 26, 0.96) !important;
-  border: 1px solid rgba(255, 255, 255, 0.14) !important;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.85) !important;
+/* ==========================================================================
+   Luxury Glassmorphic Floating Navigation Drawer & Menu
+   ========================================================================== */
+#desktop-dashboards-menu,
+.glass-dropdown-drawer {
+  position: absolute !important;
+  right: 0 !important;
+  top: calc(100% + 12px) !important;
+  width: 295px !important;
+  max-width: calc(100vw - 24px) !important;
+  padding: 16px !important;
+  border-radius: 20px !important;
+  box-sizing: border-box !important;
+  z-index: 99999 !important;
+  flex-direction: column !important;
+  gap: 4px !important;
+  
+  /* Semi-transparent obsidian glass surface */
+  background: linear-gradient(rgba(15, 16, 22, 0.58), rgba(15, 16, 22, 0.58)) padding-box,
+              linear-gradient(145deg, rgba(255, 255, 255, 0.18), rgba(255, 255, 255, 0.03) 40%, rgba(168, 130, 255, 0.15)) border-box !important;
+  border: 1px solid transparent !important;
+  
+  /* Heavy frosted blur so glowing purple flowers softly diffuse behind */
+  backdrop-filter: blur(24px) saturate(180%) !important;
+  -webkit-backdrop-filter: blur(24px) saturate(180%) !important;
+  
+  /* Deep ambient shadow, top specular highlight & faint violet ambient glow */
+  box-shadow: inset 0 1px 0 0 rgba(255, 255, 255, 0.15),
+              0 24px 48px -12px rgba(0, 0, 0, 0.85),
+              0 0 32px rgba(168, 85, 247, 0.1) !important;
 }
 
-.desktop-nav-item, #desktop-dashboards-menu button {
-  font-size: 13.5px !important;
-  padding: 10px 14px !important;
-  border-radius: 12px !important;
+#desktop-dashboards-menu[style*="display: flex"],
+#desktop-dashboards-menu.is-open {
+  animation: glassMenuEntrance 0.22s cubic-bezier(0.16, 1, 0.3, 1) forwards !important;
+}
+
+@keyframes glassMenuEntrance {
+  0% {
+    opacity: 0;
+    transform: translateY(-8px) scale(0.96);
+    filter: blur(4px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+    filter: blur(0px);
+  }
+}
+
+/* Header Section */
+.menu-header {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  padding: 2px 4px 10px !important;
+}
+
+.menu-header-title {
+  font-size: 11px !important;
+  font-weight: 700 !important;
+  color: #8E92A4 !important;
+  letter-spacing: 0.12em !important;
+  text-transform: uppercase !important;
+}
+
+.active-session-badge {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 6px !important;
+  padding: 3px 8px !important;
+  border-radius: 9999px !important;
+  background: rgba(16, 185, 129, 0.12) !important;
+  border: 1px solid rgba(16, 185, 129, 0.3) !important;
+  font-size: 9.5px !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.06em !important;
+  color: #10B981 !important;
+  line-height: 1 !important;
+}
+
+.active-pulse-dot {
+  width: 6px !important;
+  height: 6px !important;
+  border-radius: 50% !important;
+  background-color: #10B981 !important;
+  box-shadow: 0 0 8px #10B981 !important;
+  animation: emeraldPulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite !important;
+  flex-shrink: 0 !important;
+}
+
+@keyframes emeraldPulse {
+  0%, 100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.45;
+    transform: scale(0.85);
+  }
+}
+
+/* Hairline Gradient Dividers */
+.menu-divider {
+  height: 1px !important;
+  width: 100% !important;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.08) 15%, rgba(255, 255, 255, 0.08) 85%, transparent) !important;
+  margin: 6px 0 !important;
+  border: none !important;
+}
+
+/* Menu Items & Micro-Interactions */
+.menu-items-list {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 3px !important;
+}
+
+.glass-dropdown-drawer .desktop-nav-item,
+#desktop-dashboards-menu .desktop-nav-item {
+  display: flex !important;
+  align-items: center !important;
   gap: 12px !important;
-  font-weight: 500;
+  width: 100% !important;
+  padding: 8px 12px !important;
+  border-radius: 12px !important;
+  border: 1px solid transparent !important;
+  background: transparent !important;
+  color: #CBD5E1 !important;
+  font-size: 13.5px !important;
+  font-weight: 500 !important;
+  cursor: pointer !important;
+  position: relative !important;
+  transition: all 0.18s cubic-bezier(0.16, 1, 0.3, 1) !important;
+  text-align: left !important;
+  box-sizing: border-box !important;
+  text-decoration: none !important;
 }
 
-.desktop-nav-item span {
-  font-size: 17px !important;
+.glass-dropdown-drawer .desktop-nav-item::before,
+#desktop-dashboards-menu .desktop-nav-item::before {
+  content: "" !important;
+  position: absolute !important;
+  left: 0 !important;
+  top: 22% !important;
+  height: 56% !important;
+  width: 3px !important;
+  border-radius: 0 4px 4px 0 !important;
+  background: linear-gradient(to bottom, #F2B8C6, #A78BFA) !important;
+  opacity: 0 !important;
+  transform: scaleY(0.4) !important;
+  transition: opacity 0.18s ease, transform 0.18s ease !important;
+}
+
+.glass-dropdown-drawer .desktop-nav-item:hover,
+#desktop-dashboards-menu .desktop-nav-item:hover {
+  background: rgba(255, 255, 255, 0.07) !important;
+  color: #F8FAFC !important;
+  border-color: rgba(255, 255, 255, 0.06) !important;
+}
+
+.glass-dropdown-drawer .desktop-nav-item:hover::before,
+#desktop-dashboards-menu .desktop-nav-item:hover::before,
+.glass-dropdown-drawer .desktop-nav-item.active::before,
+#desktop-dashboards-menu .desktop-nav-item.active::before {
+  opacity: 1 !important;
+  transform: scaleY(1) !important;
+}
+
+.glass-dropdown-drawer .desktop-nav-item.active,
+#desktop-dashboards-menu .desktop-nav-item.active {
+  background: rgba(255, 255, 255, 0.07) !important;
+  color: #F8FAFC !important;
+}
+
+.glass-dropdown-drawer .desktop-nav-item:hover .menu-icon,
+#desktop-dashboards-menu .desktop-nav-item:hover .menu-icon,
+.glass-dropdown-drawer .desktop-nav-item.active .menu-icon,
+#desktop-dashboards-menu .desktop-nav-item.active .menu-icon {
+  transform: translateX(2px) !important;
+  color: #F2B8C6 !important;
+  stroke: #F2B8C6 !important;
+}
+
+.glass-dropdown-drawer .desktop-nav-item span,
+#desktop-dashboards-menu .desktop-nav-item span {
+  font-size: 13.5px !important;
+  line-height: 1.2 !important;
+}
+
+.menu-icon {
+  width: 16px !important;
+  height: 16px !important;
+  stroke-width: 1.5px !important;
+  color: #94A3B8 !important;
+  stroke: #94A3B8 !important;
+  flex-shrink: 0 !important;
+  transition: transform 0.18s ease, color 0.18s ease, stroke 0.18s ease !important;
+}
+
+/* Evidence Vault Pill Badge */
+.menu-pill-badge {
+  margin-left: auto !important;
+  font-size: 10.5px !important;
+  font-weight: 700 !important;
+  padding: 2px 7.5px !important;
+  border-radius: 9999px !important;
+  background: rgba(244, 194, 194, 0.12) !important;
+  border: 1px solid rgba(244, 194, 194, 0.28) !important;
+  color: #F4C2C2 !important;
+  line-height: 1.2 !important;
+  letter-spacing: 0.02em !important;
+}
+
+/* Featured Kavach AI Card */
+.menu-featured-wrap {
+  padding: 5px 0 !important;
+}
+
+.menu-ai-card {
+  display: flex !important;
+  align-items: center !important;
+  width: 100% !important;
+  padding: 9px 12px !important;
+  border-radius: 14px !important;
+  background: radial-gradient(circle at 80% 50%, rgba(168, 85, 247, 0.2), rgba(20, 16, 35, 0.65) 75%), rgba(25, 20, 42, 0.5) !important;
+  border: 1px solid rgba(192, 132, 252, 0.3) !important;
+  box-shadow: 0 4px 16px -2px rgba(168, 85, 247, 0.2), inset 0 1px 0 0 rgba(255, 255, 255, 0.15) !important;
+  gap: 10px !important;
+  box-sizing: border-box !important;
+  cursor: pointer !important;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+
+.menu-ai-card:hover {
+  background: radial-gradient(circle at 80% 50%, rgba(192, 132, 252, 0.3), rgba(30, 22, 54, 0.75) 75%), rgba(35, 25, 60, 0.6) !important;
+  border-color: rgba(216, 180, 254, 0.5) !important;
+  box-shadow: 0 6px 20px -2px rgba(168, 85, 247, 0.35), inset 0 1px 0 0 rgba(255, 255, 255, 0.25) !important;
+  transform: translateY(-1px) !important;
+}
+
+.menu-ai-card::before {
+  display: none !important;
+}
+
+.menu-ai-icon-box {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  width: 26px !important;
+  height: 26px !important;
+  border-radius: 8px !important;
+  background: rgba(245, 158, 11, 0.14) !important;
+  border: 1px solid rgba(245, 158, 11, 0.28) !important;
+  flex-shrink: 0 !important;
+}
+
+.menu-ai-text {
+  font-size: 13.5px !important;
+  font-weight: 600 !important;
+  background: linear-gradient(135deg, #FFFFFF 30%, #E9D5FF 100%) !important;
+  -webkit-background-clip: text !important;
+  -webkit-text-fill-color: transparent !important;
+  letter-spacing: 0.01em !important;
+}
+
+.menu-ai-badge {
+  margin-left: auto !important;
+  font-size: 9px !important;
+  font-weight: 800 !important;
+  padding: 2px 6px !important;
+  border-radius: 6px !important;
+  background: rgba(168, 85, 247, 0.2) !important;
+  border: 1px solid rgba(168, 85, 247, 0.35) !important;
+  color: #D8B4FE !important;
+  letter-spacing: 0.06em !important;
+}
+
+/* Footer / Sign Out */
+.menu-footer {
+  padding-top: 2px !important;
+}
+
+.menu-logout-btn {
+  color: #F87171 !important;
+  font-weight: 500 !important;
+  gap: 12px !important;
+}
+
+.menu-logout-btn .logout-icon {
+  stroke: #F87171 !important;
+  transition: transform 0.18s ease, stroke 0.18s ease !important;
+}
+
+.menu-logout-btn:hover {
+  background: rgba(239, 68, 68, 0.12) !important;
+  color: #FCA5A5 !important;
+  border-color: rgba(239, 68, 68, 0.25) !important;
+}
+
+.menu-logout-btn:hover .logout-icon {
+  transform: translateX(2px) !important;
+  stroke: #FCA5A5 !important;
+}
+
+.menu-logout-btn:hover::before {
+  background: #EF4444 !important;
 }
 
 /* ==========================================================================

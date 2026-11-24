@@ -13,6 +13,9 @@
   function setActive(name) {
     links.forEach((l) => l.classList.toggle("active", l.dataset.nav === name));
     tabs.forEach((t) => t.classList.toggle("active", t.dataset.tab === (name || "home")));
+    document.querySelectorAll(".desktop-nav-item[data-nav]").forEach((b) => {
+      b.classList.toggle("active", b.dataset.nav === (name || "home"));
+    });
   }
 
   function leaveHome() {
@@ -21,7 +24,7 @@
 
   function goHome() {
     body.classList.add("at-home");
-    setActive(null);
+    setActive("home");
     mobile.pill(null);
   }
 
@@ -229,18 +232,30 @@
   const desktopMenuBtn = document.querySelector("#desktop-menu-btn");
   const desktopDashboardsMenu = document.querySelector("#desktop-dashboards-menu");
 
+  function closeDesktopMenu() {
+    if (desktopDashboardsMenu) {
+      desktopDashboardsMenu.style.display = "none";
+      desktopDashboardsMenu.classList.remove("is-open");
+    }
+  }
+
   desktopMenuBtn?.addEventListener("click", (e) => {
     e.stopPropagation();
     if (desktopDashboardsMenu) {
       const isShown = desktopDashboardsMenu.style.display === "flex";
-      desktopDashboardsMenu.style.display = isShown ? "none" : "flex";
+      if (isShown) {
+        closeDesktopMenu();
+      } else {
+        desktopDashboardsMenu.style.display = "flex";
+        desktopDashboardsMenu.classList.add("is-open");
+      }
     }
   });
 
   document.querySelectorAll(".desktop-nav-item[data-nav]").forEach((btn) => {
     btn.addEventListener("click", (e) => {
       e.stopPropagation();
-      if (desktopDashboardsMenu) desktopDashboardsMenu.style.display = "none";
+      closeDesktopMenu();
       const navTarget = btn.dataset.nav;
       if (navTarget) go(navTarget);
     });
@@ -248,13 +263,13 @@
 
   document.querySelector("#desktop-ai-menu-item")?.addEventListener("click", (e) => {
     e.stopPropagation();
-    if (desktopDashboardsMenu) desktopDashboardsMenu.style.display = "none";
+    closeDesktopMenu();
     body.classList.add("shield-open");
   });
 
   document.querySelector("#desktop-menu-logout-btn")?.addEventListener("click", async (e) => {
     e.stopPropagation();
-    if (desktopDashboardsMenu) desktopDashboardsMenu.style.display = "none";
+    closeDesktopMenu();
     if (await window.kavachConfirm?.("Log out of Kavach on this device?", { ok: "Log out" })) {
       await fetch(`${API}/auth/logout`, { method: "POST" }).catch(() => {});
       try {
@@ -267,7 +282,7 @@
   // Close menus when clicking outside
   document.addEventListener("click", (e) => {
     if (desktopDashboardsMenu && !desktopDashboardsMenu.contains(e.target) && !desktopMenuBtn?.contains(e.target)) {
-      desktopDashboardsMenu.style.display = "none";
+      closeDesktopMenu();
     }
     if (body.classList.contains("menu-open")) {
       const contactsEl = document.querySelector(".contacts");
