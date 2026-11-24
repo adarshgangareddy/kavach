@@ -64,12 +64,22 @@
     const contactsEyebrow = document.querySelector("#contacts-eyebrow");
 
     if (where === "safetyspace" || where === "shield") {
-      window.kavachSos?.open();
+      window.kavachSos?.close();
+      const gView = document.querySelector("#guardians-view");
+      if (gView) gView.hidden = true;
       const el = document.querySelector("#safetyspace-view");
       if (el) el.hidden = false;
+
+      const safetyspaceHub = document.getElementById("safetyspace-hub");
+      const safetyspacePhone = document.getElementById("safetyspace-phone-container");
+      if (safetyspaceHub) safetyspaceHub.style.display = "flex";
+      if (safetyspacePhone) safetyspacePhone.style.display = "none";
+
       body.classList.add("left-collapsed");
       setActive("safetyspace");
     } else if (where === "guardians" || where === "sos") {
+      const sView = document.querySelector("#safetyspace-view");
+      if (sView) sView.hidden = true;
       window.kavachSos?.open();
       window.kavachSos?.loadSetup?.();
       const el = document.querySelector("#guardians-view");

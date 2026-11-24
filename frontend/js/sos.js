@@ -1085,17 +1085,14 @@
     if (mc) mc.hidden = true;
     isOpen = true;
     document.body.classList.add("sosing");
+    const sView = document.querySelector("#safetyspace-view");
+    if (sView) sView.hidden = true;
     if (els.view) els.view.hidden = false;
     els.btn?.classList.add("active");
     window.kavach.deselect("");
     window.kavachMobile?.show("main");
 
-    // Reset Safety Space sub-views to default hub mode
-    const safetyspaceHub = document.getElementById("safetyspace-hub");
-    const safetyspacePhone = document.getElementById("safetyspace-phone-container");
     const addGuardianCard = document.getElementById("add-guardian-card");
-    if (safetyspaceHub) safetyspaceHub.style.display = "flex";
-    if (safetyspacePhone) safetyspacePhone.style.display = "none";
     if (addGuardianCard) addGuardianCard.style.display = "none";
 
     loadCachedSetup();

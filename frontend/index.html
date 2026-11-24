@@ -71,21 +71,21 @@
         </button>
 
         <!-- Desktop Dashboards Dropdown Menu -->
-        <div id="desktop-dashboards-menu" class="glass-panel" style="display:none; position:absolute; right:0; top:calc(100% + 12px); width:min(340px, calc(100vw - 24px)); padding:14px; border-radius:20px; border:1px solid rgba(255,255,255,0.15); background:rgba(15,20,32,0.96); backdrop-filter:blur(28px); -webkit-backdrop-filter:blur(28px); box-shadow:0 16px 50px rgba(0,0,0,0.85); z-index:99999; flex-direction:column; gap:6px;">
-          <div style="padding:6px 10px 10px; border-bottom:1px solid rgba(255,255,255,0.08); margin-bottom:4px; display:flex; justify-content:space-between; align-items:center;">
-            <span style="font-size:11px; font-weight:700; color:var(--muted); letter-spacing:0.08em; text-transform:uppercase;">Dashboards & Features</span>
+        <div id="desktop-dashboards-menu" class="glass-panel" style="display:none; position:absolute; right:0; top:calc(100% + 12px); width:min(320px, calc(100vw - 24px)); padding:12px; border-radius:20px; border:1px solid rgba(255,255,255,0.15); background:rgba(15,20,32,0.96); backdrop-filter:blur(28px); -webkit-backdrop-filter:blur(28px); box-shadow:0 16px 50px rgba(0,0,0,0.85); z-index:99999; flex-direction:column; gap:4px;">
+          <div style="padding:4px 8px 8px; border-bottom:1px solid rgba(255,255,255,0.08); margin-bottom:4px; display:flex; justify-content:space-between; align-items:center;">
+            <span style="font-size:10.5px; font-weight:700; color:var(--muted); letter-spacing:0.08em; text-transform:uppercase;">Navigation</span>
             <span class="glass-badge" style="font-size:10px; color:#10b981; border-color:rgba(16,185,129,0.3);">Active Session</span>
           </div>
-          <button type="button" class="desktop-nav-item" data-nav="home"><span>🏠</span> Home Dashboard</button>
-          <button type="button" class="desktop-nav-item" data-nav="guardians"><span>🛡️</span> Emergency Guardians</button>
-          <button type="button" class="desktop-nav-item" data-nav="safetyspace"><span>🦺</span> Safety Space</button>
-          <button type="button" class="desktop-nav-item" data-nav="vault"><span>🗄️</span> Evidence Vault</button>
-          <button type="button" class="desktop-nav-item" data-nav="responders"><span>🚨</span> Community Responders</button>
-          <button type="button" class="desktop-nav-item" data-nav="profile"><span>👤</span> User Legal Profile</button>
-          <button type="button" class="desktop-nav-item" data-nav="settings"><span>⚙️</span> Settings & Security</button>
-          <button type="button" id="desktop-ai-menu-item" class="desktop-nav-item" style="color:#a5b4fc; font-weight:600;"><span>✨</span> Kavach AI Assistant</button>
-          <div style="border-top:1px solid rgba(255,255,255,0.08); margin-top:6px; padding-top:8px;">
-            <button type="button" id="desktop-menu-logout-btn" class="desktop-nav-item" style="color:#ef4444; font-weight:600;"><span>🚪</span> Sign Out</button>
+          <button type="button" class="desktop-nav-item" data-nav="home">Home</button>
+          <button type="button" class="desktop-nav-item" data-nav="profile">Profile</button>
+          <button type="button" class="desktop-nav-item" data-nav="guardians">Guardians</button>
+          <button type="button" class="desktop-nav-item" data-nav="safetyspace">Safety Space</button>
+          <button type="button" class="desktop-nav-item" data-nav="vault">Evidence Vault</button>
+          <button type="button" class="desktop-nav-item" data-nav="responders">Responders</button>
+          <button type="button" class="desktop-nav-item" data-nav="settings">Settings & Security</button>
+          <button type="button" id="desktop-ai-menu-item" class="desktop-nav-item" style="color:#a5b4fc; font-weight:600;"><span>✨</span> Kavach AI</button>
+          <div style="border-top:1px solid rgba(255,255,255,0.08); margin-top:6px; padding-top:6px;">
+            <button type="button" id="desktop-menu-logout-btn" class="desktop-nav-item" style="color:#ef4444; font-weight:600;">Sign Out</button>
           </div>
         </div>
       </div>
@@ -149,34 +149,34 @@
     <!-- Mock chat app: stands in for Instagram / WhatsApp in the demo -->
     <aside class="contacts">
       <!-- Mobile / Left Sidebar Dashboard Navigation -->
-      <nav class="sidebar-dashboards" style="padding:14px 12px 10px; border-bottom:1px solid rgba(255,255,255,0.08); display:flex; flex-direction:column; gap:6px;">
+      <nav class="sidebar-dashboards" style="padding:14px 12px 10px; border-bottom:1px solid rgba(255,255,255,0.08); display:flex; flex-direction:column; gap:4px;">
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px; padding:0 4px;">
           <span class="eyebrow" style="font-size:10.5px; letter-spacing:0.12em; color:var(--muted);">DASHBOARDS</span>
           <button type="button" id="close-sidebar-menu-btn" class="mobile-only-btn" style="background:transparent; border:none; color:var(--muted); font-size:16px; cursor:pointer;" title="Close Menu">✕</button>
         </div>
-        <button type="button" class="sidebar-nav-btn" data-nav="home" style="display:flex; align-items:center; gap:10px; width:100%; padding:9px 12px; background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.05); border-radius:10px; color:var(--text); font-size:13.5px; font-weight:500; cursor:pointer; text-align:left;">
-          <span>🏠</span> Home
+        <button type="button" class="sidebar-nav-btn" data-nav="home" style="width:100%; padding:9px 12px; background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.05); border-radius:10px; color:var(--text); font-size:13.5px; font-weight:500; cursor:pointer; text-align:left;">
+          Home
         </button>
-        <button type="button" class="sidebar-nav-btn" data-nav="guardians" style="display:flex; align-items:center; gap:10px; width:100%; padding:9px 12px; background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.05); border-radius:10px; color:var(--text); font-size:13.5px; font-weight:500; cursor:pointer; text-align:left;">
-          <span>🛡️</span> Guardians
+        <button type="button" class="sidebar-nav-btn" data-nav="profile" style="width:100%; padding:9px 12px; background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.05); border-radius:10px; color:var(--text); font-size:13.5px; font-weight:500; cursor:pointer; text-align:left;">
+          Profile
         </button>
-        <button type="button" class="sidebar-nav-btn" data-nav="safetyspace" style="display:flex; align-items:center; gap:10px; width:100%; padding:9px 12px; background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.05); border-radius:10px; color:var(--text); font-size:13.5px; font-weight:500; cursor:pointer; text-align:left;">
-          <span>🦺</span> Safety Space
+        <button type="button" class="sidebar-nav-btn" data-nav="guardians" style="width:100%; padding:9px 12px; background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.05); border-radius:10px; color:var(--text); font-size:13.5px; font-weight:500; cursor:pointer; text-align:left;">
+          Guardians
         </button>
-        <button type="button" class="sidebar-nav-btn" data-nav="vault" style="display:flex; align-items:center; gap:10px; width:100%; padding:9px 12px; background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.05); border-radius:10px; color:var(--text); font-size:13.5px; font-weight:500; cursor:pointer; text-align:left;">
-          <span>🗄️</span> Evidence Vault
+        <button type="button" class="sidebar-nav-btn" data-nav="safetyspace" style="width:100%; padding:9px 12px; background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.05); border-radius:10px; color:var(--text); font-size:13.5px; font-weight:500; cursor:pointer; text-align:left;">
+          Safety Space
         </button>
-        <button type="button" class="sidebar-nav-btn" data-nav="responders" style="display:flex; align-items:center; gap:10px; width:100%; padding:9px 12px; background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.05); border-radius:10px; color:var(--text); font-size:13.5px; font-weight:500; cursor:pointer; text-align:left;">
-          <span>🚨</span> Responders
+        <button type="button" class="sidebar-nav-btn" data-nav="vault" style="width:100%; padding:9px 12px; background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.05); border-radius:10px; color:var(--text); font-size:13.5px; font-weight:500; cursor:pointer; text-align:left;">
+          Evidence Vault
         </button>
-        <button type="button" class="sidebar-nav-btn" data-nav="profile" style="display:flex; align-items:center; gap:10px; width:100%; padding:9px 12px; background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.05); border-radius:10px; color:var(--text); font-size:13.5px; font-weight:500; cursor:pointer; text-align:left;">
-          <span>👤</span> Legal Profile
+        <button type="button" class="sidebar-nav-btn" data-nav="responders" style="width:100%; padding:9px 12px; background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.05); border-radius:10px; color:var(--text); font-size:13.5px; font-weight:500; cursor:pointer; text-align:left;">
+          Responders
         </button>
-        <button type="button" class="sidebar-nav-btn" data-nav="settings" style="display:flex; align-items:center; gap:10px; width:100%; padding:9px 12px; background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.05); border-radius:10px; color:var(--text); font-size:13.5px; font-weight:500; cursor:pointer; text-align:left;">
-          <span>⚙️</span> Settings & Security
+        <button type="button" class="sidebar-nav-btn" data-nav="settings" style="width:100%; padding:9px 12px; background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.05); border-radius:10px; color:var(--text); font-size:13.5px; font-weight:500; cursor:pointer; text-align:left;">
+          Settings & Security
         </button>
         <!-- Borderless Kavach AI in sidebar as requested -->
-        <button type="button" id="sidebar-ai-btn" style="display:flex; align-items:center; gap:10px; width:100%; padding:9px 12px; background:transparent; border:none; color:#a5b4fc; font-size:13.5px; font-weight:600; cursor:pointer; text-align:left;">
+        <button type="button" id="sidebar-ai-btn" style="display:flex; align-items:center; gap:8px; width:100%; padding:9px 12px; background:transparent; border:none; color:#a5b4fc; font-size:13.5px; font-weight:600; cursor:pointer; text-align:left;">
           <span>✨</span> Kavach AI
         </button>
       </nav>
