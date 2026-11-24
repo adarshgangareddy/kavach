@@ -831,199 +831,352 @@
         </div>
       </section>
 
-      <!-- User Profile Screen: Modern E-Commerce / SaaS Account Dashboard -->
-      <section id="profile-view" class="vault" hidden>
-        <header class="vault__head">
+      <!-- User Profile Screen: Modern Glassmorphic Bento Grid Dashboard -->
+      <section id="profile-view" class="vault profile-viewport-wrapper" hidden>
+        <!-- Ambient Background Mesh: Slow-moving radial gradient orbs -->
+        <div class="ambient-mesh-wrap" aria-hidden="true">
+          <div class="ambient-orb orb-1"></div>
+          <div class="ambient-orb orb-2"></div>
+          <div class="ambient-orb orb-3"></div>
+        </div>
+
+        <header class="vault__head" style="position:relative; z-index:2;">
           <div>
             <div class="chat__name">User Profile & Complainant Details</div>
-            <div class="muted small">Personal and legal identity details automatically synchronized into police complaints.</div>
+            <div class="muted small">Personal and legal identity details automatically synchronized into official police complaints.</div>
           </div>
         </header>
-        <div class="vault__body" style="max-width: 860px; margin: 0 auto; padding: 24px;">
-          <!-- Profile Hero Banner with Avatar Edit Popover -->
-          <div class="profile-hero" style="border-radius:24px; padding:24px; margin-bottom:24px; position:relative;">
-            <div class="profile-avatar-container" style="position:relative; flex-shrink:0;">
-              <div class="profile-avatar">
-                <img id="prof-avatar-img" class="prof-avatar-img" alt="Profile" style="display:none; width:100%; height:100%; object-fit:cover; border-radius:50%;" />
-                <span id="prof-avatar-letter">A</span>
-                <span class="avatar-online-dot"></span>
-                <button type="button" id="prof-avatar-edit-badge" class="avatar-edit-badge" title="Edit Profile Photo & Details" aria-label="Edit Profile">📷</button>
-              </div>
 
-              <!-- Avatar Edit Popover Menu -->
-              <div id="avatar-edit-popover" class="glass-panel avatar-popover" style="display:none; position:absolute; top:calc(100% + 8px); left:0; min-width:210px; padding:10px; border-radius:16px; z-index:100; flex-direction:column; gap:4px; box-shadow:0 12px 36px rgba(0,0,0,0.7);">
-                <div style="font-size:11px; font-weight:700; color:var(--muted); text-transform:uppercase; letter-spacing:0.06em; padding:4px 8px 6px; border-bottom:1px solid rgba(255,255,255,0.08); margin-bottom:4px;">Profile Options</div>
-                <button type="button" id="avatar-opt-upload" class="avatar-popover-item" style="display:flex; align-items:center; gap:8px; width:100%; padding:8px 10px; background:transparent; border:none; color:#f8fafc; font-size:12.5px; border-radius:8px; cursor:pointer; text-align:left;">
-                  <span>🖼️</span> Upload Photo
-                </button>
-                <button type="button" id="avatar-opt-remove" class="avatar-popover-item" style="display:flex; align-items:center; gap:8px; width:100%; padding:8px 10px; background:transparent; border:none; color:#f87171; font-size:12.5px; border-radius:8px; cursor:pointer; text-align:left;">
-                  <span>🗑️</span> Remove Photo
-                </button>
-                <div style="border-top:1px solid rgba(255,255,255,0.08); margin:4px 0;"></div>
-                <button type="button" id="avatar-opt-details" class="avatar-popover-item" style="display:flex; align-items:center; gap:8px; width:100%; padding:8px 10px; background:transparent; border:none; color:var(--brand, #f2b8c6); font-weight:600; font-size:12.5px; border-radius:8px; cursor:pointer; text-align:left;">
-                  <span>✏️</span> Edit Personal Details
-                </button>
-              </div>
-              <input type="file" id="avatar-file-input" accept="image/*" style="display:none;" />
-            </div>
+        <div class="vault__body profile-bento-container" style="max-width: 1100px; margin: 0 auto; padding: 24px; position:relative; z-index:2;">
+          <form id="profile-form">
+            <!-- Full Width Top Card: Hero Identity Header -->
+            <div class="bento-card hero-identity-card" style="margin-bottom: 24px; padding: 28px;">
+              <div class="hero-identity-main">
+                <div class="profile-avatar-container" style="position:relative; flex-shrink:0;">
+                  <div class="profile-avatar-ring">
+                    <div class="profile-avatar">
+                      <img id="prof-avatar-img" class="prof-avatar-img" alt="Profile" style="display:none; width:100%; height:100%; object-fit:cover; border-radius:50%;" />
+                      <span id="prof-avatar-letter">A</span>
+                      <span class="avatar-online-dot"></span>
+                      <button type="button" id="prof-avatar-edit-badge" class="avatar-edit-badge" title="Change Avatar Photo" aria-label="Edit Profile Photo">📷</button>
+                    </div>
+                  </div>
 
-            <div style="flex:1;">
-              <div style="display:flex; align-items:center; gap:10px; margin-bottom:4px; flex-wrap:wrap;">
-                <h2 id="prof-display-name" style="margin:0; font-size:22px; font-weight:700;">adarshavg</h2>
-                <span class="glass-badge" style="color:#10b981; border-color:rgba(16,185,129,0.3);">Protected by Kavach</span>
-              </div>
-              <div id="prof-display-email" style="font-size:13.5px; color:var(--muted);">adarshavg26@gmail.com</div>
-            </div>
-          </div>
+                  <!-- Avatar Edit Popover Menu -->
+                  <div id="avatar-edit-popover" class="glass-panel avatar-popover" style="display:none; position:absolute; top:calc(100% + 8px); left:0; min-width:210px; padding:10px; border-radius:16px; z-index:100; flex-direction:column; gap:4px; box-shadow:0 12px 36px rgba(0,0,0,0.7);">
+                    <div style="font-size:11px; font-weight:700; color:var(--muted); text-transform:uppercase; letter-spacing:0.06em; padding:4px 8px 6px; border-bottom:1px solid rgba(255,255,255,0.08); margin-bottom:4px;">Profile Options</div>
+                    <button type="button" id="avatar-opt-upload" class="avatar-popover-item">
+                      <span>🖼️</span> Upload Photo
+                    </button>
+                    <button type="button" id="avatar-opt-remove" class="avatar-popover-item" style="color:#f87171;">
+                      <span>🗑️</span> Remove Photo
+                    </button>
+                    <div style="border-top:1px solid rgba(255,255,255,0.08); margin:4px 0;"></div>
+                    <button type="button" id="avatar-opt-details" class="avatar-popover-item" style="color:var(--brand, #f2b8c6); font-weight:600;">
+                      <span>✏️</span> Edit Personal Details
+                    </button>
+                  </div>
+                  <input type="file" id="avatar-file-input" accept="image/*" style="display:none;" />
+                </div>
 
-          <!-- Google Profile Style Read-Only Sections View (Personal Details Only) -->
-          <div id="profile-sections-view" style="display:flex; flex-direction:column; gap:20px;">
-            <!-- Header bar -->
-            <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
-              <div>
-                <strong style="font-size:16px; color:#fff; display:block;">Personal Information</strong>
-                <span style="font-size:12.5px; color:var(--muted);">Personal and legal jurisdiction details automatically synchronized into official complaints.</span>
-              </div>
-            </div>
+                <div class="hero-identity-meta" style="flex:1;">
+                  <div class="hero-identity-heading">
+                    <h2 id="prof-display-name">adarshavg</h2>
+                    <span class="glass-badge badge-protected">
+                      <span class="pulse-emerald-dot"></span>
+                      PROTECTED BY KAVACH
+                    </span>
+                  </div>
+                  <div id="prof-display-email" class="hero-identity-email">adarshavg26@gmail.com</div>
 
-            <!-- Basic Info Card (Google Account Style) -->
-            <div class="glass-panel" style="padding:0; border-radius:20px; overflow:hidden;">
-              <div style="padding:18px 22px; border-bottom:1px solid rgba(255,255,255,0.06); background:rgba(255,255,255,0.02);">
-                <strong style="font-size:15px; color:#fff; display:block;">Basic info</strong>
-                <span style="font-size:12px; color:var(--muted);">Used to identify the complainant in formal police petitions.</span>
-              </div>
-
-              <!-- Name row -->
-              <div style="display:flex; justify-content:space-between; align-items:center; padding:16px 22px; border-bottom:1px solid rgba(255,255,255,0.05);">
-                <span style="font-size:12.5px; color:var(--muted); width:180px; text-transform:uppercase; letter-spacing:0.04em;">Name</span>
-                <strong id="prof-row-name" style="flex:1; font-size:13.5px; color:#fff; font-weight:600;">adarshavg</strong>
-              </div>
-
-              <!-- Contact info: Email row -->
-              <div style="display:flex; justify-content:space-between; align-items:center; padding:16px 22px; border-bottom:1px solid rgba(255,255,255,0.05);">
-                <span style="font-size:12.5px; color:var(--muted); width:180px; text-transform:uppercase; letter-spacing:0.04em;">Email</span>
-                <span id="prof-row-email" style="flex:1; font-size:13px; color:#e2e8f0;">adarshavg26@gmail.com</span>
-              </div>
-
-              <!-- Contact info: Phone row -->
-              <div style="display:flex; justify-content:space-between; align-items:center; padding:16px 22px; border-bottom:1px solid rgba(255,255,255,0.05);">
-                <span style="font-size:12.5px; color:var(--muted); width:180px; text-transform:uppercase; letter-spacing:0.04em;">Phone</span>
-                <span id="prof-row-phone" style="flex:1; font-size:13px; color:#e2e8f0;">7795806293</span>
-              </div>
-
-              <!-- Contact info: Alt Phone row -->
-              <div style="display:flex; justify-content:space-between; align-items:center; padding:16px 22px;">
-                <span style="font-size:12.5px; color:var(--muted); width:180px; text-transform:uppercase; letter-spacing:0.04em;">Emergency Phone</span>
-                <span id="prof-row-alt-phone" style="flex:1; font-size:13px; color:#e2e8f0;">Not added</span>
-              </div>
-            </div>
-
-            <!-- Addresses & Jurisdiction Card (Google Account Style) -->
-            <div class="glass-panel" style="padding:0; border-radius:20px; overflow:hidden;">
-              <div style="padding:18px 22px; border-bottom:1px solid rgba(255,255,255,0.06); background:rgba(255,255,255,0.02);">
-                <strong style="font-size:15px; color:#fff; display:block;">Addresses & Legal Jurisdiction</strong>
-                <span style="font-size:12px; color:var(--muted);">Jurisdiction details used for police and Cyber Cell complaints under BNS 2023.</span>
-              </div>
-
-              <!-- Residential Street Address row -->
-              <div style="display:flex; justify-content:space-between; align-items:center; padding:16px 22px; border-bottom:1px solid rgba(255,255,255,0.05);">
-                <span style="font-size:12.5px; color:var(--muted); width:180px; text-transform:uppercase; letter-spacing:0.04em;">Residential Address</span>
-                <span id="prof-row-address" style="flex:1; font-size:13px; color:#e2e8f0;">Reva university</span>
-              </div>
-
-              <!-- City / State row -->
-              <div style="display:flex; justify-content:space-between; align-items:center; padding:16px 22px; border-bottom:1px solid rgba(255,255,255,0.05);">
-                <span style="font-size:12.5px; color:var(--muted); width:180px; text-transform:uppercase; letter-spacing:0.04em;">City & State</span>
-                <span id="prof-row-city" style="flex:1; font-size:13px; color:#e2e8f0;">Bengaluru, Karnataka</span>
-              </div>
-
-              <!-- Nearest Police Station row -->
-              <div style="display:flex; justify-content:space-between; align-items:center; padding:16px 22px; border-bottom:1px solid rgba(255,255,255,0.05);">
-                <span style="font-size:12.5px; color:var(--muted); width:180px; text-transform:uppercase; letter-spacing:0.04em;">Police Station</span>
-                <span id="prof-row-station" style="flex:1; font-size:13px; color:#e2e8f0;">Indiranagar Cyber Crime Station</span>
-              </div>
-
-              <!-- Legal Complainant Status row -->
-              <div style="display:flex; justify-content:space-between; align-items:center; padding:16px 22px;">
-                <span style="font-size:12.5px; color:var(--muted); width:180px; text-transform:uppercase; letter-spacing:0.04em;">Legal Verification</span>
-                <span class="glass-badge" style="color:#10b981; border-color:rgba(16,185,129,0.3); font-size:11.5px; font-weight:600;">
-                  ✓ Verified Section 65B IT Act Complainant
-                </span>
-              </div>
-            </div>
-          </div>
-
-          <!-- Profile Form with Two Cards (Edit Mode) -->
-          <div id="profile-form-wrap" style="display:none; flex-direction:column; gap:20px;">
-            <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
-              <div>
-                <strong style="font-size:16px; color:#fff; display:block;">Edit Profile Information</strong>
-                <span style="font-size:12.5px; color:var(--muted);">Update your legal identity and address for official complaints.</span>
-              </div>
-              <button type="button" id="prof-cancel-edit-btn" class="btn btn--ghost small" style="border-radius:10px;">
-                ✕ Cancel
-              </button>
-            </div>
-
-            <form id="profile-form" style="display:flex; flex-direction:column; gap:20px;">
-              <div style="display:grid; grid-template-columns: 1fr 1fr; gap:20px;" class="profile-cards-grid">
-                <!-- Card 1: Legal Identity -->
-                <div class="glass-panel" style="padding:22px; border-radius:20px;">
-                  <strong style="font-size:15px; display:block; margin-bottom:4px; color:var(--text);">Legal Identity Details</strong>
-                  <p style="font-size:12px; color:var(--muted); margin-bottom:16px;">Used to identify the complainant in formal police petitions.</p>
-                  <div style="display:flex; flex-direction:column; gap:12px;">
-                    <label style="display:flex; flex-direction:column; gap:6px; font-size:12.5px; font-weight:500;">
-                      Full Legal Name
-                      <input id="prof-name" placeholder="e.g. Priya Sharma" class="glass-input" required />
-                    </label>
-                    <label style="display:flex; flex-direction:column; gap:6px; font-size:12.5px; font-weight:500;">
-                      Primary Mobile Phone
-                      <input id="prof-phone" type="tel" placeholder="+91 98765 43210" class="glass-input" />
-                    </label>
-                    <label style="display:flex; flex-direction:column; gap:6px; font-size:12.5px; font-weight:500;">
-                      Email Address
-                      <input id="prof-email" type="email" placeholder="priya@example.com" class="glass-input" />
-                    </label>
-                    <label style="display:flex; flex-direction:column; gap:6px; font-size:12.5px; font-weight:500;">
-                      Alternate Emergency Phone
-                      <input id="prof-alt-phone" type="tel" placeholder="Alternative contact number" class="glass-input" />
-                    </label>
+                  <!-- Profile Completeness Progress Bar -->
+                  <div class="profile-strength-box">
+                    <div class="strength-header">
+                      <span id="prof-strength-label" class="strength-label">Profile Strength</span>
+                      <span id="prof-strength-pct" class="strength-pct">85%</span>
+                    </div>
+                    <div class="strength-track">
+                      <div id="prof-strength-bar" class="strength-fill" style="width: 85%;"></div>
+                    </div>
+                    <div id="prof-strength-tip" class="strength-tip">Add emergency contact for 100% legal readiness</div>
                   </div>
                 </div>
 
-                <!-- Card 2: Police Jurisdiction -->
-                <div class="glass-panel" style="padding:22px; border-radius:20px;">
-                  <strong style="font-size:15px; display:block; margin-bottom:4px; color:var(--text);">Residential & Police Jurisdiction</strong>
-                  <p style="font-size:12px; color:var(--muted); margin-bottom:16px;">Determines the official police station jurisdiction for filing.</p>
-                  <div style="display:flex; flex-direction:column; gap:12px;">
-                    <label style="display:flex; flex-direction:column; gap:6px; font-size:12.5px; font-weight:500;">
-                      Residential Street Address
-                      <textarea id="prof-address" rows="2" placeholder="#42, 5th Cross, Indiranagar" class="glass-input" style="resize:vertical;"></textarea>
-                    </label>
-                    <label style="display:flex; flex-direction:column; gap:6px; font-size:12.5px; font-weight:500;">
-                      City / District & State
-                      <input id="prof-city" placeholder="Bengaluru, Karnataka" class="glass-input" />
-                    </label>
-                    <label style="display:flex; flex-direction:column; gap:6px; font-size:12.5px; font-weight:500;">
-                      Nearest Police Station
-                      <input id="prof-police-station" placeholder="Indiranagar Police Station" class="glass-input" />
-                    </label>
+                <!-- Quick Actions Buttons -->
+                <div class="hero-identity-actions">
+                  <button type="button" id="prof-toggle-edit-btn" class="btn-glass-action">
+                    <span class="btn-icon">✏️</span>
+                    <span id="prof-edit-btn-text">Edit Profile</span>
+                  </button>
+                  <button type="button" id="prof-download-dossier-btn" class="btn-glass-primary">
+                    <span class="btn-icon">📄</span>
+                    <span>Download Legal Identity Dossier (PDF)</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <!-- 2-Column Responsive Bento Grid -->
+            <div class="profile-bento-grid">
+              
+              <!-- LEFT COLUMN (60% Width) — Core & Legal Details -->
+              <div class="profile-col-left" style="display:flex; flex-direction:column; gap:20px;">
+                
+                <!-- Card 1: Basic Info Card -->
+                <div class="bento-card card-basic-info">
+                  <div class="bento-card-head">
+                    <div>
+                      <div class="bento-card-title">Complainant Legal Identity</div>
+                      <div class="bento-card-sub">Used to identify the complainant in formal police petitions & court filings.</div>
+                    </div>
+                    <span class="bento-tag">Primary</span>
+                  </div>
+
+                  <div class="bento-fields-list">
+                    <!-- Full Name -->
+                    <div class="bento-field-row">
+                      <div class="field-label">Full Legal Name</div>
+                      <div class="field-value-wrap">
+                        <div class="field-val-view">
+                          <strong id="prof-row-name">adarshavg</strong>
+                        </div>
+                        <div class="field-val-edit" style="display:none;">
+                          <input id="prof-name" class="glass-input" placeholder="e.g. Adarsha VG" required />
+                        </div>
+                      </div>
+                    </div>
+
+                    <!-- Email -->
+                    <div class="bento-field-row">
+                      <div class="field-label">Email Address</div>
+                      <div class="field-value-wrap">
+                        <div class="field-val-view">
+                          <span id="prof-row-email">adarshavg26@gmail.com</span>
+                          <span class="verified-pill">✓ Verified</span>
+                        </div>
+                        <div class="field-val-edit" style="display:none;">
+                          <input id="prof-email" type="email" class="glass-input" placeholder="user@domain.com" />
+                        </div>
+                      </div>
+                    </div>
+
+                    <!-- Phone -->
+                    <div class="bento-field-row">
+                      <div class="field-label">Primary Mobile Phone</div>
+                      <div class="field-value-wrap">
+                        <div class="field-val-view">
+                          <span id="prof-row-phone">7795806293</span>
+                        </div>
+                        <div class="field-val-edit" style="display:none;">
+                          <input id="prof-phone" type="tel" class="glass-input" placeholder="+91 98765 43210" />
+                        </div>
+                      </div>
+                    </div>
+
+                    <!-- Emergency Phone -->
+                    <div class="bento-field-row">
+                      <div class="field-label">Emergency Phone</div>
+                      <div class="field-value-wrap">
+                        <div class="field-val-view">
+                          <span id="prof-row-alt-phone" style="color:var(--muted);">Not added</span>
+                          <button type="button" id="btn-add-emergency-pill" class="pill-add-emergency">
+                            + Add Emergency Contact
+                          </button>
+                        </div>
+                        <div class="field-val-edit" style="display:none;">
+                          <input id="prof-alt-phone" type="tel" class="glass-input" placeholder="Alternative contact number" />
+                        </div>
+                      </div>
+                    </div>
                   </div>
                 </div>
+
+                <!-- Card 2: Addresses & Legal Jurisdiction Card -->
+                <div class="bento-card card-jurisdiction">
+                  <div class="bento-card-head">
+                    <div>
+                      <div class="bento-card-title">Addresses & Legal Jurisdiction</div>
+                      <div class="bento-card-sub">Jurisdiction routing for Cyber Crime Police Stations under BNS 2023.</div>
+                    </div>
+                    <button type="button" id="copy-jurisdiction-btn" class="micro-btn-ghost" title="Copy Jurisdiction ID">
+                      📋 Copy Jurisdiction ID
+                    </button>
+                  </div>
+
+                  <div class="bento-fields-list">
+                    <!-- Residential Address -->
+                    <div class="bento-field-row">
+                      <div class="field-label">Residential Address</div>
+                      <div class="field-value-wrap">
+                        <div class="field-val-view">
+                          <span id="prof-row-address">Reva university</span>
+                        </div>
+                        <div class="field-val-edit" style="display:none;">
+                          <textarea id="prof-address" rows="2" class="glass-input" placeholder="#42, 5th Cross, Bengaluru" style="resize:vertical;"></textarea>
+                        </div>
+                      </div>
+                    </div>
+
+                    <!-- City & State -->
+                    <div class="bento-field-row">
+                      <div class="field-label">City & State</div>
+                      <div class="field-value-wrap">
+                        <div class="field-val-view">
+                          <span id="prof-row-city">Bengaluru, Karnataka</span>
+                        </div>
+                        <div class="field-val-edit" style="display:none;">
+                          <input id="prof-city" class="glass-input" placeholder="Bengaluru, Karnataka" />
+                        </div>
+                      </div>
+                    </div>
+
+                    <!-- Nearest Police Station -->
+                    <div class="bento-field-row">
+                      <div class="field-label">Nearest Police Station</div>
+                      <div class="field-value-wrap">
+                        <div class="field-val-view" style="display:flex; align-items:center; gap:6px;">
+                          <span class="station-pin">📍</span>
+                          <span id="prof-row-station">Indiranagar Cyber Crime Station</span>
+                        </div>
+                        <div class="field-val-edit" style="display:none;">
+                          <input id="prof-police-station" class="glass-input" placeholder="Indiranagar Police Station" />
+                        </div>
+                      </div>
+                    </div>
+
+                    <!-- Complainant Standing with Light-sweep shimmer -->
+                    <div class="bento-field-row legal-shimmer-row">
+                      <div class="field-label">Legal Complainant Standing</div>
+                      <div class="field-value-wrap">
+                        <div class="shimmer-badge-wrap">
+                          <span class="shimmer-badge">
+                            <span class="shimmer-sweep"></span>
+                            <span class="badge-icon">⚖️</span>
+                            <span>VERIFIED SECTION 65B IT ACT COMPLAINANT</span>
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
               </div>
 
-              <!-- Complaint Sync Notice & Save Buttons -->
-              <div class="glass-card" style="padding:16px 20px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:14px; border-radius:18px;">
-                <div style="font-size:12.5px; color:var(--muted);">
-                  <strong style="color:#10b981;">✓ Auto-Fill Enabled:</strong> These details will be automatically inserted into the complainant header of every generated cyber crime report.
+              <!-- RIGHT COLUMN (40% Width) — Real-World Safety & Account Trust -->
+              <div class="profile-col-right" style="display:flex; flex-direction:column; gap:20px;">
+                
+                <!-- Card 3: Guardian & SOS Readiness Card -->
+                <div class="bento-card card-guardian-readiness">
+                  <div class="bento-card-head">
+                    <div>
+                      <div class="bento-card-title">Guardian & SOS Readiness</div>
+                      <div class="bento-card-sub">Real-time alert routing & immediate responder network.</div>
+                    </div>
+                    <span class="pulse-indicator"></span>
+                  </div>
+
+                  <div class="guardian-kpi-block">
+                    <div class="kpi-main-stat">
+                      <span class="kpi-icon">🛡️</span>
+                      <div>
+                        <span id="prof-kpi-guardians" class="kpi-number">2 Guardians Linked</span>
+                        <div class="kpi-sub">Telegram & Email sirens armed</div>
+                      </div>
+                    </div>
+                    <button type="button" class="micro-btn-outline" onclick="location.hash='#guardians'">Manage Guardians →</button>
+                  </div>
+
+                  <div class="readiness-toggles-list">
+                    <div class="readiness-item">
+                      <div class="readiness-info">
+                        <strong>Auto-Sync to Police Complaints</strong>
+                        <span>Automatically insert verified complainant details to generated FIR petitions.</span>
+                      </div>
+                      <label class="switch-toggle" title="Toggle Auto-Sync">
+                        <input type="checkbox" id="prof-auto-sync-toggle" checked />
+                        <span class="slider"></span>
+                      </label>
+                    </div>
+
+                    <div class="readiness-item">
+                      <div class="readiness-info">
+                        <strong>Live Location Sharing</strong>
+                        <span id="prof-location-sub">High-accuracy GPS active for responders</span>
+                      </div>
+                      <span class="status-live-loc">
+                        <span class="loc-dot"></span> Active
+                      </span>
+                    </div>
+
+                    <div class="readiness-item">
+                      <div class="readiness-info">
+                        <strong>Proximity Safety Radius</strong>
+                        <span>Instant dispatch to nearby certified community responders</span>
+                      </div>
+                      <span class="glass-pill-sm">30 km Radius</span>
+                    </div>
+                  </div>
                 </div>
-                <div style="display:flex; gap:10px;">
-                  <button type="submit" class="btn btn--primary" style="padding:10px 24px; font-weight:600; font-size:13.5px; border-radius:10px;">Save Profile</button>
-                  <button type="button" class="btn btn--ghost" id="prof-reset-btn" style="padding:10px 16px; font-size:13px; border-radius:10px;">Clear</button>
+
+                <!-- Card 4: Security & Digital Signature Card -->
+                <div class="bento-card card-security-signature">
+                  <div class="bento-card-head">
+                    <div>
+                      <div class="bento-card-title">Security & Digital Signature</div>
+                      <div class="bento-card-sub">Tamper-evident legal hash verification.</div>
+                    </div>
+                    <span class="lock-icon">🔒</span>
+                  </div>
+
+                  <div class="security-items-list">
+                    <div class="security-row">
+                      <span class="sec-label">Authentication</span>
+                      <span class="badge-secure">✓ Session Active (Argon2id)</span>
+                    </div>
+
+                    <div class="security-row">
+                      <span class="sec-label">Last Device Login</span>
+                      <span id="prof-last-login" class="sec-val">Today, 19:25 IST · Bengaluru</span>
+                    </div>
+
+                    <div class="security-row signature-row">
+                      <div class="sig-header">
+                        <span class="sec-label">Digital Signature Token (SHA-256)</span>
+                        <button type="button" id="copy-crypto-token-btn" class="micro-copy-btn" title="Copy Signature Token">Copy</button>
+                      </div>
+                      <div class="crypto-hash-box">
+                        <code id="prof-crypto-token">8f4e2b9c3a1078d4...e901a71e</code>
+                      </div>
+                      <span class="crypto-caption">Cryptographically seals all legal complaints and chain-of-custody logs under Section 65B IT Act.</span>
+                    </div>
+                  </div>
+                </div>
+
+              </div>
+
+            </div>
+
+            <!-- Floating Save Changes Bar (Revealed when editing) -->
+            <div id="prof-floating-save-bar" class="prof-floating-bar" style="display:none;">
+              <div class="floating-bar-inner">
+                <div class="floating-bar-info">
+                  <span class="floating-dot"></span>
+                  <span>Unsaved changes in complainant profile</span>
+                </div>
+                <div class="floating-bar-actions">
+                  <button type="button" id="prof-cancel-edit-btn" class="btn btn--ghost small" style="border-radius:10px;">
+                    Cancel
+                  </button>
+                  <button type="button" id="prof-reset-btn" class="btn btn--ghost small" style="border-radius:10px; display:none;">
+                    Reset
+                  </button>
+                  <button type="submit" id="prof-save-changes-btn" class="btn btn--primary small" style="padding:10px 24px; font-weight:700; border-radius:10px;">
+                    Save Changes
+                  </button>
                 </div>
               </div>
-            </form>
-          </div>
+            </div>
+          </form>
         </div>
       </section>
 
