@@ -260,6 +260,20 @@ def user_for_session(token: str | None) -> dict | None:
     return _format_user(row)
 
 
+def latest_active_user() -> dict | None:
+    """Returns the most recent active user, for trusted local browser extension integrations."""
+    _init()
+    row = db.one(
+        "SELECT u.*, s.expires FROM sessions s JOIN users u ON u.id=s.user_id "
+        "WHERE s.expires > ? ORDER BY s.expires DESC LIMIT 1",
+        time.time()
+    )
+    if row:
+        return _format_user(row)
+    u = db.one("SELECT * FROM users ORDER BY created_at DESC LIMIT 1")
+    return _format_user(u) if u else None
+
+
 def login_or_create_google(email: str, full_name: str = "", sub: str = "") -> dict:
     """Finds or registers a user via Google OAuth2."""
     clean_email = email.strip().lower()

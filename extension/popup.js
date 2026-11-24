@@ -2,29 +2,41 @@ const toggle = document.getElementById("toggle-shield");
 const liveDot = document.getElementById("live-dot");
 const liveText = document.getElementById("live-text");
 const apiStatus = document.getElementById("api-status");
+const userStatus = document.getElementById("user-status");
 const threatCount = document.getElementById("threat-count");
 const testBtn = document.getElementById("test-banner-btn");
+const openKavachBtn = document.getElementById("open-kavach-btn");
 
-chrome.storage.sync.get(["kavachEnabled", "threatCount", "kavachApiUrl"], async (data) => {
+chrome.storage.sync.get(["kavachEnabled", "threatCount"], (data) => {
   const enabled = data.kavachEnabled !== false;
   toggle.checked = enabled;
   updateUI(enabled);
   threatCount.textContent = data.threatCount || 0;
-
   chrome.action.setBadgeText({ text: "" });
+});
 
-  const apiUrl = data.kavachApiUrl || "http://localhost:8000";
-  try {
-    const res = await fetch(`${apiUrl}/health`);
-    if (res.ok) {
-      apiStatus.textContent = "Online (Local API)";
-      apiStatus.style.color = "#10b981";
-    } else {
-      throw new Error();
+// Check user session & backend status from background worker
+chrome.runtime.sendMessage({ type: "GET_KAVACH_SESSION" }, (resp) => {
+  if (resp && resp.ok) {
+    apiStatus.textContent = "Online (Connected)";
+    apiStatus.style.color = "#10b981";
+    if (resp.apiUrl && openKavachBtn) {
+      openKavachBtn.href = resp.apiUrl;
     }
-  } catch {
-    apiStatus.textContent = "Offline (Backend down)";
+    const u = resp.user;
+    if (u && (u.full_name || u.username || u.email)) {
+      const name = u.full_name || u.username || u.email;
+      userStatus.textContent = `${name.slice(0, 18)} (Linked)`;
+      userStatus.style.color = "#a78bfa";
+    } else {
+      userStatus.textContent = "Connected (Ready)";
+      userStatus.style.color = "#10b981";
+    }
+  } else {
+    apiStatus.textContent = "Offline (Backend Down)";
     apiStatus.style.color = "#ef4444";
+    userStatus.textContent = "Not Connected";
+    userStatus.style.color = "#9ca3af";
   }
 });
 
@@ -44,21 +56,20 @@ function updateUI(enabled) {
   }
 }
 
-// Send test message directly to active tab
+// Send scan trigger directly to active tab
 testBtn?.addEventListener("click", () => {
   chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
     if (!tabs || !tabs[0] || !tabs[0].id) return;
     chrome.tabs.sendMessage(tabs[0].id, { action: "TRIGGER_TEST_BANNER" }, (response) => {
       if (chrome.runtime.lastError) {
-        // Tab was opened before extension was loaded or needs a refresh
         chrome.scripting?.executeScript({
           target: { tabId: tabs[0].id },
           func: () => {
-            alert("Please refresh this WhatsApp Web tab (Press F5 or Ctrl+R) so Kavach can connect to it!");
+            alert("Please refresh this WhatsApp Web tab so Kavach can connect to it!");
           },
         });
       } else {
-        window.close(); // Close popup so user sees the banner immediately!
+        window.close(); // Close popup so user sees the result immediately
       }
     });
   });

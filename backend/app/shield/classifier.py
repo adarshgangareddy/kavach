@@ -54,7 +54,8 @@ Only choose a category whose definition is actually met; a vague phrase is not a
 - safe: ordinary conversation with no abuse or risk
 
 risk_score (0-100): 0-39 low, 40-69 medium, 70-100 high. Explicit threats of violence or leaking
-intimate images are high. Slurs or sexual demands combined with knowing where she lives are high.
+intimate images are high (80-100). Imminent physical harm, extreme blackmail/ransom demands with deadlines,
+or coercive extortion threats are critical (95-100), triggering emergency auto-dispatch to guardians.
 Stalking where he knows her home, hostel, college or route AND says he will turn up or wait for her in
 person is high (75+): it is a physical-safety risk.
 severity MUST match the score band.

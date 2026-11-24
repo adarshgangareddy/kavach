@@ -19,8 +19,8 @@
     input:checked + .slider { background-color: #10b981; }
     input:checked + .slider:before { transform: translateX(14px); }
     .stat-row { display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 6px; color: #d1d5db; }
-    .btn { display: block; text-align: center; background: #2563eb; color: #fff; text-decoration: none; padding: 8px; border-radius: 6px; font-size: 12.5px; font-weight: 600; margin-top: 8px; cursor: pointer; border: none; width: 100%; box-sizing: border-box; }
-    .btn:hover { background: #1d4ed8; }
+    .btn { display: block; text-align: center; background: #6366f1; color: #fff; text-decoration: none; padding: 8px; border-radius: 6px; font-size: 12.5px; font-weight: 600; margin-top: 8px; cursor: pointer; border: none; width: 100%; box-sizing: border-box; }
+    .btn:hover { background: #4f46e5; }
     .btn-secondary { background: #27272a; border: 1px solid #3f3f46; color: #e4e4e7; }
     .btn-secondary:hover { background: #3f3f46; }
   </style>
@@ -41,8 +41,12 @@
   </div>
 
   <div class="stat-row">
+    <span>Kavach User:</span>
+    <strong id="user-status" style="color:#a78bfa;">Connecting...</strong>
+  </div>
+  <div class="stat-row">
     <span>Backend Connectivity:</span>
-    <strong id="api-status" style="color:#10b981;">Connected</strong>
+    <strong id="api-status" style="color:#10b981;">Online (Local API)</strong>
   </div>
   <div class="stat-row">
     <span>Threats Flagged:</span>
@@ -50,7 +54,7 @@
   </div>
 
   <button type="button" class="btn btn-secondary" id="test-banner-btn">⚡ Scan Active Chat Now</button>
-  <a class="btn" href="http://localhost:8000" target="_blank" rel="noopener">Open Kavach Safety Center ↗</a>
+  <a class="btn" id="open-kavach-btn" href="http://127.0.0.1:8000" target="_blank" rel="noopener">Open Kavach Safety Center ↗</a>
 
   <script src="popup.js"></script>
 </body>

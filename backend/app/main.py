@@ -136,6 +136,10 @@ def require_user(request: Request = None) -> str:
                 u = accounts.user_for_id(user_header)
                 if u:
                     uid = u["id"]
+        if not uid and request.headers.get("X-Kavach-Client") == "extension":
+            latest = accounts.latest_active_user()
+            if latest:
+                uid = latest["id"]
         if uid:
             context.set_current(uid)
     if not uid:
@@ -748,6 +752,10 @@ def _resolve_request_uid(request: Request) -> str | None:
                 u = accounts.user_for_id(user_header)
                 if u:
                     uid = u["id"]
+        if not uid and request.headers.get("X-Kavach-Client") == "extension":
+            latest = accounts.latest_active_user()
+            if latest:
+                uid = latest["id"]
         if uid:
             context.set_current(uid)
     return uid
@@ -1007,15 +1015,46 @@ async def people_siren(pid: str, request: Request):
 
 @app.post("/sos/auto-alert")
 async def sos_auto_alert(req: AutoAlertRequest, request: Request):
-    """Automatically dispatches critical threat warnings with live GPS & LLM guardian advice when threat score >= 90."""
+    """Automatically dispatches critical threat warnings with live GPS & LLM guardian advice when threat score >= 95."""
+    user_id = context.current()
     raw_token = request.cookies.get(SESSION_COOKIE)
-    curr_user = accounts.user_for_session(raw_token) if raw_token else None
-    user_name = (curr_user.get("full_name") or curr_user.get("username") if curr_user else None) or "Your ward"
-    user_id = curr_user["id"] if curr_user else None
+    if not raw_token:
+        auth_h = request.headers.get("Authorization", "")
+        if auth_h.startswith("Bearer "):
+            raw_token = auth_h[7:].strip()
+        elif "X-Kavach-Token" in request.headers:
+            raw_token = request.headers["X-Kavach-Token"].strip()
 
-    contacts = people.list_kind("contact", owner=user_id) if user_id else people.list_kind("contact")
+    curr_user = accounts.user_for_session(raw_token) if raw_token else None
+    if not curr_user and user_id:
+        curr_user = accounts.user_for_id(user_id)
+    if not curr_user:
+        curr_user = accounts.latest_active_user()
+
+    if curr_user:
+        user_id = curr_user["id"]
+        context.set_current(user_id)
+        user_name = curr_user.get("full_name") or curr_user.get("username") or "Your ward"
+    else:
+        user_name = "Your ward"
+
+    contacts = people.list_kind("contact", owner=user_id) if user_id else []
+    if not contacts and curr_user:
+        u_email = (curr_user.get("email") or "").strip().lower()
+        if u_email:
+            contacts = people.list_kind("contact", owner=u_email)
     if not contacts:
         contacts = people.list_kind("contact")
+
+    # Record active emergency SOS in Kavach system so dashboards and maps reflect it
+    sos_id = None
+    if user_id:
+        try:
+            loc = {"lat": req.lat, "lng": req.lng, "accuracy": 10.0} if req.lat is not None and req.lng is not None else None
+            res = _sos_call(sos.trigger, user_id, loc, "auto_threat_95", "browser_extension", _public_base(request))
+            sos_id = res.get("sos_id")
+        except Exception as e:
+            log.warning("Could not create SOS session for auto-alert: %s", e)
 
     advice = req.guardian_advice or (
         "Approach your ward gently and calmly without anger, panic, or victim-blaming. "

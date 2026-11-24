@@ -1,20 +1,25 @@
 /**
  * Kavach Live Chat Shield — Content Script for WhatsApp Web & Telegram Web
- * Automatically reads active chat messages via DOM MutationObserver,
- * streams them via the background service worker to the local Groq-powered Kavach API,
- * and displays real-time threat warnings with one-click tamper-proof Vault sealing.
+ * Automatically detects when a user opens or switches a chat,
+ * extracts incoming conversation messages reliably across modern DOM structures,
+ * analyzes threats in real-time with Groq AI,
+ * automatically dispatches emergency SOS alerts with GPS to guardians when Threat Score >= 95%,
+ * and presents full protection options when Threat Score is under 95%.
  */
 
 (() => {
-  let activePlatform = location.host.includes("whatsapp.com") ? "whatsapp" : "telegram";
+  const activePlatform = location.host.includes("whatsapp.com") ? "whatsapp" : "telegram";
   let lastScannedFingerprint = "";
   let lastContactName = "";
+  let lastMessageCount = 0;
   let autoAlertDispatched = new Set();
   let scanDebounceTimer = null;
   let isProtectionEnabled = true;
+  let currentBackendUrl = "http://127.0.0.1:8000";
 
-  chrome.storage?.sync?.get(["kavachEnabled"], (res) => {
+  chrome.storage?.sync?.get(["kavachEnabled", "kavachApiUrl"], (res) => {
     if (res?.kavachEnabled !== undefined) isProtectionEnabled = res.kavachEnabled;
+    if (res?.kavachApiUrl) currentBackendUrl = res.kavachApiUrl;
   });
 
   function getGeolocation(cb) {
@@ -33,58 +38,133 @@
     badge.id = "kavach-live-badge";
     badge.className = "kavach-status-badge";
     badge.innerHTML = `<span class="kavach-status-dot"></span><span>🛡️ Kavach Active</span>`;
-    badge.title = "Kavach Live Shield is active. Click to analyze this chat with Groq AI!";
+    badge.title = "Kavach Live Shield is active. Monitoring chats for harassment, blackmail, and safety threats.";
     badge.onclick = (e) => {
       e.stopPropagation();
-      badge.innerHTML = `<span class="kavach-status-dot" style="background:#f59e0b;"></span><span>🔄 Reading chat...</span>`;
+      badge.innerHTML = `<span class="kavach-status-dot" style="background:#f59e0b;"></span><span>⚡ Scanning Chat...</span>`;
       performScan(true);
     };
     document.body.appendChild(badge);
   }
 
-  // Extract messages from WhatsApp Web DOM
-  function parseWhatsAppMessages() {
-    const main = document.querySelector("#main, div[role='region'], div[data-testid='conversation-panel-wrapper'], div[tabindex='-1']") || document.body;
-
-    const contactHeader = document.querySelector(
-      "#main header span[dir='auto'], #main header span[title], #main header h2, header div[role='button'] span, span[data-testid='conversation-info-header-chat-title']"
+  function isIgnoredHeaderString(str) {
+    if (!str) return true;
+    const s = str.trim().toLowerCase();
+    return (
+      s === "online" ||
+      s.startsWith("typing") ||
+      s.startsWith("last seen") ||
+      s.includes("click here") ||
+      s.includes("tap here") ||
+      s.length < 2
     );
-    const contactName = contactHeader?.textContent?.trim() || "Sender";
+  }
 
-    // Support all modern WhatsApp Web row structures
+  // Detect active contact name in WhatsApp Web header
+  function getWhatsAppActiveContact() {
+    const header = document.querySelector(
+      "#main header, div[data-testid='conversation-header'], div[data-testid='conversation-panel-wrapper'] header, header"
+    );
+    if (!header) return null;
+
+    // 1. Explicit chat title data-testid
+    const testIdTitle = header.querySelector("span[data-testid='conversation-info-header-chat-title']");
+    if (testIdTitle && testIdTitle.textContent) {
+      const val = testIdTitle.textContent.trim();
+      if (!isIgnoredHeaderString(val)) return val;
+    }
+
+    // 2. Any span with title attribute inside header
+    const titleSpans = header.querySelectorAll("span[title], div[role='button'] span[title]");
+    for (const span of titleSpans) {
+      const title = span.getAttribute("title")?.trim();
+      if (title && !isIgnoredHeaderString(title)) return title;
+    }
+
+    // 3. Header heading or dir=auto text
+    const headings = header.querySelectorAll("h2, div[role='heading'], span[dir='auto'], ._ao3e");
+    for (const el of headings) {
+      const text = el.textContent?.trim();
+      if (text && !isIgnoredHeaderString(text)) return text;
+    }
+
+    return "Sender";
+  }
+
+  // Extract clean text from a message row
+  function extractWhatsAppMessageText(rowNode) {
+    // 1. Common selectable text wrappers
+    const textEl = rowNode.querySelector(
+      ".selectable-text, span.selectable-text, .copyable-text, span.copyable-text, span[dir='ltr'], span._ao3e, span[data-lexical-text='true'], div[data-pre-plain-text]"
+    );
+    let text = textEl ? (textEl.innerText || textEl.textContent || "").trim() : "";
+
+    // 2. Fallback: inspect row bubble excluding timestamps & status icons
+    if (!text) {
+      const clone = rowNode.cloneNode(true);
+      clone.querySelectorAll(
+        "span[data-testid='msg-time'], [data-testid='status-check'], [data-testid='status-dblcheck'], [data-testid='msg-meta'], button, svg"
+      ).forEach((el) => el.remove());
+      text = (clone.innerText || clone.textContent || "").trim();
+    }
+
+    // Filter out WhatsApp system info banners
+    if (
+      !text ||
+      text.length < 2 ||
+      text.includes("Messages and calls are end-to-end encrypted") ||
+      text.includes("Security code changed") ||
+      text.includes("added you to this group") ||
+      text.includes("is a contact") ||
+      text.includes("waiting for this message")
+    ) {
+      return null;
+    }
+
+    return text;
+  }
+
+  // Determine if a message row is outgoing (sent by user) or incoming
+  function isWhatsAppOutgoing(rowNode) {
+    const dataId = rowNode.getAttribute("data-id") || rowNode.closest("div[data-id]")?.getAttribute("data-id") || "";
+    if (dataId.startsWith("true_")) return true;
+    if (dataId.startsWith("false_")) return false;
+
+    const cls = (rowNode.className || "") + " " + (rowNode.parentElement?.className || "");
+    if (cls.includes("message-out")) return true;
+    if (cls.includes("message-in")) return false;
+
+    if (rowNode.querySelector("[data-testid='msg-check'], [data-testid='msg-dblcheck']")) return true;
+    return false;
+  }
+
+  // Extract messages from modern WhatsApp Web DOM
+  function parseWhatsAppMessages() {
+    const contactName = getWhatsAppActiveContact();
+    if (!contactName) return null;
+
+    // Find all message containers
     const rows = document.querySelectorAll(
-      "#main div[role='row'], div[data-testid='msg-container'], .message-in, .message-out, div[data-id]"
+      "#main div[data-testid='msg-container'], #main div[role='row'], div[data-testid='msg-container'], div[role='row'], div.message-in, div.message-out, div[class*='message-in'], div[class*='message-out'], div[data-id]"
     );
     if (!rows.length) return null;
 
     const messages = [];
+    const seenTexts = new Set();
+
     rows.forEach((node, idx) => {
-      const dataId = node.getAttribute("data-id") || node.closest("div[data-id]")?.getAttribute("data-id") || "";
-      const isOut = node.classList.contains("message-out") || dataId.startsWith("true_");
+      const text = extractWhatsAppMessageText(node);
+      if (!text) return;
 
-      const textNode = node.querySelector(".selectable-text, .copyable-text, span._ao3e, div[data-pre-plain-text]") || node;
-      let text = "";
-      if (textNode.classList?.contains("selectable-text") || textNode.classList?.contains("_ao3e")) {
-        text = textNode.textContent?.trim();
-      } else {
-        const span = textNode.querySelector("span.selectable-text, span._ao3e, div.copyable-text");
-        text = span ? span.textContent?.trim() : textNode.textContent?.trim();
-      }
-
-      // Filter out system banners
-      if (
-        !text ||
-        text.length < 2 ||
-        text.includes("end-to-end encrypted") ||
-        text.includes("Security code changed") ||
-        text.includes("Messages and calls are end-to-end")
-      ) {
-        return;
-      }
+      const isOut = isWhatsAppOutgoing(node);
+      const sender = isOut ? "me" : contactName;
+      const dedupeKey = `${sender}::${text}`;
+      if (seenTexts.has(dedupeKey)) return;
+      seenTexts.add(dedupeKey);
 
       messages.push({
-        id: `wa-${idx}-${text.slice(0, 15).replace(/[^a-zA-Z0-9]/g, "_")}`,
-        sender: isOut ? "me" : contactName,
+        id: `wa-${idx}-${text.slice(0, 16).replace(/[^a-zA-Z0-9]/g, "_")}`,
+        sender: sender,
         text: text,
         timestamp: "",
       });
@@ -100,8 +180,6 @@
 
   // Extract messages from Telegram Web DOM
   function parseTelegramMessages() {
-    const main = document.querySelector(".messages-container, .bubbles-group, .chat-info, .history, .bubbles") || document.body;
-
     const header = document.querySelector(".chat-info .peer-title, .top .name, .chat-title, .user-title");
     const contactName = header?.textContent?.trim() || "Sender";
 
@@ -113,10 +191,10 @@
       const isOut = node.classList.contains("is-out") || node.classList.contains("own");
       const textNode = node.querySelector(".message-content, .text-content, .bubble-content, .message");
       const text = textNode?.textContent?.trim();
-      if (!text) return;
+      if (!text || text.length < 2) return;
 
       messages.push({
-        id: `tg-${idx}-${text.slice(0, 15).replace(/[^a-zA-Z0-9]/g, "_")}`,
+        id: `tg-${idx}-${text.slice(0, 16).replace(/[^a-zA-Z0-9]/g, "_")}`,
         sender: isOut ? "me" : contactName,
         text: text,
         timestamp: "",
@@ -131,7 +209,7 @@
     };
   }
 
-  // Analyze active chat via background worker
+  // Execute scan of currently open chat
   function performScan(force = false) {
     if (!isProtectionEnabled) return;
 
@@ -143,39 +221,41 @@
         badge.innerHTML = `<span class="kavach-status-dot" style="background:#ef4444;"></span><span>⚠️ Open a chat to scan</span>`;
         setTimeout(() => {
           badge.innerHTML = `<span class="kavach-status-dot"></span><span>🛡️ Kavach Active</span>`;
-        }, 2500);
+        }, 2200);
       }
       return;
     }
 
-    // Chat switch detection: when the user switches to a different contact in WhatsApp
+    // Detect chat switch
     if (chatData.contact_name && chatData.contact_name !== lastContactName) {
       lastContactName = chatData.contact_name;
       lastScannedFingerprint = "";
+      lastMessageCount = 0;
       removeThreatBanner();
       if (badge) {
-        badge.innerHTML = `<span class="kavach-status-dot" style="background:#f59e0b;"></span><span>🔄 Analyzing ${chatData.contact_name}...</span>`;
+        badge.innerHTML = `<span class="kavach-status-dot" style="background:#f59e0b;"></span><span>⚡ Scanning ${chatData.contact_name}...</span>`;
       }
     }
 
     const incoming = chatData.messages.filter((m) => m.sender !== "me");
     if (!incoming.length) {
       removeThreatBanner();
-      if (force && badge) {
+      if (badge) {
         badge.innerHTML = `<span class="kavach-status-dot" style="background:#10b981;"></span><span>✓ ${chatData.contact_name}: Safe</span>`;
-        setTimeout(() => {
-          badge.innerHTML = `<span class="kavach-status-dot"></span><span>🛡️ Kavach Active</span>`;
-        }, 2500);
       }
       return;
     }
 
+    // Fingerprint based on contact and recent incoming text
     const fingerprint = `${chatData.contact_name}::` + incoming.slice(-4).map((m) => m.text).join("::");
-    if (!force && fingerprint === lastScannedFingerprint) return;
+    if (!force && fingerprint === lastScannedFingerprint && incoming.length === lastMessageCount) {
+      return;
+    }
     lastScannedFingerprint = fingerprint;
+    lastMessageCount = incoming.length;
 
-    if (force && badge) {
-      badge.innerHTML = `<span class="kavach-status-dot" style="background:#6366f1;"></span><span>⚡ Groq AI Checking...</span>`;
+    if (badge) {
+      badge.innerHTML = `<span class="kavach-status-dot" style="background:#6366f1;"></span><span>🛡️ AI Analyzing Chat...</span>`;
     }
 
     chrome.runtime?.sendMessage?.(
@@ -189,8 +269,8 @@
       },
       (response) => {
         if (!response || !response.ok) {
-          if (force && badge) {
-            badge.innerHTML = `<span class="kavach-status-dot" style="background:#ef4444;"></span><span>⚠️ Kavach API Offline</span>`;
+          if (badge) {
+            badge.innerHTML = `<span class="kavach-status-dot" style="background:#ef4444;"></span><span>⚠️ Kavach Offline</span>`;
             setTimeout(() => {
               badge.innerHTML = `<span class="kavach-status-dot"></span><span>🛡️ Kavach Active</span>`;
             }, 3000);
@@ -198,49 +278,63 @@
           return;
         }
 
+        if (response.apiUrl) currentBackendUrl = response.apiUrl;
         const verdict = response.data;
+
+        // Threat Flagged: Risk score >= 50 and category not safe
         if (verdict.severity !== "low" && verdict.category !== "safe" && verdict.risk_score >= 50) {
-          // Automatic Alert Dispatch when Threat Score >= 90
+          const isCritical = verdict.risk_score >= 95;
           let isAutoDispatched = false;
-          if (verdict.risk_score >= 90 && !autoAlertDispatched.has(fingerprint)) {
-            autoAlertDispatched.add(fingerprint);
-            isAutoDispatched = true;
-            getGeolocation((loc) => {
-              chrome.runtime?.sendMessage?.({
-                type: "TRIGGER_AUTO_ALERT",
-                payload: {
-                  category: verdict.category,
-                  risk_score: verdict.risk_score,
-                  reason: verdict.reason,
-                  sender: chatData.contact_name,
-                  guardian_advice: verdict.guardian_advice,
-                  lat: loc?.lat,
-                  lng: loc?.lng,
-                },
-              }, (alertResp) => {
-                console.log("Kavach Auto-Alert Dispatched:", alertResp);
+
+          // Requirement: If threat level >= 95%, automatically dispatch emergency alert to guardians
+          if (isCritical) {
+            if (!autoAlertDispatched.has(fingerprint)) {
+              autoAlertDispatched.add(fingerprint);
+              isAutoDispatched = true;
+
+              getGeolocation((loc) => {
+                chrome.runtime?.sendMessage?.(
+                  {
+                    type: "TRIGGER_AUTO_ALERT",
+                    payload: {
+                      category: verdict.category,
+                      risk_score: verdict.risk_score,
+                      reason: verdict.reason,
+                      sender: chatData.contact_name,
+                      guardian_advice: verdict.guardian_advice,
+                      lat: loc?.lat,
+                      lng: loc?.lng,
+                    },
+                  },
+                  (alertResp) => {
+                    console.log("Kavach Auto-Alert Dispatched (95%+ Critical Threat):", alertResp);
+                  }
+                );
               });
-            });
-          } else if (autoAlertDispatched.has(fingerprint)) {
-            isAutoDispatched = true;
+            } else {
+              isAutoDispatched = true;
+            }
           }
 
           displayThreatBanner(verdict, chatData, isAutoDispatched);
+
           if (badge) {
-            badge.innerHTML = `<span class="kavach-status-dot" style="background:#ef4444;"></span><span>🚨 Threat Flagged (${verdict.risk_score})</span>`;
+            badge.innerHTML = `<span class="kavach-status-dot" style="background:#ef4444;"></span><span>🚨 Threat: ${verdict.risk_score}% (${isCritical ? "95%+ Critical" : "Review"})</span>`;
           }
+
           chrome.runtime?.sendMessage?.({
             type: "THREAT_DETECTED",
             category: verdict.category,
             severity: verdict.severity,
+            risk_score: verdict.risk_score,
             reason: verdict.reason,
             sender: chatData.contact_name,
           });
         } else {
-          // Safely remove banner if conversation is clean
+          // Chat is safe
           removeThreatBanner();
           if (badge) {
-            badge.innerHTML = `<span class="kavach-status-dot" style="background:#10b981;"></span><span>🟢 ${chatData.contact_name}: Safe · 0 Threats</span>`;
+            badge.innerHTML = `<span class="kavach-status-dot" style="background:#10b981;"></span><span>✓ ${chatData.contact_name}: Safe</span>`;
             setTimeout(() => {
               badge.innerHTML = `<span class="kavach-status-dot"></span><span>🛡️ Kavach Active</span>`;
             }, 3500);
@@ -250,96 +344,181 @@
     );
   }
 
-  // Display high-visibility fixed banner
+  // Display high-visibility fixed safety banner
   function displayThreatBanner(verdict, chatData, isAutoDispatched = false) {
-    let existing = document.getElementById("kavach-threat-banner");
-    if (!existing) {
-      existing = document.createElement("div");
-      existing.id = "kavach-threat-banner";
-      existing.className = "kavach-shield-banner";
-      document.body.appendChild(existing);
+    let banner = document.getElementById("kavach-threat-banner");
+    if (!banner) {
+      banner = document.createElement("div");
+      banner.id = "kavach-threat-banner";
+      banner.className = "kavach-shield-banner";
+      document.body.appendChild(banner);
     }
 
-    const categoryLabel = (verdict.category || "THREAT").replace(/_/g, " ").toUpperCase();
+    const categoryLabel = (verdict.category || "SAFETY THREAT").replace(/_/g, " ").toUpperCase();
     const senderName = chatData.contact_name || "Sender";
+    const isCritical = verdict.risk_score >= 95;
 
-    const autoAlertHtml = isAutoDispatched || verdict.risk_score >= 90
-      ? `<div style="background:rgba(239, 68, 68, 0.2); border:1px solid rgba(239, 68, 68, 0.5); padding:8px 12px; border-radius:6px; margin-top:8px; font-size:12px; font-weight:600; color:#fca5a5; display:flex; align-items:center; gap:8px;">
-          <span>⚡</span>
-          <span><strong>AUTO-ALERT DISPATCHED:</strong> Critical Threat Score ${verdict.risk_score}/100. Emergency alert with live GPS coordinates and supportive parental guidance was automatically sent to your guardians via Telegram and Email.</span>
-        </div>`
-      : "";
-
-    const sosBtnText = isAutoDispatched || verdict.risk_score >= 90
-      ? "✓ SOS Dispatched to Guardians"
-      : "🚨 Trigger SOS to Guardians";
-
-    existing.innerHTML = `
+    // Header badge & score display
+    const badgeClass = isCritical ? "kavach-threat-badge" : "kavach-threat-badge kavach-threat-warn";
+    const headerHtml = `
       <div class="kavach-banner-top">
-        <span class="kavach-threat-badge">🚨 KAVACH SHIELD: ${categoryLabel}</span>
-        <span class="kavach-risk-score">Threat Score: ${verdict.risk_score}/100 (${(verdict.severity || "HIGH").toUpperCase()})</span>
-      </div>
-      <div class="kavach-banner-body">
-        <strong>Harassment / Extortion Warning: Threat detected from ${senderName}:</strong>
-        <br/><span style="opacity:0.95; font-size:12.5px; margin-top:4px; display:inline-block;">${verdict.reason}</span>
-        ${autoAlertHtml}
-      </div>
-      <div class="kavach-banner-acts">
-        <button type="button" class="kavach-btn" id="kavach-act-vault">🔒 Save Evidence to Vault</button>
-        <button type="button" class="kavach-btn kavach-btn-sos" id="kavach-act-sos">${sosBtnText}</button>
-        <button type="button" class="kavach-btn" id="kavach-act-dismiss">Dismiss</button>
+        <span class="${badgeClass}">${isCritical ? "🚨 CRITICAL THREAT DETECTED" : "⚠️ SAFETY THREAT DETECTED"}: ${categoryLabel}</span>
+        <span class="kavach-risk-score">Threat Level: ${verdict.risk_score}% (${(verdict.severity || "HIGH").toUpperCase()})</span>
       </div>
     `;
 
+    // Body content: Auto-alert info for 95%+, or Options explanation for < 95%
+    let bodyHtml = `
+      <div class="kavach-banner-body">
+        <strong>Harassment & Coercion Alert from ${senderName}:</strong>
+        <div style="margin-top:4px; opacity:0.95; font-size:12.5px;">${verdict.reason}</div>
+    `;
+
+    if (isCritical || isAutoDispatched) {
+      bodyHtml += `
+        <div class="kavach-auto-dispatched-box">
+          <span style="font-size:16px;">⚡</span>
+          <span><strong>EMERGENCY ALERT SENT (Threat Level ${verdict.risk_score}% &ge; 95%):</strong> An emergency SOS alert with live GPS coordinates and supportive guidance was automatically dispatched to your connected Kavach guardians via Telegram and Email.</span>
+        </div>
+      `;
+    } else {
+      bodyHtml += `
+        <div class="kavach-options-info">
+          <span>ℹ️ <strong>Threat level is ${verdict.risk_score}% (under 95% auto-dispatch threshold).</strong> Full safety options are available below:</span>
+        </div>
+      `;
+    }
+    bodyHtml += `</div>`;
+
+    // Action buttons
+    let actsHtml = `<div class="kavach-banner-acts">`;
+    if (isCritical || isAutoDispatched) {
+      actsHtml += `
+        <button type="button" class="kavach-btn kavach-btn-sos" id="kavach-act-sos-status">✓ Emergency Alert Active</button>
+        <button type="button" class="kavach-btn" id="kavach-act-vault">🔒 Save Evidence to Vault</button>
+        <button type="button" class="kavach-btn" id="kavach-act-complaint">⚖️ View Legal Draft</button>
+        <button type="button" class="kavach-btn" id="kavach-act-dismiss">Dismiss</button>
+      `;
+    } else {
+      actsHtml += `
+        <button type="button" class="kavach-btn kavach-btn-sos-manual" id="kavach-act-sos-manual">🚨 Send Emergency Alert to Guardians</button>
+        <button type="button" class="kavach-btn" id="kavach-act-vault">🔒 Save Evidence to Vault</button>
+        <button type="button" class="kavach-btn" id="kavach-act-complaint">⚖️ Draft Legal Complaint</button>
+        <button type="button" class="kavach-btn" id="kavach-act-dismiss">Dismiss</button>
+      `;
+    }
+    actsHtml += `</div>`;
+
+    banner.innerHTML = headerHtml + bodyHtml + actsHtml;
+
+    // Save Evidence to Vault action
     const vaultBtn = document.getElementById("kavach-act-vault");
-    vaultBtn.onclick = () => {
-      vaultBtn.disabled = true;
-      vaultBtn.textContent = "⏳ Sealing Evidence in Vault...";
+    if (vaultBtn) {
+      vaultBtn.onclick = () => {
+        vaultBtn.disabled = true;
+        vaultBtn.textContent = "⏳ Sealing Evidence...";
 
-      const vaultPayload = {
-        platform: chatData.platform,
-        conversation: senderName,
-        messages: chatData.messages.map((m) => ({
-          ref: m.id,
-          sender: m.sender,
-          text: m.text,
-          time: m.timestamp || "",
-          flagged: m.sender !== "me",
-        })),
-        analysis: verdict,
-        client_captured_at: new Date().toISOString(),
-        incident_date: new Date().toISOString().slice(0, 10),
-      };
+        const vaultPayload = {
+          platform: chatData.platform,
+          conversation: senderName,
+          messages: chatData.messages.map((m) => ({
+            ref: m.id,
+            sender: m.sender,
+            text: m.text,
+            time: m.timestamp || "",
+            flagged: m.sender !== "me",
+          })),
+          analysis: verdict,
+          client_captured_at: new Date().toISOString(),
+          incident_date: new Date().toISOString().slice(0, 10),
+        };
 
-      chrome.runtime?.sendMessage?.(
-        {
-          type: "SAVE_TO_VAULT",
-          payload: vaultPayload,
-        },
-        (resp) => {
-          if (resp && resp.ok) {
-            vaultBtn.textContent = "✓ Sealed in Vault!";
-            vaultBtn.style.background = "#10b981";
-            vaultBtn.style.borderColor = "#10b981";
-            setTimeout(() => {
-              window.open("http://localhost:8000/index.html#vault", "_blank");
-            }, 600);
-          } else {
-            vaultBtn.disabled = false;
-            vaultBtn.textContent = "⚠️ Save Failed - Retry";
-            console.error("Kavach Vault error:", resp?.error);
+        chrome.runtime?.sendMessage?.(
+          {
+            type: "SAVE_TO_VAULT",
+            payload: vaultPayload,
+          },
+          (resp) => {
+            if (resp && resp.ok) {
+              vaultBtn.textContent = "✓ Sealed in Vault!";
+              vaultBtn.style.background = "#10b981";
+              vaultBtn.style.borderColor = "#10b981";
+              const targetUrl = resp.apiUrl || currentBackendUrl;
+              setTimeout(() => {
+                window.open(`${targetUrl}/index.html#vault`, "_blank");
+              }, 600);
+            } else {
+              vaultBtn.disabled = false;
+              vaultBtn.textContent = "⚠️ Save Failed - Retry";
+            }
           }
-        }
-      );
-    };
+        );
+      };
+    }
 
-    document.getElementById("kavach-act-sos").onclick = () => {
-      window.open("http://localhost:8000/index.html#guardians", "_blank");
-    };
+    // Manual SOS Alert dispatch (for threats < 95%)
+    const manualSosBtn = document.getElementById("kavach-act-sos-manual");
+    if (manualSosBtn) {
+      manualSosBtn.onclick = () => {
+        manualSosBtn.disabled = true;
+        manualSosBtn.textContent = "⚡ Dispatching Alert...";
 
-    document.getElementById("kavach-act-dismiss").onclick = () => {
-      existing.remove();
-    };
+        getGeolocation((loc) => {
+          chrome.runtime?.sendMessage?.(
+            {
+              type: "TRIGGER_AUTO_ALERT",
+              payload: {
+                category: verdict.category,
+                risk_score: verdict.risk_score,
+                reason: verdict.reason,
+                sender: senderName,
+                guardian_advice: verdict.guardian_advice,
+                lat: loc?.lat,
+                lng: loc?.lng,
+              },
+            },
+            (alertResp) => {
+              if (alertResp && alertResp.ok) {
+                manualSosBtn.textContent = "✓ Sent to Guardians!";
+                manualSosBtn.style.background = "#10b981";
+                manualSosBtn.style.borderColor = "#10b981";
+                const targetUrl = alertResp.apiUrl || currentBackendUrl;
+                setTimeout(() => {
+                  window.open(`${targetUrl}/index.html#guardians`, "_blank");
+                }, 800);
+              } else {
+                manualSosBtn.disabled = false;
+                manualSosBtn.textContent = "⚠️ Retry Sending Alert";
+              }
+            }
+          );
+        });
+      };
+    }
+
+    // View Active SOS action (for 95%+)
+    const statusSosBtn = document.getElementById("kavach-act-sos-status");
+    if (statusSosBtn) {
+      statusSosBtn.onclick = () => {
+        window.open(`${currentBackendUrl}/index.html#guardians`, "_blank");
+      };
+    }
+
+    // Legal Complaint drafting action
+    const complaintBtn = document.getElementById("kavach-act-complaint");
+    if (complaintBtn) {
+      complaintBtn.onclick = () => {
+        window.open(`${currentBackendUrl}/index.html#safetyspace`, "_blank");
+      };
+    }
+
+    // Dismiss banner action
+    const dismissBtn = document.getElementById("kavach-act-dismiss");
+    if (dismissBtn) {
+      dismissBtn.onclick = () => {
+        banner.remove();
+      };
+    }
   }
 
   function removeThreatBanner() {
@@ -348,37 +527,61 @@
   }
 
   // Listen for direct messages from extension popup
-  chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+  chrome.runtime?.onMessage?.addListener((request, sender, sendResponse) => {
     if (request.action === "TRIGGER_TEST_BANNER") {
       performScan(true);
       sendResponse({ ok: true });
     }
   });
 
-  // Observe DOM changes and sidebar chat clicks
-  function setupObserver() {
+  // Watch for active chat changes and sidebar interactions
+  function setupChatWatchers() {
+    // 1. Fast triggers on sidebar contact clicks or searches
+    document.addEventListener("click", (e) => {
+      const isChatClick = e.target.closest(
+        "#pane-side, div[role='listitem'], div[data-testid='cell-frame-container'], div[data-testid='chat-list-item'], div[data-testid='chat'], header, div[role='button']"
+      );
+      if (isChatClick) {
+        // Run progressive scans as WhatsApp renders the messages
+        setTimeout(() => performScan(true), 300);
+        setTimeout(() => performScan(true), 800);
+        setTimeout(() => performScan(false), 1600);
+      }
+    });
+
+    // 2. Keyboard chat switching (Arrow keys / Enter in search)
+    document.addEventListener("keyup", (e) => {
+      if (e.key === "Enter" || e.key === "ArrowDown" || e.key === "ArrowUp") {
+        setTimeout(() => performScan(true), 400);
+      }
+    });
+
+    // 3. Heartbeat chat watcher (checks every 750ms if active chat or messages changed)
+    setInterval(() => {
+      const activeContact = activePlatform === "whatsapp" ? getWhatsAppActiveContact() : "Telegram";
+      if (activeContact && activeContact !== "Sender" && activeContact !== lastContactName) {
+        performScan(true);
+      }
+    }, 750);
+
+    // 4. MutationObserver for DOM changes with fast 350ms debounce
     const observer = new MutationObserver(() => {
       clearTimeout(scanDebounceTimer);
-      scanDebounceTimer = setTimeout(() => performScan(false), 1200);
+      scanDebounceTimer = setTimeout(() => performScan(false), 350);
     });
 
     observer.observe(document.body, { childList: true, subtree: true });
 
-    // Instantly scan when user clicks any contact in the left conversation list
-    document.addEventListener("click", (e) => {
-      if (e.target.closest("#pane-side, div[role='listitem'], div[data-testid='cell-frame-container'], header")) {
-        setTimeout(() => performScan(true), 600);
-      }
-    });
-
     injectStatusBadge();
-    // Run an initial scan after loading
-    setTimeout(() => performScan(true), 1500);
+
+    // Initial scans after page load
+    setTimeout(() => performScan(true), 1200);
+    setTimeout(() => performScan(false), 2500);
   }
 
   if (document.readyState === "loading") {
-    document.addEventListener("DOMContentLoaded", setupObserver);
+    document.addEventListener("DOMContentLoaded", setupChatWatchers);
   } else {
-    setupObserver();
+    setupChatWatchers();
   }
 })();
