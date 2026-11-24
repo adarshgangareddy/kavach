@@ -12,146 +12,212 @@ chrome.runtime.onInstalled.addListener(() => {
   });
 });
 
-// Retrieve the session token from Kavach cookies (supports both 127.0.0.1 and localhost)
+// Safely retrieve the Kavach session token from cookies
 async function getKavachAuth() {
   return new Promise((resolve) => {
-    if (!chrome.cookies) return resolve({ token: null, host: null });
-    chrome.cookies.getAll({ name: "kavach_session" }, (cookies) => {
-      if (cookies && cookies.length > 0) {
-        cookies.sort((a, b) => (b.expirationDate || 0) - (a.expirationDate || 0));
-        const cookie = cookies[0];
-        const domain = (cookie.domain || "").replace(/^\./, "");
-        const host = domain.includes("127.0.0.1") ? "http://127.0.0.1:8000" : "http://localhost:8000";
-        return resolve({ token: cookie.value, host: host });
+    try {
+      if (!chrome.cookies) {
+        return resolve({ token: null, host: null });
       }
+      // Check 127.0.0.1 first (default local address)
+      chrome.cookies.get({ url: "http://127.0.0.1:8000", name: "kavach_session" }, (c1) => {
+        if (c1 && c1.value) {
+          return resolve({ token: c1.value, host: "http://127.0.0.1:8000" });
+        }
+        // Then check localhost
+        chrome.cookies.get({ url: "http://localhost:8000", name: "kavach_session" }, (c2) => {
+          if (c2 && c2.value) {
+            return resolve({ token: c2.value, host: "http://localhost:8000" });
+          }
+          // Fallback to storage
+          chrome.storage.local.get(["kavachToken", "kavachApiUrl"], (s) => {
+            resolve({ token: s?.kavachToken || null, host: s?.kavachApiUrl || null });
+          });
+        });
+      });
+    } catch (err) {
+      console.warn("getKavachAuth error:", err);
       resolve({ token: null, host: null });
-    });
+    }
   });
 }
 
-// Find working API endpoint
+// Find working API endpoint with timeout guard
 async function resolveApiBase() {
-  const auth = await getKavachAuth();
-  const cfg = await new Promise((r) => chrome.storage.sync.get(["kavachApiUrl"], r));
-  const candidates = [
-    auth.host,
-    cfg?.kavachApiUrl,
-    "http://127.0.0.1:8000",
-    "http://localhost:8000",
-  ].filter(Boolean);
+  try {
+    const auth = await getKavachAuth();
+    const cfg = await new Promise((r) => chrome.storage.sync.get(["kavachApiUrl"], r));
+    const candidateUrls = [
+      auth.host,
+      cfg?.kavachApiUrl,
+      "http://127.0.0.1:8000",
+      "http://localhost:8000",
+    ].filter(Boolean);
 
-  for (const url of candidates) {
-    try {
-      const res = await fetch(`${url}/health`, { signal: AbortSignal.timeout(1200) });
-      if (res.ok) return { apiUrl: url, token: auth.token };
-    } catch {}
+    for (const url of candidateUrls) {
+      try {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 1200);
+        const res = await fetch(`${url}/health`, { signal: controller.signal });
+        clearTimeout(timeoutId);
+        if (res.ok) {
+          return { apiUrl: url, token: auth.token };
+        }
+      } catch (e) {
+        // Continue to next candidate
+      }
+    }
+    return { apiUrl: cfg?.kavachApiUrl || "http://127.0.0.1:8000", token: auth.token };
+  } catch (err) {
+    return { apiUrl: "http://127.0.0.1:8000", token: null };
   }
-  return { apiUrl: cfg?.kavachApiUrl || "http://127.0.0.1:8000", token: auth.token };
 }
 
 chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
   if (msg.type === "ANALYZE_CHAT") {
-    resolveApiBase().then(({ apiUrl, token }) => {
-      const headers = {
-        "Content-Type": "application/json",
-        "X-Kavach-Client": "extension",
-      };
-      if (token) {
-        headers["Authorization"] = `Bearer ${token}`;
-        headers["X-Kavach-Token"] = token;
-      }
+    (async () => {
+      try {
+        const { apiUrl, token } = await resolveApiBase();
+        const headers = {
+          "Content-Type": "application/json",
+          "X-Kavach-Client": "extension",
+        };
+        if (token) {
+          headers["Authorization"] = `Bearer ${token}`;
+          headers["X-Kavach-Token"] = token;
+        }
 
-      fetch(`${apiUrl}/analyze`, {
-        method: "POST",
-        headers: headers,
-        credentials: "include",
-        body: JSON.stringify(msg.payload),
-      })
-        .then(async (res) => {
-          if (!res.ok) {
-            const errText = await res.text();
-            sendResponse({ ok: false, error: errText || `HTTP ${res.status}` });
-          } else {
-            const data = await res.json();
-            sendResponse({ ok: true, data, apiUrl });
-          }
-        })
-        .catch((err) => {
-          sendResponse({ ok: false, error: err.message });
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 12000); // 12s timeout for AI analysis
+        const res = await fetch(`${apiUrl}/analyze`, {
+          method: "POST",
+          headers: headers,
+          credentials: "include",
+          signal: controller.signal,
+          body: JSON.stringify(msg.payload),
         });
-    });
-    return true; // Keep message channel open for async sendResponse
+        clearTimeout(timeoutId);
+
+        if (!res.ok) {
+          const errText = await res.text().catch(() => "");
+          sendResponse({ ok: false, error: errText || `HTTP ${res.status}`, apiUrl });
+        } else {
+          const data = await res.json();
+          sendResponse({ ok: true, data, apiUrl, token });
+        }
+      } catch (err) {
+        sendResponse({ ok: false, error: err.message || "Network request failed" });
+      }
+    })();
+    return true; // Keep channel open
   }
 
   if (msg.type === "SAVE_TO_VAULT") {
-    resolveApiBase().then(({ apiUrl, token }) => {
-      const headers = {
-        "Content-Type": "application/json",
-        "X-Kavach-Client": "extension",
-      };
-      if (token) {
-        headers["Authorization"] = `Bearer ${token}`;
-        headers["X-Kavach-Token"] = token;
-      }
+    (async () => {
+      try {
+        const { apiUrl, token } = await resolveApiBase();
+        const headers = {
+          "Content-Type": "application/json",
+          "X-Kavach-Client": "extension",
+        };
+        if (token) {
+          headers["Authorization"] = `Bearer ${token}`;
+          headers["X-Kavach-Token"] = token;
+        }
 
-      fetch(`${apiUrl}/evidence`, {
-        method: "POST",
-        headers: headers,
-        credentials: "include",
-        body: JSON.stringify(msg.payload),
-      })
-        .then(async (res) => {
-          if (!res.ok) {
-            const errText = await res.text();
-            sendResponse({ ok: false, error: errText || `HTTP ${res.status}` });
-          } else {
-            const data = await res.json();
-            sendResponse({ ok: true, data, apiUrl });
-          }
-        })
-        .catch((err) => {
-          sendResponse({ ok: false, error: err.message });
+        const res = await fetch(`${apiUrl}/evidence`, {
+          method: "POST",
+          headers: headers,
+          credentials: "include",
+          body: JSON.stringify(msg.payload),
         });
-    });
+
+        if (!res.ok) {
+          const errText = await res.text().catch(() => "");
+          sendResponse({ ok: false, error: errText || `HTTP ${res.status}`, apiUrl });
+        } else {
+          const data = await res.json();
+          sendResponse({ ok: true, data, apiUrl });
+        }
+      } catch (err) {
+        sendResponse({ ok: false, error: err.message || "Save failed" });
+      }
+    })();
     return true;
   }
 
   if (msg.type === "TRIGGER_AUTO_ALERT") {
-    resolveApiBase().then(({ apiUrl, token }) => {
-      const headers = {
-        "Content-Type": "application/json",
-        "X-Kavach-Client": "extension",
-      };
-      if (token) {
-        headers["Authorization"] = `Bearer ${token}`;
-        headers["X-Kavach-Token"] = token;
-      }
+    (async () => {
+      try {
+        const { apiUrl, token } = await resolveApiBase();
+        const headers = {
+          "Content-Type": "application/json",
+          "X-Kavach-Client": "extension",
+        };
+        if (token) {
+          headers["Authorization"] = `Bearer ${token}`;
+          headers["X-Kavach-Token"] = token;
+        }
 
-      fetch(`${apiUrl}/sos/auto-alert`, {
-        method: "POST",
-        headers: headers,
-        credentials: "include",
-        body: JSON.stringify(msg.payload),
-      })
-        .then(async (res) => {
-          const data = await res.json().catch(() => ({}));
-          sendResponse({ ok: res.ok, data, apiUrl });
-        })
-        .catch((err) => {
-          sendResponse({ ok: false, error: err.message });
+        const res = await fetch(`${apiUrl}/sos/auto-alert`, {
+          method: "POST",
+          headers: headers,
+          credentials: "include",
+          body: JSON.stringify(msg.payload),
         });
-    });
+
+        const data = await res.json().catch(() => ({}));
+        sendResponse({ ok: res.ok, data, apiUrl });
+      } catch (err) {
+        sendResponse({ ok: false, error: err.message || "Alert dispatch failed" });
+      }
+    })();
     return true;
   }
 
   if (msg.type === "GET_KAVACH_SESSION") {
-    resolveApiBase().then(({ apiUrl, token }) => {
-      const headers = { "X-Kavach-Client": "extension" };
-      if (token) headers["Authorization"] = `Bearer ${token}`;
-      fetch(`${apiUrl}/auth/me`, { headers, credentials: "include" })
-        .then((r) => r.json())
-        .then((u) => sendResponse({ ok: true, user: u, apiUrl, token }))
-        .catch((err) => sendResponse({ ok: false, error: err.message, apiUrl }));
+    (async () => {
+      try {
+        const { apiUrl, token } = await resolveApiBase();
+        const headers = { "X-Kavach-Client": "extension" };
+        if (token) {
+          headers["Authorization"] = `Bearer ${token}`;
+          headers["X-Kavach-Token"] = token;
+        }
+
+        const res = await fetch(`${apiUrl}/auth/me`, {
+          headers: headers,
+          credentials: "include",
+        });
+
+        if (res.ok) {
+          const info = await res.json();
+          sendResponse({
+            ok: true,
+            user: info.user,
+            guardians_count: info.guardians_count || 0,
+            guardians_names: info.guardians_names || [],
+            apiUrl,
+            token,
+          });
+        } else {
+          sendResponse({ ok: false, error: "Not logged in", apiUrl });
+        }
+      } catch (err) {
+        sendResponse({ ok: false, error: err.message || "Connection failed" });
+      }
+    })();
+    return true;
+  }
+
+  if (msg.type === "PAIR_DEVICE_IDENTITY") {
+    // Store device-level pairing between WhatsApp Web user and local Kavach account
+    chrome.storage.local.set({
+      whatsappUser: msg.whatsappUser || "",
+      pairedAt: new Date().toISOString(),
+      pairedDevice: navigator.userAgent.slice(0, 50),
+    }, () => {
+      sendResponse({ ok: true });
     });
     return true;
   }

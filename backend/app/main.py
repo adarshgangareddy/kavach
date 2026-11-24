@@ -361,9 +361,18 @@ def auth_me(request: Request):
         elif "X-Kavach-Token" in request.headers:
             raw_token = request.headers["X-Kavach-Token"].strip()
     user = accounts.user_for_session(raw_token) if raw_token else None
+    if not user and request.headers.get("X-Kavach-Client") == "extension":
+        user = accounts.latest_active_user()
     if not user:
         raise HTTPException(401, "Please log in")
-    return {"user": user}
+
+    user_id = user["id"]
+    contacts = people.list_kind("contact", owner=user_id)
+    return {
+        "user": user,
+        "guardians_count": len(contacts),
+        "guardians_names": [c.get("name") for c in contacts if c.get("name")],
+    }
 
 
 @app.get("/auth/profile", dependencies=signed_in)

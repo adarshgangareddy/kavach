@@ -4,7 +4,8 @@
  * extracts incoming conversation messages reliably across modern DOM structures,
  * analyzes threats in real-time with Groq AI,
  * automatically dispatches emergency SOS alerts with GPS to guardians when Threat Score >= 95%,
- * and presents full protection options when Threat Score is under 95%.
+ * presents full protection options when Threat Score is under 95%,
+ * and pairs device identity between WhatsApp Web and the local Kavach account.
  */
 
 (() => {
@@ -16,11 +17,30 @@
   let scanDebounceTimer = null;
   let isProtectionEnabled = true;
   let currentBackendUrl = "http://127.0.0.1:8000";
+  let pairedKavachUser = "Adarsh";
 
   chrome.storage?.sync?.get(["kavachEnabled", "kavachApiUrl"], (res) => {
     if (res?.kavachEnabled !== undefined) isProtectionEnabled = res.kavachEnabled;
     if (res?.kavachApiUrl) currentBackendUrl = res.kavachApiUrl;
   });
+
+  // Extract WhatsApp Web Self User (e.g. "@adarsh.gangareddy (You)")
+  function extractWhatsAppSelfUser() {
+    const youEl = document.querySelector(
+      "#pane-side span[title*='(You)'], div[data-testid='cell-frame-container'] span[title*='(You)'], span[title*='You']"
+    );
+    if (youEl) {
+      const title = youEl.getAttribute("title") || youEl.textContent?.trim();
+      if (title) {
+        chrome.runtime?.sendMessage?.({
+          type: "PAIR_DEVICE_IDENTITY",
+          whatsappUser: title,
+        });
+        return title;
+      }
+    }
+    return null;
+  }
 
   function getGeolocation(cb) {
     if (!navigator.geolocation) return cb(null);
@@ -38,7 +58,7 @@
     badge.id = "kavach-live-badge";
     badge.className = "kavach-status-badge";
     badge.innerHTML = `<span class="kavach-status-dot"></span><span>🛡️ Kavach Active</span>`;
-    badge.title = "Kavach Live Shield is active. Monitoring chats for harassment, blackmail, and safety threats.";
+    badge.title = "Kavach Live Shield is active. Paired with local account. Click to re-scan this chat.";
     badge.onclick = (e) => {
       e.stopPropagation();
       badge.innerHTML = `<span class="kavach-status-dot" style="background:#f59e0b;"></span><span>⚡ Scanning Chat...</span>`;
@@ -213,6 +233,7 @@
   function performScan(force = false) {
     if (!isProtectionEnabled) return;
 
+    extractWhatsAppSelfUser();
     const badge = document.getElementById("kavach-live-badge");
     const chatData = activePlatform === "whatsapp" ? parseWhatsAppMessages() : parseTelegramMessages();
 
@@ -258,6 +279,14 @@
       badge.innerHTML = `<span class="kavach-status-dot" style="background:#6366f1;"></span><span>🛡️ AI Analyzing Chat...</span>`;
     }
 
+    // Fail-safe timeout so badge never gets permanently stuck on "Analyzing..."
+    let scanFinished = false;
+    const safetyTimeout = setTimeout(() => {
+      if (!scanFinished && badge) {
+        badge.innerHTML = `<span class="kavach-status-dot"></span><span>🛡️ Kavach Active</span>`;
+      }
+    }, 6000);
+
     chrome.runtime?.sendMessage?.(
       {
         type: "ANALYZE_CHAT",
@@ -268,9 +297,12 @@
         },
       },
       (response) => {
+        scanFinished = true;
+        clearTimeout(safetyTimeout);
+
         if (!response || !response.ok) {
           if (badge) {
-            badge.innerHTML = `<span class="kavach-status-dot" style="background:#ef4444;"></span><span>⚠️ Kavach Offline</span>`;
+            badge.innerHTML = `<span class="kavach-status-dot" style="background:#ef4444;"></span><span>⚠️ API Offline</span>`;
             setTimeout(() => {
               badge.innerHTML = `<span class="kavach-status-dot"></span><span>🛡️ Kavach Active</span>`;
             }, 3000);
@@ -573,6 +605,7 @@
     observer.observe(document.body, { childList: true, subtree: true });
 
     injectStatusBadge();
+    extractWhatsAppSelfUser();
 
     // Initial scans after page load
     setTimeout(() => performScan(true), 1200);

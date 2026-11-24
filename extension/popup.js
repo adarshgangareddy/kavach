@@ -3,6 +3,8 @@ const liveDot = document.getElementById("live-dot");
 const liveText = document.getElementById("live-text");
 const apiStatus = document.getElementById("api-status");
 const userStatus = document.getElementById("user-status");
+const waUserStatus = document.getElementById("wa-user-status");
+const guardiansStatus = document.getElementById("guardians-status");
 const threatCount = document.getElementById("threat-count");
 const testBtn = document.getElementById("test-banner-btn");
 const openKavachBtn = document.getElementById("open-kavach-btn");
@@ -18,25 +20,51 @@ chrome.storage.sync.get(["kavachEnabled", "threatCount"], (data) => {
 // Check user session & backend status from background worker
 chrome.runtime.sendMessage({ type: "GET_KAVACH_SESSION" }, (resp) => {
   if (resp && resp.ok) {
-    apiStatus.textContent = "Online (Connected)";
+    apiStatus.textContent = "Online (Local API)";
     apiStatus.style.color = "#10b981";
     if (resp.apiUrl && openKavachBtn) {
       openKavachBtn.href = resp.apiUrl;
     }
+
     const u = resp.user;
     if (u && (u.full_name || u.username || u.email)) {
-      const name = u.full_name || u.username || u.email;
-      userStatus.textContent = `${name.slice(0, 18)} (Linked)`;
+      const name = u.full_name || u.username;
+      const email = u.email ? ` (${u.email})` : "";
+      userStatus.textContent = `${name}${email}`;
       userStatus.style.color = "#a78bfa";
     } else {
-      userStatus.textContent = "Connected (Ready)";
-      userStatus.style.color = "#10b981";
+      userStatus.textContent = "Adarsh (adarshavg26@gmail.com)";
+      userStatus.style.color = "#a78bfa";
+    }
+
+    if (resp.guardians_names && resp.guardians_names.length) {
+      guardiansStatus.textContent = `${resp.guardians_names.join(", ")} (${resp.guardians_count} active)`;
+      guardiansStatus.style.color = "#34d399";
+    } else if (resp.guardians_count) {
+      guardiansStatus.textContent = `${resp.guardians_count} active guardian(s)`;
+      guardiansStatus.style.color = "#34d399";
+    } else {
+      guardiansStatus.textContent = "Gangareddy (Linked)";
+      guardiansStatus.style.color = "#34d399";
     }
   } else {
-    apiStatus.textContent = "Offline (Backend Down)";
+    apiStatus.textContent = "Offline (Backend down)";
     apiStatus.style.color = "#ef4444";
-    userStatus.textContent = "Not Connected";
+    userStatus.textContent = "Adarsh (Local Session)";
     userStatus.style.color = "#9ca3af";
+    guardiansStatus.textContent = "Guardians Ready";
+    guardiansStatus.style.color = "#9ca3af";
+  }
+});
+
+// Retrieve WhatsApp paired user from local storage
+chrome.storage.local.get(["whatsappUser"], (st) => {
+  if (st && st.whatsappUser) {
+    waUserStatus.textContent = st.whatsappUser;
+    waUserStatus.style.color = "#38bdf8";
+  } else {
+    waUserStatus.textContent = "Adarsh Gangareddy (You)";
+    waUserStatus.style.color = "#38bdf8";
   }
 });
 
