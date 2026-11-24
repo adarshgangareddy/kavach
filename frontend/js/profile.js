@@ -117,13 +117,17 @@
     try {
       const res = await fetch(`${API}/location/sync`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        headers: getAuthHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({ lat, lng }),
       });
       if (res.ok) {
         const data = await res.json();
         if (data.responder_updated) {
           console.log(`[Kavach] Automatically updated responder location for ${data.responder_name} to (${lat}, ${lng})`);
+        }
+        if (data.guardian_updated) {
+          console.log(`[Kavach] Automatically updated guardian location for ${data.guardian_name} to (${lat}, ${lng})`);
         }
       }
     } catch (e) {

@@ -34,10 +34,11 @@ def public(p: dict) -> dict:
         "opted_in": bool(p.get("opted_in", 1)),
         "has_location": p.get("lat") is not None, "lat": p.get("lat"), "lng": p.get("lng"), "location_at": p.get("location_at"),
         "user_id": p.get("user_id") or p.get("owner"),
+        "user_email": p.get("user_email") or "",
     }
 
 
-def create(kind: str, name: str, phone: str = "", email: str = "", lat=None, lng=None, owner=None, relationship: str = "Guardian", whatsapp: str = "") -> dict:
+def create(kind: str, name: str, phone: str = "", email: str = "", lat=None, lng=None, owner=None, relationship: str = "Guardian", whatsapp: str = "", user_email: str = None) -> dict:
     if kind not in ("contact", "responder"):
         raise PeopleError("kind must be contact or responder")
     if not name.strip():
@@ -45,6 +46,14 @@ def create(kind: str, name: str, phone: str = "", email: str = "", lat=None, lng
     _check_location(lat, lng)
     pid = secrets.token_hex(5)
     owner = owner or context.current()
+    if not user_email and owner:
+        try:
+            from ..auth import accounts
+            u = accounts.user_for_id(owner)
+            if u:
+                user_email = (u.get("email") or "").strip().lower()
+        except Exception:
+            pass
     now_ts = _now()
     link_code = secrets.token_urlsafe(6)
     clean_name = name.strip()
@@ -56,15 +65,15 @@ def create(kind: str, name: str, phone: str = "", email: str = "", lat=None, lng
     with db.lock:
         if kind == "contact":
             db.run(
-                "INSERT INTO guardians (id, user_id, name, relationship, phone, whatsapp, email, link_code, created_at)"
-                " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
-                pid, owner or "default", clean_name, clean_rel, clean_phone, clean_wa, clean_email, link_code, now_ts
+                "INSERT INTO guardians (id, user_id, user_email, name, relationship, phone, whatsapp, email, lat, lng, location_at, link_code, created_at)"
+                " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                pid, owner or "default", user_email or "", clean_name, clean_rel, clean_phone, clean_wa, clean_email, lat, lng, now_ts if lat is not None else None, link_code, now_ts
             )
         else:
             db.run(
-                "INSERT INTO responders (id, user_id, name, phone, email, relationship, lat, lng, location_at, verified, opted_in, link_code, created_at)"
-                " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 0, 1, ?, ?)",
-                pid, owner, clean_name, clean_phone, clean_email, clean_rel, lat, lng, now_ts if lat is not None else None, link_code, now_ts
+                "INSERT INTO responders (id, user_id, user_email, name, phone, email, relationship, lat, lng, location_at, verified, opted_in, link_code, created_at)"
+                " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, 1, ?, ?)",
+                pid, owner, user_email or "", clean_name, clean_phone, clean_email, clean_rel, lat, lng, now_ts if lat is not None else None, link_code, now_ts
             )
 
         # Mirror into people for complete backward compatibility with alerts, service, and tests
@@ -84,6 +93,7 @@ def get(pid: str) -> dict:
         d = dict(g)
         d["kind"] = "contact"
         d["owner"] = d.get("user_id")
+        d.setdefault("user_email", "")
         d.setdefault("verified", 1)
         d.setdefault("opted_in", 1)
         d.setdefault("lat", None)
@@ -95,6 +105,7 @@ def get(pid: str) -> dict:
         d = dict(r)
         d["kind"] = "responder"
         d["owner"] = d.get("user_id")
+        d.setdefault("user_email", "")
         d.setdefault("whatsapp", "")
         return d
     p = db.one("SELECT * FROM people WHERE id=?", pid)
@@ -105,17 +116,27 @@ def get(pid: str) -> dict:
 
 def list_kind(kind: str, owner=None) -> list[dict]:
     uid = owner or context.current()
+    user_email = ""
+    if uid:
+        try:
+            from ..auth import accounts
+            u = accounts.user_for_id(uid)
+            if u:
+                user_email = (u.get("email") or "").strip().lower()
+        except Exception:
+            pass
+
     if kind == "contact":
         seen_ids = set()
         out = []
-        if uid:
+        if uid or user_email:
             g_rows = db.rows(
-                "SELECT * FROM guardians WHERE user_id = ? ORDER BY created_at",
-                uid,
+                "SELECT * FROM guardians WHERE (user_id = ? OR (? != '' AND (LOWER(COALESCE(user_email, '')) = ? OR LOWER(COALESCE(email, '')) = ?))) ORDER BY created_at",
+                uid or "", user_email, user_email, user_email,
             )
             p_rows = db.rows(
-                "SELECT * FROM people WHERE kind='contact' AND (owner = ? OR owner IS NULL) ORDER BY created_at",
-                uid,
+                "SELECT * FROM people WHERE kind='contact' AND (owner = ? OR (? != '' AND (LOWER(COALESCE(owner, '')) = ? OR LOWER(COALESCE(email, '')) = ?))) ORDER BY created_at",
+                uid or "", user_email, user_email, user_email,
             )
         else:
             g_rows = db.rows("SELECT * FROM guardians ORDER BY created_at")
@@ -188,7 +209,7 @@ def linked_contacts(owner=None) -> list[dict]:
 
 def update(pid: str, **fields) -> dict:
     p = get(pid)
-    allowed = {"name", "phone", "email", "opted_in", "lat", "lng", "relationship", "whatsapp", "user_id"}
+    allowed = {"name", "phone", "email", "opted_in", "lat", "lng", "relationship", "whatsapp", "user_id", "user_email"}
     sets = {k: v for k, v in fields.items() if k in allowed and v is not None}
     if "lat" in sets or "lng" in sets:
         _check_location(sets.get("lat"), sets.get("lng"))
@@ -198,12 +219,12 @@ def update(pid: str, **fields) -> dict:
     if sets:
         with db.lock:
             if p["kind"] == "contact":
-                g_sets = {k: v for k, v in sets.items() if k in {"name", "phone", "email", "relationship", "whatsapp", "user_id"}}
+                g_sets = {k: v for k, v in sets.items() if k in {"name", "phone", "email", "relationship", "whatsapp", "user_id", "user_email", "lat", "lng", "location_at"}}
                 if g_sets:
                     g_cols = ", ".join(f"{'user_id' if k=='user_id' else k}=?" for k in g_sets)
                     db.run(f"UPDATE guardians SET {g_cols} WHERE id=?", *g_sets.values(), pid)
             else:
-                r_sets = {k: v for k, v in sets.items() if k in {"name", "phone", "email", "relationship", "lat", "lng", "location_at", "opted_in", "user_id"}}
+                r_sets = {k: v for k, v in sets.items() if k in {"name", "phone", "email", "relationship", "lat", "lng", "location_at", "opted_in", "user_id", "user_email"}}
                 if r_sets:
                     r_cols = ", ".join(f"{k}=?" for k in r_sets)
                     db.run(f"UPDATE responders SET {r_cols} WHERE id=?", *r_sets.values(), pid)

@@ -394,11 +394,12 @@ class LocationSyncIn(BaseModel):
 
 @app.post("/location/sync")
 def sync_location(body: LocationSyncIn, request: Request):
-    """Sync live device location for user profile and auto-update responder location if user is a responder."""
+    """Sync live device location for user profile and auto-update responder and guardian location."""
     lat = body.lat
     lng = body.lng
-    res = {"status": "synced", "lat": lat, "lng": lng, "responder_updated": False}
-    user = accounts.user_for_session(request.cookies.get(SESSION_COOKIE))
+    res = {"status": "synced", "lat": lat, "lng": lng, "responder_updated": False, "guardian_updated": False}
+    curr_uid = _resolve_request_uid(request)
+    user = accounts.user_for_id(curr_uid) if curr_uid else None
     if user:
         accounts.update_profile(user["id"], lat=lat, lng=lng)
         res["user_id"] = user["id"]
@@ -406,14 +407,25 @@ def sync_location(body: LocationSyncIn, request: Request):
         user_phone = (user.get("phone") or "").strip()
         user_name = (user.get("full_name") or user.get("username") or "").lower().strip()
         for r in people.list_kind("responder"):
+            r_owner = r.get("user_id") or r.get("owner")
             r_email = (r.get("email") or "").lower().strip()
+            r_uemail = (r.get("user_email") or "").lower().strip()
             r_phone = (r.get("phone") or "").strip()
             r_name = (r.get("name") or "").lower().strip()
-            if (user_email and r_email == user_email) or (user_phone and r_phone == user_phone) or (user_name and r_name == user_name):
+            if (curr_uid and r_owner == curr_uid) or (user_email and (r_email == user_email or r_uemail == user_email)) or (user_phone and r_phone == user_phone) or (user_name and r_name == user_name):
                 people.update(r["id"], lat=lat, lng=lng)
                 res["responder_updated"] = True
                 res["responder_id"] = r["id"]
                 res["responder_name"] = r.get("name")
+                break
+        for g in people.list_kind("contact"):
+            g_email = (g.get("email") or "").lower().strip()
+            g_phone = (g.get("phone") or "").strip()
+            if (user_email and g_email == user_email) or (user_phone and g_phone == user_phone):
+                people.update(g["id"], lat=lat, lng=lng)
+                res["guardian_updated"] = True
+                res["guardian_id"] = g["id"]
+                res["guardian_name"] = g.get("name")
                 break
     return res
 
@@ -909,6 +921,12 @@ async def people_create(body: PersonIn, request: Request):
             curr_uid = require_user(request)
 
     owner = curr_uid if (body.kind == "contact" or curr_uid) else None
+    user_email = None
+    if curr_uid:
+        u = accounts.user_for_id(curr_uid)
+        if u:
+            user_email = (u.get("email") or "").strip().lower()
+
     p = _sos_call(
         people.create,
         body.kind,
@@ -920,6 +938,7 @@ async def people_create(body: PersonIn, request: Request):
         owner,
         body.relationship,
         body.whatsapp,
+        user_email,
     )
     tg_link = await notify.link_for(p)
     if body.kind == "contact" and body.email:
