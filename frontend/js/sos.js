@@ -382,15 +382,44 @@
     }
     const del = e.target.closest("[data-del]");
     if (del) {
+      e.preventDefault();
+      e.stopPropagation();
+      const pid = del.dataset.del;
+      if (!pid) return;
+
+      const confirmed = await (window.kavachConfirm
+        ? window.kavachConfirm("Remove this emergency guardian from your safety network?", { ok: "Remove Guardian", cancel: "Cancel", danger: true })
+        : Promise.resolve(confirm("Remove this emergency guardian from your safety network?")));
+      if (!confirmed) return;
+
       try {
-        const me = await (await fetch("/auth/me", { credentials: "same-origin" })).json();
-        if (me.user?.has_passcode) {
-          const ok = await window.kavachPromptPasscode();
-          if (!ok) return;
+        const meRes = await fetch("/auth/me", { credentials: "include" });
+        if (meRes.ok) {
+          const me = await meRes.json().catch(() => ({}));
+          if (me.user?.has_passcode && window.kavachPromptPasscode) {
+            const ok = await window.kavachPromptPasscode();
+            if (!ok) return;
+          }
         }
       } catch {}
-      await api(`/people/${del.dataset.del}`, { method: "DELETE" }).catch(() => {});
-      return loadSetup();
+
+      try {
+        del.disabled = true;
+        del.style.opacity = "0.5";
+        await api(`/people/${pid}`, { method: "DELETE" });
+        if (setup && Array.isArray(setup.contacts)) {
+          setup.contacts = setup.contacts.filter((c) => c.id !== pid);
+          try { localStorage.setItem("kavach.sosSetup", JSON.stringify(setup)); } catch {}
+          renderContacts();
+        }
+        await loadSetup();
+        window.kavach?.toast("✓ Guardian removed from your network");
+      } catch (err) {
+        del.disabled = false;
+        del.style.opacity = "1";
+        window.kavach?.toast(`Could not remove guardian: ${err.message}`);
+      }
+      return;
     }
     const qr = e.target.closest("[data-qr]");
     if (qr) showQr(qr.dataset.qr, qr.dataset.who);

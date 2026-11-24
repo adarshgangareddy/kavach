@@ -902,11 +902,18 @@ def sos_demo_reset():
 
 # ---------- people: her trusted contacts and registered responders ----------
 
-def _person(pid: str) -> dict:
+def _person(pid: str, request: Request = None) -> dict:
     """A contact only for the account it belongs to; responders manage themselves (responder page)."""
     p = _sos_call(people.get, pid)
-    if p["kind"] == "contact" and (not context.current() or not people.owns(p)):
-        raise HTTPException(404, "person not found")
+    curr_uid = context.current()
+    if not curr_uid and request:
+        curr_uid = _resolve_request_uid(request)
+    if p["kind"] == "contact":
+        if not curr_uid:
+            if not config.DEMO_MODE:
+                raise HTTPException(404, "person not found")
+        elif not people.owns(p):
+            raise HTTPException(404, "person not found")
     return p
 
 
@@ -1086,15 +1093,15 @@ async def sos_auto_alert(req: AutoAlertRequest, request: Request):
 
 @app.patch("/people/{pid}")
 def people_update(pid: str, body: PersonPatch, request: Request):
-    p = _person(pid)
     curr_uid = _resolve_request_uid(request)
+    p = _person(pid, request)
 
     owner = p.get("user_id") or p.get("owner")
     if p["kind"] == "responder" and owner:
         if not curr_uid or curr_uid != owner:
             raise HTTPException(403, "You can only edit your own responder details")
     elif p["kind"] == "contact" and owner:
-        if not curr_uid or curr_uid != owner:
+        if not people.owns(p):
             raise HTTPException(403, "You can only edit your own guardians")
 
     return _sos_call(people.update, pid, **body.model_dump(exclude_unset=True))
@@ -1102,18 +1109,19 @@ def people_update(pid: str, body: PersonPatch, request: Request):
 
 @app.delete("/people/{pid}")
 def people_delete(pid: str, request: Request):
-    p = _person(pid)
     curr_uid = _resolve_request_uid(request)
+    p = _person(pid, request)
     owner = p.get("user_id") or p.get("owner")
     if owner and curr_uid and curr_uid != owner:
-        raise HTTPException(403, "You can only delete your own contacts or responder registrations")
+        if not people.owns(p):
+            raise HTTPException(403, "You can only delete your own contacts or responder registrations")
     _sos_call(people.delete, pid)
     return {"ok": True}
 
 
 @app.get("/people/{pid}/telegram")
-async def people_telegram(pid: str):
-    p = _person(pid)
+async def people_telegram(pid: str, request: Request = None):
+    p = _person(pid, request)
     return {"link": await notify.link_for(p), "linked": p["telegram_chat_id"] is not None}
 
 

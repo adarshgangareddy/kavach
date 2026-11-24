@@ -192,8 +192,26 @@ def list_kind(kind: str, owner=None) -> list[dict]:
 
 def owns(p: dict) -> bool:
     """A contact can only be seen or changed by the account it belongs to."""
+    if p.get("kind") != "contact":
+        return True
+    uid = context.current()
+    if not uid:
+        return True
     owner = p.get("user_id") or p.get("owner")
-    return p.get("kind") != "contact" or owner == context.current() or owner is None or not context.current()
+    if not owner or owner == uid:
+        return True
+    try:
+        from app.auth import accounts
+        curr_user = accounts.user_for_id(uid)
+        if curr_user:
+            u_email = (curr_user.get("email") or "").lower().strip()
+            p_uemail = (p.get("user_email") or "").lower().strip()
+            p_email = (p.get("email") or "").lower().strip()
+            if u_email and (p_uemail == u_email or p_email == u_email):
+                return True
+    except Exception:
+        pass
+    return False
 
 
 def linked_contacts(owner=None) -> list[dict]:
