@@ -282,7 +282,11 @@ def auth_google_callback():
           return fail(body.detail || "Server rejected Google verification");
         }
         if (body.user && body.user.id) {
-          try { localStorage.setItem("kavach.lastUser", body.user.id); } catch {}
+          try {
+            localStorage.setItem("kavach.lastUser", body.user.id);
+            localStorage.setItem("kavach.user", JSON.stringify(body.user));
+            if (body.token) localStorage.setItem("kavach_token", body.token);
+          } catch {}
         }
         title.textContent = "Success!";
         title.style.color = "#10b981";
@@ -337,8 +341,9 @@ async def auth_google_verify(request: Request):
     except accounts.AuthError as exc:
         raise HTTPException(exc.status, str(exc)) from exc
 
-    response = JSONResponse({"user": user})
-    _set_session(response, request, accounts.new_session(user["id"]))
+    session_token = accounts.new_session(user["id"])
+    response = JSONResponse({"user": user, "token": session_token})
+    _set_session(response, request, session_token)
     return response
 
 

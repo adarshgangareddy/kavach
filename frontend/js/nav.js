@@ -187,20 +187,20 @@
   };
   window.kavachMobile = mobile;
 
-  pill.addEventListener("click", () => mobile.show("panel"));
-  document.querySelector("#panel-back").addEventListener("click", () => mobile.show("main"));
-  document.querySelector("#chat-back").addEventListener("click", () => {
+  pill?.addEventListener("click", () => mobile.show("panel"));
+  document.querySelector("#panel-back")?.addEventListener("click", () => mobile.show("main"));
+  document.querySelector("#chat-back")?.addEventListener("click", () => {
     mobile.show("list");
     mobile.pill(null);
   });
   // Opening a chat or the screenshot import moves to the main pane and closes menu drawer
-  document.querySelector("#contact-list").addEventListener("click", (e) => {
+  document.querySelector("#contact-list")?.addEventListener("click", (e) => {
     leaveHome();
     body.classList.remove("menu-open");
     if (e.target.closest(".contact")) mobile.show("main");
     setActive("shield");
   });
-  document.querySelector("#import-btn").addEventListener("click", () => {
+  document.querySelector("#import-btn")?.addEventListener("click", () => {
     leaveHome();
     closeAllViews();
     body.classList.remove("menu-open");

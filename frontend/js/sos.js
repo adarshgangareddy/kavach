@@ -106,22 +106,31 @@
       /* private mode: settings just won't persist */
     }
   }
-  els.callerInput.value = settings.caller;
-  els.callerInput.addEventListener("input", () => {
-    settings.caller = els.callerInput.value.trim() || "Mom";
-    saveSettings();
-    applyCaller();
-  });
+  if (els.callerInput) {
+    els.callerInput.value = settings.caller;
+    els.callerInput.addEventListener("input", () => {
+      settings.caller = els.callerInput.value.trim() || "Mom";
+      saveSettings();
+      applyCaller();
+    });
+  }
 
   function applyCaller() {
     const name = settings.caller || "Mom";
-    ["#caller-name", "#caller-name-2"].forEach((s) => ($(s).textContent = name));
-    ["#caller-initial", "#caller-initial-2"].forEach((s) => ($(s).textContent = name[0].toUpperCase()));
-    els.missed.textContent = `Missed call: ${name}`;
+    ["#caller-name", "#caller-name-2"].forEach((s) => {
+      const el = $(s);
+      if (el) el.textContent = name;
+    });
+    ["#caller-initial", "#caller-initial-2"].forEach((s) => {
+      const el = $(s);
+      if (el) el.textContent = name[0].toUpperCase();
+    });
+    if (els.missed) els.missed.textContent = `Missed call: ${name}`;
   }
 
   // ---------- setup: her name + trusted contacts (saved on the server) ----------
-  els.testChannels.addEventListener("click", async () => {
+  els.testChannels?.addEventListener("click", async () => {
+    if (!els.testChannels) return;
     els.testChannels.disabled = true;
     els.testChannels.textContent = "Sending…";
     try {
@@ -294,8 +303,9 @@
     window.kavachNav?.go("scan");
   });
 
-  els.addContact.addEventListener("submit", async (e) => {
+  els.addContact?.addEventListener("submit", async (e) => {
     e.preventDefault();
+    if (!els.addContact) return;
     const f = new FormData(els.addContact);
     const saveBtn = els.addContact.querySelector("button[type=submit]");
     if (saveBtn) {
@@ -337,7 +347,7 @@
     }
   });
 
-  els.contactList.addEventListener("click", async (e) => {
+  els.contactList?.addEventListener("click", async (e) => {
     const sirenBtn = e.target.closest("[data-siren]");
     if (sirenBtn) {
       const pid = sirenBtn.dataset.siren;
@@ -480,7 +490,7 @@
 
   // Each contact scans this (or gets the link) and taps Start once.
   // One shared link: everyone who opens it and taps Start becomes a trusted contact.
-  els.invite.addEventListener("click", async () => {
+  els.invite?.addEventListener("click", async () => {
     try {
       const { link } = await api("/sos/invite");
       if (!link) return window.kavach.toast("Telegram isn't set up");
@@ -731,12 +741,12 @@
       goHome(); // an ordinary tap: just decline
     }
   }
-  els.decline.addEventListener("pointerdown", pressStart);
-  els.decline.addEventListener("pointerup", pressEnd);
-  els.decline.addEventListener("pointerleave", () => clearTimeout(holdTimer));
-  els.decline.addEventListener("contextmenu", (e) => e.preventDefault());
+  els.decline?.addEventListener("pointerdown", pressStart);
+  els.decline?.addEventListener("pointerup", pressEnd);
+  els.decline?.addEventListener("pointerleave", () => clearTimeout(holdTimer));
+  els.decline?.addEventListener("contextmenu", (e) => e.preventDefault());
   // Keyboard: Enter declines; Shift+Enter is the accessible equivalent of the long press.
-  els.decline.addEventListener("keydown", (e) => {
+  els.decline?.addEventListener("keydown", (e) => {
     if (e.key !== "Enter") return;
     e.preventDefault();
     stopRingtone();
@@ -744,7 +754,7 @@
     if (e.shiftKey) sendSos("long_press_decline");
   });
 
-  els.accept.addEventListener("click", () => {
+  els.accept?.addEventListener("click", () => {
     stopRingtone();
     show("incall");
     playDeEscalationVoice();
@@ -752,15 +762,15 @@
     clearInterval(callTimer);
     callTimer = setInterval(() => {
       const s = Math.floor((Date.now() - start) / 1000);
-      els.timer.textContent = `${String(Math.floor(s / 60)).padStart(2, "0")}:${String(s % 60).padStart(2, "0")}`;
+      if (els.timer) els.timer.textContent = `${String(Math.floor(s / 60)).padStart(2, "0")}:${String(s % 60).padStart(2, "0")}`;
     }, 500);
   });
-  els.end.addEventListener("click", () => {
+  els.end?.addEventListener("click", () => {
     stopRingtone();
     if ("speechSynthesis" in window) window.speechSynthesis.cancel();
     goHome();
   });
-  els.ring.addEventListener("click", startCall);
+  els.ring?.addEventListener("click", startCall);
 
   // Trigger Silent SOS from the button in the action bar
   document.querySelector("#trigger-sos-btn")?.addEventListener("click", () => {
@@ -1030,7 +1040,7 @@
     </div>`;
   }
 
-  els.shield.addEventListener("click", (e) => {
+  els.shield?.addEventListener("click", (e) => {
     if (isOpen && e.target.closest("[data-safe]")) imSafe();
     if (isOpen && e.target.closest("[data-sos-reset]")) resetDemo();
   });
@@ -1046,8 +1056,8 @@
     if (mc) mc.hidden = true;
     isOpen = true;
     document.body.classList.add("sosing");
-    els.view.hidden = false;
-    els.btn.classList.add("active");
+    if (els.view) els.view.hidden = false;
+    els.btn?.classList.add("active");
     window.kavach.deselect("");
     window.kavachMobile?.show("main");
 
@@ -1108,9 +1118,16 @@
     els.btn?.classList.remove("active");
   }
 
-  els.btn.addEventListener("click", open);
+  els.btn?.addEventListener("click", open);
   applyCaller();
+  window.kavachSos = { open, close, markSafe, openLive, loadSetup };
   loadCachedSetup();
   loadSetup();
-  window.kavachSos = { open, close, markSafe, openLive, loadSetup };
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", () => {
+      loadCachedSetup();
+      loadSetup();
+    });
+  }
 })();

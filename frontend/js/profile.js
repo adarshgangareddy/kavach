@@ -112,8 +112,29 @@
     sessionStorage.setItem("kavach_loc_modal_dismissed", "true");
   });
 
-  async function syncLocationToBackend(lat, lng) {
+  let lastSyncedLat = null;
+  let lastSyncedLng = null;
+  let lastSyncTime = 0;
+  let geoWatchId = null;
+
+  async function syncLocationToBackend(lat, lng, force = false) {
     if (!lat || !lng) return;
+    const now = Date.now();
+    if (!force && lastSyncedLat !== null && lastSyncedLng !== null) {
+      const dLat = Math.abs(lat - lastSyncedLat);
+      const dLng = Math.abs(lng - lastSyncedLng);
+      // Skip if location changed by less than ~11 meters and synced within last 30s
+      if (dLat < 0.0001 && dLng < 0.0001 && (now - lastSyncTime < 30000)) {
+        return;
+      }
+      // Throttle rapid location updates to at most once per 6 seconds
+      if (now - lastSyncTime < 6000) {
+        return;
+      }
+    }
+    lastSyncedLat = lat;
+    lastSyncedLng = lng;
+    lastSyncTime = now;
     try {
       const res = await fetch(`${API}/location/sync`, {
         method: "POST",
@@ -287,7 +308,10 @@
 
         // Watch position for live movements (e.g. traveling between Bengaluru & Chikkaballapur)
         try {
-          navigator.geolocation.watchPosition(
+          if (geoWatchId !== null) {
+            navigator.geolocation.clearWatch(geoWatchId);
+          }
+          geoWatchId = navigator.geolocation.watchPosition(
             (p) => {
               isLocationGranted = true;
               currentCoord.lat = p.coords.latitude;
@@ -1107,12 +1131,15 @@
 
   async function loadSettings() {
     try {
-      const res = await fetch(`${API}/auth/profile`);
+      const res = await fetch(`${API}/auth/profile`, {
+        credentials: "include",
+        headers: getAuthHeaders(),
+      });
       if (res.ok) {
         const data = await res.json();
         const u = data.user || {};
         const name = u.full_name || u.username || "Kavach User";
-        const email = u.email || "user@kavach.safety";
+        const email = u.email || (u.username === "adarshavg" ? "adarshavg26@gmail.com" : `${u.username || "user"}@kavach.safety`);
         if (settingsUserAvatar) settingsUserAvatar.textContent = (name[0] || "U").toUpperCase();
         if (settingsUserName) settingsUserName.textContent = name;
         if (settingsUserEmail) settingsUserEmail.textContent = email;
